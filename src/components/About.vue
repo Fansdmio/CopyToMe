@@ -3,26 +3,31 @@
     <template #header>
       <div class="card-header">
         <div class="header-content">
-          <el-icon :size="24" color="#409EFF"><InfoFilled /></el-icon>
+          <el-icon :size="24" color="#409EFF">
+            <InfoFilled />
+          </el-icon>
           <h2>关于</h2>
         </div>
       </div>
     </template>
-    
+
     <el-space direction="vertical" :size="20" style="width: 100%">
       <div class="about-content">
-        <el-icon :size="64" color="#409EFF"><Document /></el-icon>
+        <el-icon :size="64" color="#409EFF">
+          <img src="/src/assets/logo.png" style="width: 50px;"></img>
+        </el-icon>
         <h1>CopyToMe & Tauri</h1>
-        <el-text type="info">版本 20251103</el-text>
+        <el-text type="info">版本 20251104</el-text>
+        <div style="display: flex;flex-direction: column;gap: 4px;margin-top: 10px;">
+          <span>免费软件，请勿上当受骗</span>
+          <el-link target="_blank" href="https://cp.uuyo.fun" underline="false" type="primary">官网链接</el-link>
+        </div>
+
       </div>
 
       <!-- 图片占位符区域 -->
       <div class="image-placeholder-container">
-        <div 
-          v-if="!showImage" 
-          class="image-placeholder"
-          @click="showImage = true"
-        >
+        <div v-if="!showImage" class="image-placeholder" @click="showImage = true">
           <el-icon :size="64" color="#c0c4cc">
             <Picture />
           </el-icon>
@@ -31,12 +36,8 @@
           </div>
         </div>
         <div v-else class="image-container">
-          <el-image
-            src="https://cp.uuyo.fun/zsm.jpg"
-            fit="contain"
-            class="about-image"
-            :preview-src-list="['https://cp.uuyo.fun/zsm.jpg']"
-          >
+          <el-image src="https://cp.uuyo.fun/zsm.jpg" fit="contain" class="about-image"
+            :preview-src-list="['https://cp.uuyo.fun/zsm.jpg']">
             <template #error>
               <div class="image-placeholder">
                 <el-icon :size="40" color="#f56c6c">
@@ -46,14 +47,10 @@
               </div>
             </template>
           </el-image>
-          <el-button 
-            type="info" 
-            size="small" 
-            text
-            @click="showImage = false"
-            class="hide-image-btn"
-          >
-            <el-icon><Close /></el-icon>
+          <el-button type="info" size="small" text @click="showImage = false" class="hide-image-btn">
+            <el-icon>
+              <Close />
+            </el-icon>
             隐藏图片
           </el-button>
         </div>
@@ -216,11 +213,11 @@ const showImage = ref(false)
     width: 300px;
     height: 300px;
   }
-  
+
   .placeholder-text .main-text {
     font-size: 14px;
   }
-  
+
   .placeholder-text .sub-text {
     font-size: 12px;
   }

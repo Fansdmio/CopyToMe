@@ -70,27 +70,27 @@
           </h3>
 
           <el-form label-width=" 120px" label-position="left">
-              <el-form-item v-for="field in aiConfigFields" :key="field.key" :label="field.label">
-                <el-input v-model="settingsForm[field.key]" :placeholder="field.placeholder" :type="field.type"
-                  :show-password="field.showPassword" clearable>
-                  <template #prepend>
-                    <el-icon>
-                      <component :is="field.icon" />
-                    </el-icon>
-                  </template>
-                </el-input>
-                <template #extra>
-                  <el-text size="small" type="info">
-                    {{ field.hint }}
-                  </el-text>
+            <el-form-item v-for="field in aiConfigFields" :key="field.key" :label="field.label">
+              <el-input v-model="settingsForm[field.key]" :placeholder="field.placeholder" :type="field.type"
+                :show-password="field.showPassword" clearable>
+                <template #prepend>
+                  <el-icon>
+                    <component :is="field.icon" />
+                  </el-icon>
                 </template>
-              </el-form-item>
-              </el-form>
-              <el-alert type="primary" :closable="false">
-                <div class="shortcut-tips">
-                  <p v-for="(tip, index) in aiTips" :key="index">• {{ tip }}</p>
-                </div>
-              </el-alert>
+              </el-input>
+              <template #extra>
+                <el-text size="small" type="info">
+                  {{ field.hint }}
+                </el-text>
+              </template>
+            </el-form-item>
+          </el-form>
+          <el-alert type="primary" :closable="false">
+            <div class="shortcut-tips">
+              <p v-for="(tip, index) in aiTips" :key="index">• {{ tip }}</p>
+            </div>
+          </el-alert>
 
         </div>
 
@@ -335,6 +335,9 @@ const saveAiSettringHandler = async () => {
     }
   }
   saveAIConfig()
+  if (settingsForm.deepseekApi) {
+    ElMessage.success('AI 设置已保存')
+  }
 }
 
 // 保存快捷键设置
