@@ -25,6 +25,9 @@
               <span style="font-size: 14px; color: #909399;">次</span>
             </template>
           </el-statistic>
+          <div class="ai-status">
+            <el-tag @click="checkAi" :type="aiStatus.healthy" effect="light" round>{{ aiStatus.message }}</el-tag>
+          </div>
         </el-col>
       </el-row>
 
@@ -208,7 +211,13 @@ const props = defineProps({
   aiQAEnabled: Boolean
 })
 
-const { getQAHistory } = useAI()
+
+const aiStatus = ref({
+  healthy: "info",
+  message: '检查AI服务中...'
+})
+
+const { getQAHistory, askAI, refreshAPIOnStartup } = useAI()
 
 // 问答次数统计
 const qaCount = ref(0)
@@ -291,6 +300,35 @@ const steps = [
 // 使用提示
 const usageTips = USAGE_TIPS
 
+const checkAi = async () => {
+
+  console.log("检验ai状态");
+  aiStatus.value = {
+    healthy: "info",
+    message: '检查AI服务中...'
+  }
+
+  //使用用户名时尝试获取api状态
+  await refreshAPIOnStartup()
+
+
+  let answer = await askAI("hello")
+
+  console.log("answer", answer);
+
+  if (answer && answer !== "暂无返回内容") {
+    aiStatus.value = {
+      healthy: "success",
+      message: 'AI 服务正常'
+    }
+  } else {
+    aiStatus.value = {
+      healthy: "danger",
+      message: 'AI 服务异常,点击我再次测试'
+    }
+  }
+}
+
 onMounted(() => {
   loadQACount()
   // 每3秒刷新一次统计
@@ -302,9 +340,24 @@ onUnmounted(() => {
     clearInterval(intervalId)
   }
 })
+
+defineExpose({
+  checkAi
+})
 </script>
 
 <style scoped>
+.ai-status {
+  display: flex;
+  justify-content: center;
+  margin-top: 5px;
+
+}
+
+.ai-status>span {
+  cursor: pointer;
+}
+
 /* 自定义alert容器 */
 .custom-alert {
   border-radius: 12px !important;

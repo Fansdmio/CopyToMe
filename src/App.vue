@@ -36,7 +36,7 @@
         </el-menu>
 
         <div class="sidebar-footer">
-          <el-text size="small" type="info">v0.1.0</el-text>
+          <el-text size="small" type="info">20251103</el-text>
         </div>
       </el-aside>
 
@@ -46,7 +46,7 @@
         <div v-show="activeMenu === 'home'" class="page-container">
           <HomePage :wx-input-mode="settings.wxInputMode" :text-key="settings.textKey"
             :question-key="settings.questionKey" :text-process-enabled="settings.textProcessEnabled"
-            :ai-q-a-enabled="settings.aiQAEnabled" />
+            :ai-q-a-enabled="settings.aiQAEnabled" ref="homeRef" />
         </div>
 
         <!-- 问答记录页面 -->
@@ -90,6 +90,7 @@ import { listen } from '@tauri-apps/api/event';
 const { settings, initSettings, saveSettings } = useSettings()
 const { askAI, saveQAHistory, refreshAPIOnStartup } = useAI()
 const { registerShortcuts, updateShortcuts, registerStopKey, unregisterStopKey } = useShortcuts()
+const homeRef = ref(null)
 
 // 当前激活的菜单
 const activeMenu = ref('home')
@@ -146,7 +147,7 @@ const handleText = debounce(async () => {
 
   console.log('处理文本:', text)
   // 注意: handle_text 现在在后台线程运行,会立即返回
-  await new Promise(resolve => setTimeout(resolve, 500)); 
+  await new Promise(resolve => setTimeout(resolve, 500));
   invoke('handle_text', { text })
   console.log('模拟输入已启动')
 })
@@ -181,17 +182,13 @@ const handleQuestion = debounce(async () => {
 })
 
 // 更新快捷键处理
-const handleUpdateShortcuts = async (oldTextKey, oldQuestionKey) => {
-  const success = await updateShortcuts(
+const handleUpdateShortcuts = async () => {
+  updateShortcuts(
     settings.value.textKey,
     settings.value.questionKey,
     handleText,
     handleQuestion
   )
-
-  if (success) {
-    saveSettings()
-  }
 }
 
 // 监听设置变化自动保存
@@ -201,8 +198,7 @@ watch(settings, saveSettings, { deep: true })
 onMounted(async () => {
   console.log('已加载设置:', settings.value)
 
-  // 启动时刷新 API
-  await refreshAPIOnStartup()
+  homeRef.value?.checkAi()
 
   // 初始化时间范围到 Rust 后端
   try {
@@ -258,7 +254,8 @@ html {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  margin: 8px 4px 8px 8px; /* 右边距改为4px,增加与主内容的间隙 */
+  margin: 8px 4px 8px 8px;
+  /* 右边距改为4px,增加与主内容的间隙 */
   border-radius: 12px;
 }
 
@@ -312,7 +309,8 @@ html {
   padding: 16px;
   overflow-y: auto;
   height: calc(100vh - 16px);
-  margin: 8px 8px 8px 4px; /* 左边距改为4px,增加与侧边栏的间隙 */
+  margin: 8px 8px 8px 4px;
+  /* 左边距改为4px,增加与侧边栏的间隙 */
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }

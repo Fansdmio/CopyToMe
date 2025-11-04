@@ -9,7 +9,7 @@ import { decryptGCM } from '../utils/crypto.js'
 
 const AI_CONFIG_KEY = 'copytome_ai_config'
 const QA_HISTORY_KEY = 'copytome_qa_history'
-const MAX_HISTORY = 100
+const MAX_HISTORY = 2000
 
 /**
  * AI 功能 Hook
@@ -59,7 +59,7 @@ export function useAI() {
   const fetchAPIFromServer = async (userName) => {
     try {
       const response = await fetch(
-        `https://cp.uuyo.fun/get_api_key?user_name=${encodeURIComponent(userName)}`
+        `https://cp.uuyo.fun/get_api_key?user_name=${encodeURIComponent(userName)}`,
       )
       const data = await response.json()
 
