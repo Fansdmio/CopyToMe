@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8"/>
+    <link rel="icon" type="image/svg+xml" href="/vite.svg"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>CopyToMeAndTauri</title>
+    <style>
+        body {
+            margin: 0;
+            padding-top: 30px;
+            /* 给标题栏留出空间 */
+        }
+
+        .titlebar {
+            height: 30px;
+            background: #F4F6F9;
+            /* 背景改为白色 */
+            user-select: none;
+            display: flex;
+            justify-content: flex-end;
+            /* 按钮组靠右对齐 */
+            align-items: center;
+            /* 垂直居中所有内容 */
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 0 12px;
+            /* 左右都留间距，避免文字和按钮贴边 */
+            border-bottom: 1px solid #e1e1e1;
+            /* 增加底部边框，提升视觉层次 */
+        }
+
+        /* 新增：CopyToMe文字样式 */
+        .titlebar-text {
+            position: absolute;
+            /* 使用绝对定位 */
+            left: 50%;
+            /* 定位到父容器的50% */
+            transform: translateX(-50%);
+            /* 向左偏移自身宽度的50%，实现完全居中 */
+            font-size: 12px;
+            /* 小字大小 */
+            color: #666666;
+            /* 灰色字体 */
+            user-select: none;
+            /* 禁止选中文字 */
+            pointer-events: none;
+            /* 不阻挡拖拽事件 */
+        }
+
+        .titlebar-button-group {
+            display: flex;
+            /* 按钮组保持横向排列 */
+        }
+
+        .titlebar-button {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 16px;
+            /* 圆形按钮宽度 */
+            height: 16px;
+            /* 圆形按钮高度 */
+            border-radius: 50%;
+            /* 圆形 */
+            margin-left: 8px;
+            /* 按钮之间的间距 */
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: pointer;
+            transition: opacity 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            /* 轻微阴影，提升质感 */
+        }
+
+        /* 最小化按钮 - 黄色（调整为更鲜艳的黄色，适配白色背景） */
+        #titlebar-minimize {
+            background-color: #ffd166;
+        }
+
+        /* 最大化按钮 - 绿色（调整为更鲜艳的绿色，适配白色背景） */
+        #titlebar-maximize {
+            background-color: #06d6a0;
+        }
+
+        /* 关闭按钮 - 红色（调整为更鲜艳的红色，适配白色背景） */
+        #titlebar-close {
+            background-color: #ef4444;
+        }
+
+        /* hover效果 - 降低透明度+轻微放大 */
+        .titlebar-button:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+        }
+
+        /* 点击效果 - 轻微缩小 */
+        .titlebar-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+
+<body>
+<div data-tauri-drag-region class="titlebar">
+    <div class="titlebar-text">CopyToMeAndTauri</div>
+    <!-- 按钮组用容器包裹，确保排列整齐 -->
+    <div class="titlebar-button-group">
+        <div class="titlebar-button" id="titlebar-minimize"></div>
+        <div class="titlebar-button" id="titlebar-maximize"></div>
+        <div class="titlebar-button" id="titlebar-close"></div>
+    </div>
+</div>
+<div id="app"></div>
+
+<script type="module" src="/src/main.js"></script>
+
+<script type="module">
+    import {getCurrentWindow} from '@tauri-apps/api/window';
+
+    const appWindow = getCurrentWindow();
+    document
+        .getElementById('titlebar-minimize')
+        ?.addEventListener('click', () => appWindow.minimize());
+    document
+        .getElementById('titlebar-maximize')
+        ?.addEventListener('click', () => appWindow.toggleMaximize());
+    document
+        .getElementById('titlebar-close')
+        ?.addEventListener('click', () => appWindow.hide());
+</script>
+
+</body>
+
+</html>

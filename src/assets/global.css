@@ -1,0 +1,109 @@
+/* 全局样式重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', 'Microsoft YaHei', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f7fa;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #dcdfe6;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c0c4cc;
+}
+
+/* Element Plus 组件自定义样式 */
+.el-card {
+  transition: all 0.3s;
+}
+
+.el-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.el-button {
+  transition: all 0.3s;
+}
+
+.el-menu-item {
+  transition: all 0.3s;
+}
+
+.el-space {
+  width: 100%;
+}
+
+.el-descriptions {
+  font-size: 13px;
+}
+
+.el-tag {
+  font-size: 12px;
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .el-descriptions {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 180px !important;
+  }
+  
+  .main-content {
+    padding: 12px;
+  }
+  
+  .el-card {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 576px) {
+  .sidebar {
+    width: 160px !important;
+  }
+  
+  .main-content {
+    padding: 8px;
+  }
+}
