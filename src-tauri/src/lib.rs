@@ -47,7 +47,14 @@ fn handle_text(app: AppHandle, text: String) {
                 break;
             }
             // 在延迟期间也检查停止标志
-            let delay = rng.random_range(l_val..r_val);
+
+            let mut delay = 0u64;
+            if r_val == 0 && l_val == 0 {
+                // 无延迟
+            } else {
+                delay = rng.random_range(l_val..r_val);
+            }
+            
             let check_interval = 10; // 每10ms检查一次
             let mut remaining = delay;
 
@@ -56,6 +63,7 @@ fn handle_text(app: AppHandle, text: String) {
                     println!("延迟期间检测到停止信号,中断输入");
                     return;
                 }
+
                 let sleep_time = remaining.min(check_interval);
                 sleep(Duration::from_millis(sleep_time));
                 remaining = remaining.saturating_sub(sleep_time);
