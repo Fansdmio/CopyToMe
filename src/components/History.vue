@@ -3,14 +3,18 @@
     <template #header>
       <div class="card-header">
         <div class="header-content">
-          <el-icon :size="24" color="#409EFF"><ChatDotRound /></el-icon>
+          <el-icon :size="24" color="#409EFF">
+            <ChatDotRound/>
+          </el-icon>
           <h2>AI 问答记录</h2>
           <el-tag v-if="allHistory.length > 0" size="small" type="info">
             共 {{ allHistory.length }} 条
           </el-tag>
         </div>
         <el-button @click="clearHistory" type="danger" size="small" :disabled="allHistory.length === 0">
-          <el-icon><Delete /></el-icon>
+          <el-icon>
+            <Delete/>
+          </el-icon>
           清空记录
         </el-button>
       </div>
@@ -19,7 +23,9 @@
     <div v-if="allHistory.length === 0" class="empty-state">
       <el-empty description="暂无问答记录">
         <template #image>
-          <el-icon :size="80" color="#c0c4cc"><ChatLineSquare /></el-icon>
+          <el-icon :size="80" color="#c0c4cc">
+            <ChatLineSquare/>
+          </el-icon>
         </template>
       </el-empty>
     </div>
@@ -27,25 +33,29 @@
     <div v-else class="timeline-container" @scroll="handleScroll" ref="scrollContainer">
       <el-timeline class="history-timeline">
         <el-timeline-item
-          v-for="(item, index) in displayedHistory"
-          :key="index"
-          :timestamp="item.time"
-          placement="top"
+            v-for="(item, index) in displayedHistory"
+            :key="index"
+            :timestamp="item.time"
+            placement="top"
         >
           <el-card class="history-item" shadow="hover">
             <div class="question-section">
               <div class="section-header">
-                <el-icon color="#409EFF"><QuestionFilled /></el-icon>
+                <el-icon color="#409EFF">
+                  <QuestionFilled/>
+                </el-icon>
                 <span class="section-title">问题</span>
               </div>
               <div class="content">{{ item.question }}</div>
             </div>
-            
-            <el-divider style="margin: 12px 0" />
-            
+
+            <el-divider style="margin: 12px 0"/>
+
             <div class="answer-section">
               <div class="section-header">
-                <el-icon color="#67C23A"><CircleCheck /></el-icon>
+                <el-icon color="#67C23A">
+                  <CircleCheck/>
+                </el-icon>
                 <span class="section-title">回答</span>
               </div>
               <div class="content answer-content">{{ item.answer }}</div>
@@ -53,13 +63,15 @@
 
             <div class="item-footer">
               <el-tag size="small" type="info">{{ item.model }}</el-tag>
-              <el-button 
-                type="primary" 
-                size="small" 
-                text
-                @click="copyToClipboard(item.answer)"
+              <el-button
+                  type="primary"
+                  size="small"
+                  text
+                  @click="copyToClipboard(item.answer)"
               >
-                <el-icon><CopyDocument /></el-icon>
+                <el-icon>
+                  <CopyDocument/>
+                </el-icon>
                 复制回答
               </el-button>
             </div>
@@ -79,8 +91,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import {ref, onMounted, computed} from 'vue'
+import {ElMessage, ElMessageBox} from 'element-plus'
 import {
   ChatDotRound,
   Delete,
@@ -90,9 +102,7 @@ import {
   CopyDocument
 } from '@element-plus/icons-vue'
 
-import { useAI } from '../composables/useAI.js'
-
-const { getQAHistory, clearQAHistory } = useAI()
+import aiMg from "../composables/aiMg.js";
 
 const allHistory = ref([])
 const displayedHistory = ref([])
@@ -104,8 +114,8 @@ const scrollContainer = ref(null)
 const hasMore = computed(() => displayedHistory.value.length < allHistory.value.length)
 
 // 加载历史记录
-const loadHistory = () => {
-  allHistory.value = getQAHistory()
+const loadHistory = async () => {
+  allHistory.value = await aiMg.getQAHistory()
   loadMoreRecords()
 }
 
@@ -114,7 +124,7 @@ const loadMoreRecords = () => {
   const start = (currentPage.value - 1) * pageSize
   const end = start + pageSize
   const newRecords = allHistory.value.slice(start, end)
-  
+
   if (newRecords.length > 0) {
     displayedHistory.value = [...displayedHistory.value, ...newRecords]
     currentPage.value++
@@ -124,10 +134,15 @@ const loadMoreRecords = () => {
 // 处理滚动事件
 const handleScroll = (e) => {
   const container = e.target
-  const { scrollTop, scrollHeight, clientHeight } = container
-  
-  console.log('滚动事件触发', { scrollTop, scrollHeight, clientHeight, distance: scrollHeight - scrollTop - clientHeight })
-  
+  const {scrollTop, scrollHeight, clientHeight} = container
+
+  console.log('滚动事件触发', {
+    scrollTop,
+    scrollHeight,
+    clientHeight,
+    distance: scrollHeight - scrollTop - clientHeight
+  })
+
   // 距离底部小于 100px 时加载更多
   if (scrollHeight - scrollTop - clientHeight < 100 && hasMore.value) {
     console.log('触发加载更多')
@@ -143,8 +158,8 @@ const clearHistory = async () => {
       cancelButtonText: '取消',
       type: 'warning',
     })
-    
-    if (clearQAHistory()) {
+
+    if (aiMg.clearQAHistory()) {
       allHistory.value = []
       displayedHistory.value = []
       currentPage.value = 1

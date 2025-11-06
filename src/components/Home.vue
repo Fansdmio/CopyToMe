@@ -4,7 +4,7 @@
       <div class="card-header">
         <div class="header-content">
           <el-icon :size="28" color="#409EFF">
-            <Promotion />
+            <Promotion/>
           </el-icon>
           <h2>欢迎使用 CopyToMe</h2>
         </div>
@@ -18,7 +18,7 @@
           <el-statistic title="AI 问答次数" :value="qaCount">
             <template #prefix>
               <el-icon color="#409EFF">
-                <ChatDotRound />
+                <ChatDotRound/>
               </el-icon>
             </template>
             <template #suffix>
@@ -31,13 +31,13 @@
         </el-col>
       </el-row>
 
-      <el-divider style="margin: 12px 0" />
+      <el-divider style="margin: 12px 0"/>
 
       <!-- 快捷键说明 -->
       <div class="shortcut-section">
         <h3>
           <el-icon>
-            <Pointer />
+            <Pointer/>
           </el-icon>
           快捷键说明
         </h3>
@@ -45,7 +45,7 @@
           <div class="shortcut-detail">
             <div class="shortcut-icon">
               <el-icon :size="32" :color="shortcut.color">
-                <component :is="shortcut.icon" />
+                <component :is="shortcut.icon"/>
               </el-icon>
             </div>
             <div class="shortcut-info">
@@ -59,39 +59,39 @@
         </el-card>
       </div>
 
-      <el-divider style="margin: 12px 0" />
+      <el-divider style="margin: 12px 0"/>
 
-      <el-divider style="margin: 12px 0" />
+      <el-divider style="margin: 12px 0"/>
 
       <!-- 功能状态 -->
       <div class="status-section">
         <h3>
           <el-icon>
-            <Monitor />
+            <Monitor/>
           </el-icon>
           功能状态
         </h3>
         <el-descriptions border size="small">
           <el-descriptions-item v-for="status in featureStatuses" :key="status.key" align="center"
-            :label="status.label">
-            <StatusTag :enabled="status.enabled" :disabled-text="status.disabledText" />
+                                :label="status.label">
+            <StatusTag :enabled="status.enabled" :disabled-text="status.disabledText"/>
           </el-descriptions-item>
         </el-descriptions>
       </div>
 
-      <el-divider style="margin: 12px 0" />
+      <el-divider style="margin: 12px 0"/>
 
       <!-- 使用指南 -->
       <div class="guide-section">
         <h3>
           <el-icon>
-            <Reading />
+            <Reading/>
           </el-icon>
           使用指南
         </h3>
         <el-timeline class="compact-timeline">
           <el-timeline-item v-for="(step, index) in steps" :key="index" :icon="step.icon" :type="step.type"
-            :size="step.size" :hollow="step.hollow">
+                            :size="step.size" :hollow="step.hollow">
             <div class="timeline-content">
               <h4>{{ step.title }}</h4>
               <p>{{ step.description }}</p>
@@ -105,7 +105,8 @@
           <!-- 注意事项1 -->
           <div class="tips-item">
             <div class="tips-desc">
-              在<span class="highlight-err">学习通考试客户端</span>中, <span class="highlight-err">微信输入法中文模式</span>下, 不要使用<span
+              在<span class="highlight-err">学习通考试客户端</span>中, <span
+                class="highlight-err">微信输入法中文模式</span>下, 不要使用<span
                 class="highlight-err">模拟输入</span>, 如出现异常请疯狂按<span class="highlight-err">K</span> 终止模拟输入
             </div>
           </div>
@@ -113,7 +114,8 @@
           <!-- 注意事项2 -->
           <div class="tips-item">
             <div class="tips-desc">
-              开启<span class="highlight-info">AI问答模式</span>，需要去<span class="highlight-info">设置页面</span>配置<span
+              开启<span class="highlight-info">AI问答模式</span>，需要去<span
+                class="highlight-info">设置页面</span>配置<span
                 class="highlight">DeepSeek API</span> 或者<span class="highlight">用户名</span>
             </div>
           </div>
@@ -130,12 +132,12 @@
           <div class="tips-item">
             <div class="tips-header">
               <el-icon class="tips-icon">
-                <Monitor />
+                <Monitor/>
               </el-icon>
               <h4 class="tips-title">日常使用场景</h4>
             </div>
             <div class="tips-desc">
-              任意输入法 + <span class="highlight">开启模拟输入</span>，要复制的内容复制到剪切板中，使用模拟输入，即可绕过禁止粘贴限制
+              <span class="highlight-require">开启模拟输入</span>，使用模拟输入,可绕过禁止粘贴限制, 设置里可调节打字速度
             </div>
           </div>
 
@@ -148,8 +150,10 @@
               <h4 class="tips-title">学习通考试客户端(V4.1.4.25389) - 方案一</h4>
             </div>
             <div class="tips-desc">
-              <span class="highlight">微信输入法</span> + <span class="highlight">开启微信输入法模式</span> + <span
-                class="highlight">开启AI智能问答</span>，把问题复制到剪切板，再使用<span class="highlight">AI智能问答</span>，按 <code
+              <span class="highlight-require">微信输入法</span> + <span class="highlight-require">开启去除换行</span> +
+              <span
+                  class="highlight-require">开启AI问答</span>，把问题复制到剪切板，再使用<span
+                class="highlight">AI问答</span>，按 <code
                 class="code-snippet">v->2->空格</code>
               即可调出AI的回答
             </div>
@@ -159,8 +163,9 @@
               <h4 class="tips-title">学习通考试客户端(V4.1.4.25389) - 方案二</h4>
             </div>
             <div class="tips-desc">
-              任意输入法 + <span class="highlight">开启AI智能问答</span> + <span
-                class="highlight">管理员模式运行</span>，把问题复制到剪切板，再使用<span class="highlight">AI智能问答</span>,再使用<span
+              <span class="highlight-require">开启AI问答</span> + <span
+                class="highlight-require">管理员模式运行</span>，把问题复制到剪切板，再使用<span
+                class="highlight">AI问答</span>,再使用<span
                 class="highlight">模拟输入</span>
               即可调出AI的回答
             </div>
@@ -172,10 +177,13 @@
     <el-alert title="⚡ 停止模拟输入" type="warning" :closable="false">
       <div style="display: flex; align-items: center; gap: 12px;">
         <el-icon :size="24" color="#E6A23C">
-          <VideoPause />
+          <VideoPause/>
         </el-icon>
         <div>
-          <p style="margin: 0; font-weight: 500;">按下 <el-tag type="danger" size="large">K</el-tag> 键可立即停止模拟输入</p>
+          <p style="margin: 0; font-weight: 500;">按下
+            <el-tag type="danger" size="large">K</el-tag>
+            键可立即停止模拟输入
+          </p>
           <el-text size="small" type="info" style="margin-top: 4px; display: block;">
             在模拟输入过程中按 K 键,可以立即中断模拟输入操作
           </el-text>
@@ -186,7 +194,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import {ref, computed, onMounted, onUnmounted} from 'vue'
 import {
   Promotion,
   ChatDotRound,
@@ -200,9 +208,10 @@ import {
   VideoPause
 } from '@element-plus/icons-vue'
 
-import { useAI } from '../composables/useAI.js'
-import { USAGE_TIPS } from '../constants/config.js'
 import StatusTag from './common/StatusTag.vue'
+import aiMg from "../composables/aiMg.js";
+import setMg from "../composables/setMg.js";
+
 const props = defineProps({
   wxInputMode: Boolean,
   textKey: String,
@@ -217,15 +226,15 @@ const aiStatus = ref({
   message: '检查AI服务中...'
 })
 
-const { getQAHistory, askAI, refreshAPIOnStartup } = useAI()
 
 // 问答次数统计
 const qaCount = ref(0)
 let intervalId = null
 
 // 加载问答次数
-const loadQACount = () => {
-  qaCount.value = getQAHistory().length
+const loadQACount = async () => {
+  qaCount.value = (await aiMg.getQAHistory()).length;
+
 }
 
 // 快捷键配置
@@ -241,7 +250,7 @@ const shortcuts = computed(() => [
   },
   {
     key: 'question',
-    title: 'AI 智能问答',
+    title: 'AI 问答',
     description: '基于 DeepSeek 的智能对话功能',
     icon: ChatDotRound,
     color: '#67C23A',
@@ -266,7 +275,7 @@ const featureStatuses = computed(() => [
   },
   {
     key: 'wxInput',
-    label: '微信输入法模式',
+    label: '去除换行',
     enabled: props.wxInputMode,
     disabledText: '未启用'
   }
@@ -289,18 +298,24 @@ const steps = [
     size: 'large'
   },
   {
-    title: '自动处理',
-    description: '程序自动处理剪贴板内容并更新结果',
+    title: '处理结果',
+    description: '如果使用AI问答，选择自己的方式从剪切板获取答案',
     icon: Position,
     type: 'warning',
     size: 'large'
   }
 ]
 
-// 使用提示
-const usageTips = USAGE_TIPS
 
 const checkAi = async () => {
+
+  if (setMg.get("deepseekApi") === "" && setMg.get("userName") === "") {
+    aiStatus.value = {
+      healthy: "danger",
+      message: '未配置 DeepSeek API 或 用户名，请前往设置页面配置'
+    }
+    return
+  }
 
   console.log("检验ai状态");
   aiStatus.value = {
@@ -308,15 +323,10 @@ const checkAi = async () => {
     message: '检查AI服务中...'
   }
 
-  //使用用户名时尝试获取api状态
-  await refreshAPIOnStartup()
+  const isHealth = await aiMg.checkHealth();
+  console.log(isHealth)
 
-
-  let answer = await askAI("hello")
-
-  console.log("answer", answer);
-
-  if (answer && answer !== "暂无返回内容") {
+  if (isHealth) {
     aiStatus.value = {
       healthy: "success",
       message: 'AI 服务正常'
@@ -354,7 +364,7 @@ defineExpose({
 
 }
 
-.ai-status>span {
+.ai-status > span {
   cursor: pointer;
 }
 
@@ -421,13 +431,20 @@ defineExpose({
   padding-left: 26px;
 }
 
-/* 高亮关键词 */
 .highlight {
   color: #1989fa;
   font-weight: 500;
   padding: 2px 4px;
   border-radius: 4px;
   background-color: #e8f4f8;
+}
+
+.highlight-require {
+  color: #0d9488; /* 主色：青绿色（代表高效、可靠，贴合工具属性） */
+  font-weight: 500;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background-color: #f0fdfa; /* 背景色：主色的浅淡版，柔和不刺眼 */
 }
 
 .highlight-info {

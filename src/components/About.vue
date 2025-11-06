@@ -20,7 +20,7 @@
         <el-text type="info">版本 20251104</el-text>
         <div style="display: flex;flex-direction: column;gap: 4px;margin-top: 10px;">
           <span>免费软件，请勿上当受骗</span>
-          <el-link target="_blank" href="https://cp.uuyo.fun" underline="false" type="primary">官网链接</el-link>
+          <el-link target="_blank" href="https://cp.uuyo.fun" underline="never" type="primary">官网链接</el-link>
         </div>
 
       </div>

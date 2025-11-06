@@ -11,25 +11,25 @@
         <el-menu :default-active="activeMenu" class="sidebar-menu" @select="handleMenuSelect">
           <el-menu-item index="home">
             <el-icon>
-              <HomeFilled />
+              <HomeFilled/>
             </el-icon>
             <span>主页</span>
           </el-menu-item>
           <el-menu-item index="history">
             <el-icon>
-              <ChatDotRound />
+              <ChatDotRound/>
             </el-icon>
             <span>问答记录</span>
           </el-menu-item>
           <el-menu-item index="settings">
             <el-icon>
-              <Setting />
+              <Setting/>
             </el-icon>
             <span>设置</span>
           </el-menu-item>
           <el-menu-item index="about">
             <el-icon>
-              <InfoFilled />
+              <InfoFilled/>
             </el-icon>
             <span>关于</span>
           </el-menu-item>
@@ -42,55 +42,69 @@
 
       <!-- 主内容区域 -->
       <el-main class="main-content">
-        <!-- 主页 -->
-        <div v-show="activeMenu === 'home'" class="page-container">
-          <HomePage :wx-input-mode="settings.wxInputMode" :text-key="settings.textKey"
-            :question-key="settings.questionKey" :text-process-enabled="settings.textProcessEnabled"
-            :ai-q-a-enabled="settings.aiQAEnabled" ref="homeRef" />
+        <!-- 加载中状态 -->
+        <div v-if="!isSettingsLoaded"
+             style="display: flex; justify-content: center; align-items: center; height: 100%;">
+          <el-icon class="is-loading" :size="40" color="#409EFF">
+            <Loading/>
+          </el-icon>
         </div>
 
-        <!-- 问答记录页面 -->
-        <div v-show="activeMenu === 'history'" class="page-container">
-          <HistoryPage :key="historyRefreshKey" />
-        </div>
+        <!-- 使用 v-if 完全阻止子组件创建，直到设置加载完成 -->
+        <template v-if="isSettingsLoaded">
+          <!-- 主页 -->
+          <div v-show="activeMenu === 'home'" class="page-container">
+            <HomePage :wx-input-mode="settings.wxInputMode" :text-key="settings.textKey"
+                      :question-key="settings.questionKey" :text-process-enabled="settings.textProcessEnabled"
+                      :ai-q-a-enabled="settings.aiQAEnabled" ref="homeRef"/>
+          </div>
 
-        <!-- 设置页面 -->
-        <div v-show="activeMenu === 'settings'" class="page-container">
-          <SettingPage @update-shortcuts="handleUpdateShortcuts" />
-        </div>
+          <!-- 问答记录页面 -->
+          <div v-show="activeMenu === 'history'" class="page-container">
+            <HistoryPage :key="historyRefreshKey"/>
+          </div>
 
-        <!-- 关于 -->
-        <div v-show="activeMenu === 'about'" class="page-container">
-          <AboutPage />
-        </div>
+          <!-- 设置页面 -->
+          <div v-show="activeMenu === 'settings'" class="page-container">
+            <SettingPage v-model:settings="settings" @update-shortcuts="handleUpdateShortcuts"/>
+          </div>
+
+          <!-- 关于 -->
+          <div v-show="activeMenu === 'about'" class="page-container">
+            <AboutPage/>
+          </div>
+        </template>
       </el-main>
     </el-container>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
-import { clear, readText, writeText } from '@tauri-apps/plugin-clipboard-manager'
-import { invoke } from '@tauri-apps/api/core'
-import { getCurrentWindow } from '@tauri-apps/api/window'
-import { ElMessage } from 'element-plus'
-import { HomeFilled, Setting, InfoFilled, ChatDotRound } from '@element-plus/icons-vue'
+import {ref, watch, onMounted, onBeforeMount, nextTick, h} from 'vue'
+import {readText, writeText} from '@tauri-apps/plugin-clipboard-manager'
+import {invoke} from '@tauri-apps/api/core'
+import {getCurrentWindow} from '@tauri-apps/api/window'
+import {ElMessage, ElNotification} from 'element-plus'
+import {HomeFilled, Setting, InfoFilled, ChatDotRound, Loading} from '@element-plus/icons-vue'
 
 import HomePage from './components/Home.vue'
 import HistoryPage from './components/History.vue'
 import SettingPage from './components/Setting.vue'
 import AboutPage from './components/About.vue'
 
-import { useSettings } from './composables/useSettings.js'
-import { useAI } from './composables/useAI.js'
-import { useShortcuts } from './composables/useShortcuts.js'
-import { handleWxInput, debounce } from './utils/textProcessing.js'
-import { listen } from '@tauri-apps/api/event';
-// 使用 Composables
-const { settings, initSettings, saveSettings } = useSettings()
-const { askAI, saveQAHistory, refreshAPIOnStartup } = useAI()
-const { registerShortcuts, updateShortcuts, registerStopKey, unregisterStopKey } = useShortcuts()
+import {useShortcuts} from './composables/useShortcuts.js'
+import {handleWxInput, debounce} from './utils/textProcessing.js'
+import {listen} from '@tauri-apps/api/event';
+import aiMg from "./composables/aiMg.js";
+import setMg from "./composables/setMg.js";
+import {fetch} from "@tauri-apps/plugin-http";
+// 使用 快捷键管理器
+const {registerShortcuts, updateShortcuts, registerStopKey, unregisterStopKey} = useShortcuts()
 const homeRef = ref(null)
+
+// 初始化设置为默认值，会在 onBeforeMount 中更新为实际值
+const settings = ref({...setMg.defaultSetting})
+const isSettingsLoaded = ref(false)
 
 // 当前激活的菜单
 const activeMenu = ref('home')
@@ -98,13 +112,6 @@ const activeMenu = ref('home')
 // 历史记录刷新key
 const historyRefreshKey = ref(0)
 
-// 初始化设置
-initSettings()
-
-// 窗口隐藏处理
-if (settings.value.hideWindow) {
-  getCurrentWindow().hide()
-}
 
 // 菜单选择处理
 const handleMenuSelect = (index) => {
@@ -148,7 +155,7 @@ const handleText = debounce(async () => {
   console.log('处理文本:', text)
   // 注意: handle_text 现在在后台线程运行,会立即返回
   await new Promise(resolve => setTimeout(resolve, 500));
-  invoke('handle_text', { text })
+  invoke('handle_text', {text})
   console.log('模拟输入已启动')
 })
 
@@ -165,11 +172,11 @@ const handleQuestion = debounce(async () => {
   console.log('处理问题:', question)
 
   // 调用 AI
-  let answer = await askAI(question)
+  let answer = await aiMg.askAi(question)
   if (!answer) return
 
   // 保存记录
-  saveQAHistory(question, answer)
+  aiMg.saveQAHistory(question, answer)
   historyRefreshKey.value++
 
   // 微信输入法模式处理
@@ -184,21 +191,69 @@ const handleQuestion = debounce(async () => {
 // 更新快捷键处理
 const handleUpdateShortcuts = async () => {
   updateShortcuts(
-    settings.value.textKey,
-    settings.value.questionKey,
-    handleText,
-    handleQuestion
+      settings.value.textKey,
+      settings.value.questionKey,
+      handleText,
+      handleQuestion
   )
 }
 
-// 监听设置变化自动保存
-watch(settings, saveSettings, { deep: true })
+//TODO 从服务器获取信息并显示通知
+const fromServerGetInfo = async () => {
+  console.log("开始从服务器获取信息..");
+  const response = await fetch(`http://172.28.193.23:28302/get_info?v=${setMg.version}`, {
+    Method: 'GET'
+  });
+  const data = await response.json();
+  if (!data) return;
+  console.log("从服务器获取到的信息:");
+  console.log(data)
+  const {title, message, mold, duration, position} = data;
+  //渲染数据
+
+  const notificationMessage = h(
+      message.tag,
+      message.props,
+      message.children
+  )
+
+  ElNotification({
+    title: title,
+    message: notificationMessage,
+    type: mold,
+    duration: duration,
+    position: position
+  });
+}
+
+
+// 在组件挂载前初始化所有管理器
+onBeforeMount(async () => {
+  // 1. 先初始化 aiMg（它会自动初始化 setMg）
+  await aiMg.init()
+  // fromServerGetInfo()
+  // 2. 更新 settings 引用
+  settings.value = setMg.settings
+
+  // 监听设置变化（在组件初始化时就开始监听）
+  watch(settings, () => {
+    console.log("watch: 设置变更,保存设置到本地");
+    setMg.save()
+  }, {deep: true})
+
+  // 3. 标记加载完成，允许子组件渲染
+  isSettingsLoaded.value = true
+  await nextTick()
+  homeRef.value.checkAi()
+  console.log('设置已加载:', settings.value)
+})
+
 
 // 初始化
 onMounted(async () => {
-  console.log('已加载设置:', settings.value)
-
-  homeRef.value?.checkAi()
+  if (setMg.get("hideWindow")) {
+    getCurrentWindow().hide()
+  }
 
   // 初始化时间范围到 Rust 后端
   try {
@@ -213,10 +268,10 @@ onMounted(async () => {
 
   // 注册快捷键 (不包括停止键)
   await registerShortcuts(
-    settings.value.textKey,
-    settings.value.questionKey,
-    handleText,
-    handleQuestion
+      settings.value.textKey,
+      settings.value.questionKey,
+      handleText,
+      handleQuestion
   )
 })
 </script>

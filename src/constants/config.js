@@ -67,8 +67,8 @@ export const FEATURE_TOGGLES = [
   },
   {
     key: 'wxInputMode',
-    label: '微信输入法模式',
-    description: '自动去除换行符'
+    label: '去除换行',
+    description: '使用AI问答后，去除回答文本中的所有换行符'
   },
   {
     key: 'hideWindow',

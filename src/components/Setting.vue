@@ -8,7 +8,7 @@
         <div>
           <el-button @click="resetSettingsHandler">
             <el-icon>
-              <RefreshLeft />
+              <RefreshLeft/>
             </el-icon>
             重置
           </el-button>
@@ -24,7 +24,7 @@
           <h3 class="section-title">
             <div class="section-icon">
               <el-icon>
-                <Operation />
+                <Operation/>
               </el-icon>
               <span>快捷键设置</span>
             </div>
@@ -38,13 +38,13 @@
               <el-input v-model="settingsForm[shortcut.key]" :placeholder="shortcut.placeholder" class="shortcut-input">
                 <template #prepend>
                   <el-icon>
-                    <component :is="shortcut.icon" />
+                    <component :is="shortcut.icon"/>
                   </el-icon>
                 </template>
                 <template #append>
                   <el-button @click="showKeyboardHelp = true">
                     <el-icon>
-                      <QuestionFilled />
+                      <QuestionFilled/>
                     </el-icon>
                   </el-button>
                 </template>
@@ -53,18 +53,18 @@
           </el-form>
         </div>
 
-        <el-divider style="margin: 12px 0" />
+        <el-divider style="margin: 12px 0"/>
 
         <!-- AI 配置 -->
         <div class="setting-section">
           <h3 class="section-title">
             <div class="section-icon">
               <el-icon>
-                <Cpu />
+                <Cpu/>
               </el-icon>
               <span>AI 配置</span>
             </div>
-            <el-button type="primary" @click="saveAiSettringHandler">
+            <el-button type="primary" @click="saveAiSettingHandler">
               保存AI设置
             </el-button>
           </h3>
@@ -72,10 +72,10 @@
           <el-form label-width=" 120px" label-position="left">
             <el-form-item v-for="field in aiConfigFields" :key="field.key" :label="field.label">
               <el-input v-model="settingsForm[field.key]" :placeholder="field.placeholder" :type="field.type"
-                :show-password="field.showPassword" clearable>
+                        :show-password="field.showPassword" clearable>
                 <template #prepend>
                   <el-icon>
-                    <component :is="field.icon" />
+                    <component :is="field.icon"/>
                   </el-icon>
                 </template>
               </el-input>
@@ -94,14 +94,14 @@
 
         </div>
 
-        <el-divider style="margin: 8px 0" />
+        <el-divider style="margin: 8px 0"/>
 
         <!-- 功能设置 -->
         <div class="setting-section">
           <h3 class="section-title">
             <div class="section-icon">
               <el-icon>
-                <Tools />
+                <Tools/>
               </el-icon>
               <span>功能设置</span>
             </div>
@@ -110,7 +110,7 @@
           <el-form label-width="120px" label-position="left">
             <el-form-item v-for="feature in featureToggles" :key="feature.key" :label="feature.label">
               <div class="switch-container">
-                <el-switch v-model="settingsForm[feature.key]" size="large" active-text="启用" inactive-text="关闭" />
+                <el-switch v-model="settings[feature.key]" size="large" active-text="启用" inactive-text="关闭"/>
                 <el-text size="small" type="info" style="margin-left: 12px">
                   {{ feature.description }}
                 </el-text>
@@ -119,20 +119,20 @@
             <!-- 时间范围 -->
             <el-form-item :label="TEXT_PROCESSING_CONFIG.timeRange.label">
               <el-slider v-model="settingsForm.timeRange" range show-stops :min="TEXT_PROCESSING_CONFIG.timeRange.min"
-                :max="TEXT_PROCESSING_CONFIG.timeRange.max" :step="TEXT_PROCESSING_CONFIG.timeRange.step"
-                :marks="TEXT_PROCESSING_CONFIG.timeRange.marks" />
+                         :max="TEXT_PROCESSING_CONFIG.timeRange.max" :step="TEXT_PROCESSING_CONFIG.timeRange.step"
+                         :marks="TEXT_PROCESSING_CONFIG.timeRange.marks"/>
             </el-form-item>
           </el-form>
         </div>
 
 
-        <el-divider style="margin: 12px 0" />
+        <el-divider style="margin: 12px 0"/>
         <!-- 预设快捷键模板 -->
         <div class="setting-section">
           <h3 class="section-title">
             <div class="section-icon">
               <el-icon>
-                <Collection />
+                <Collection/>
               </el-icon>
               <span>快捷键预设模板</span>
             </div>
@@ -140,7 +140,7 @@
 
           <el-space wrap :size="12">
             <el-card v-for="preset in presets" :key="preset.name" class="preset-card"
-              :class="{ active: isCurrentPreset(preset) }" shadow="hover" @click="applyPreset(preset)">
+                     :class="{ active: isCurrentPreset(preset) }" shadow="hover" @click="applyPreset(preset)">
               <div class="preset-content">
                 <h4>{{ preset.name }}</h4>
                 <el-space direction="vertical" :size="4">
@@ -154,28 +154,28 @@
       </div>
 
 
+      <!--      &lt;!&ndash; 设置信息 &ndash;&gt;-->
+      <!--      <el-alert v-if="lastSavedTime" :title="`💾 上次保存: ${lastSavedTime}`" type="success" :closable="false"-->
+      <!--                show-icon/>-->
 
-      <!-- 设置信息 -->
-      <el-alert v-if="lastSavedTime" :title="`💾 上次保存: ${lastSavedTime}`" type="success" :closable="false" show-icon />
     </el-space>
   </el-card>
 
   <!-- 快捷键帮助对话框 -->
   <el-dialog v-model="showKeyboardHelp" title="快捷键帮助" width="600px">
     <el-table :data="keyboardHelpData" stripe>
-      <el-table-column prop="key" label="键名" width="180" />
-      <el-table-column prop="description" label="说明" />
-      <el-table-column prop="example" label="示例" width="150" />
+      <el-table-column prop="key" label="键名" width="180"/>
+      <el-table-column prop="description" label="说明"/>
+      <el-table-column prop="example" label="示例" width="150"/>
     </el-table>
   </el-dialog>
 </template>
 
 <script setup>
-import { reactive, ref, onMounted, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import { enable, disable } from '@tauri-apps/plugin-autostart'
+import {reactive, ref, onMounted, watch} from 'vue'
+import {ElMessage} from 'element-plus'
+import {enable, disable} from '@tauri-apps/plugin-autostart'
 import {
-  Check,
   Collection,
   Cpu,
   Operation,
@@ -184,9 +184,7 @@ import {
   Tools,
 } from '@element-plus/icons-vue'
 
-import { useSettings } from '../composables/useSettings.js'
-import { useAI } from '../composables/useAI.js'
-import { validateShortcutKey } from '../utils/textProcessing.js'
+import {validateShortcutKey} from '../utils/textProcessing.js'
 import {
   SHORTCUT_FIELDS,
   AI_CONFIG_FIELDS,
@@ -196,27 +194,21 @@ import {
   AI_TIPS,
   TEXT_PROCESSING_CONFIG
 } from '../constants/config.js'
-import { invoke } from '@tauri-apps/api/core'
-import { debounce } from '../utils/common.js'
+import {invoke} from '@tauri-apps/api/core'
+import {debounce} from '../utils/common.js'
+import setMg from "../composables/setMg.js";
+import aiMg from "../composables/aiMg.js";
 // Props 和 Emits
 const emit = defineEmits(['update-shortcuts'])
 
 // 使用 Composables
-const { settings, aiConfig, saveSettings, saveAIConfig, getLastUpdated, resetSettings: resetToDefault } = useSettings()
-const { fetchAPIFromServer } = useAI()
 
 // 表单数据 (绑定到响应式状态)
-const settingsForm = reactive({
-  ...settings.value,
-  deepseekApi: aiConfig.value.deepseekApi,
-  userName: aiConfig.value.userName,
-  timeRange: settings.value.timeRange
-})
 
+const settings = defineModel("settings")
 // 保存状态
 const saving = ref(false)
 const showKeyboardHelp = ref(false)
-const lastSavedTime = ref('')
 
 // 使用配置常量
 const shortcutFields = SHORTCUT_FIELDS
@@ -231,6 +223,16 @@ const isCurrentPreset = (preset) => {
   return settingsForm.textKey === preset.textKey && settingsForm.questionKey === preset.questionKey
 }
 
+
+console.log("setting里的setting")
+console.log(settings)
+const settingsForm = reactive({
+  textKey: settings.value.textKey,
+  questionKey: settings.value.questionKey,
+  timeRange: settings.value.timeRange,
+  deepseekApi: settings.value.deepseekApi,
+  userName: settings.value.userName,
+})
 // 应用预设
 const applyPreset = (preset) => {
   settingsForm.textKey = preset.textKey
@@ -244,19 +246,8 @@ const applyPreset = (preset) => {
 
 // 重置设置
 const resetSettingsHandler = () => {
-  Object.assign(settingsForm, {
-    textKey: 'CmdOrControl+K',
-    questionKey: 'CmdOrControl+J',
-    wxInputMode: false,
-    textProcessEnabled: true,
-    aiQAEnabled: true,
-    deepseekApi: '',
-    userName: '',
-    hideWindow: false,
-    autoStart: false,
-    timeRange: [1, 5]
-  })
-  ElMessage.info('已重置为默认设置,请点击保存应用')
+  Object.assign(settingsForm, setMg.defaultSetting)
+  setMg.reset();
 }
 
 const updateTimeRange = async (val) => {
@@ -294,47 +285,32 @@ watch(() => settingsForm.autoStart, (val) => {
   }
 })
 
-//监听更改 
-watch([
-  () => settingsForm.hideWindow,
-  () => settingsForm.wxInputMode,
-  () => settingsForm.textProcessEnabled,
-  () => settingsForm.aiQAEnabled
-], ([newHideWindow, newWxInputMode, newTextProcessEnabled, newAiQAEnabled]) => {
-  settings.value.hideWindow = newHideWindow;
-  settings.value.wxInputMode = newWxInputMode;
-  settings.value.textProcessEnabled = newTextProcessEnabled;
-  settings.value.aiQAEnabled = newAiQAEnabled;
-
-  console.log("监听变化为:", [newHideWindow, newWxInputMode, newTextProcessEnabled, newAiQAEnabled]);
-})
-
 //保存ai设置
-const saveAiSettringHandler = async () => {
+const saveAiSettingHandler = async () => {
   // 验证 AI 配置
-  if (!settingsForm.deepseekApi && !settingsForm.userName) {
+  if (!settings.value.deepseekApi && !settingsForm.userName) {
     ElMessage.warning('请至少填写 DeepSeek API 或用户名')
   }
 
   // 更新 AI 配置
-  aiConfig.value.deepseekApi = settingsForm.deepseekApi
-  aiConfig.value.userName = settingsForm.userName
-  if (!aiConfig.value.userName.trim()) {
-    aiConfig.value.cachedApi = ""
-  }
+  settings.value.deepseekApi = settingsForm.deepseekApi
+  settings.value.userName = settingsForm.userName
 
+
+  if (!settings.value.userName.trim()) {
+    aiMg.cachedApi = ""
+  }
   // 如果只有用户名,获取 API
   if (!settingsForm.deepseekApi && settingsForm.userName) {
     ElMessage.info('正在从服务器获取 API...')
-    const fetchedApi = await fetchAPIFromServer(settingsForm.userName)
-    if (fetchedApi) {
-      aiConfig.value.cachedApi = fetchedApi
+    const isSuccee = await aiMg.fetchAPIFromServer()
+    if (isSuccee) {
       ElMessage.success('成功获取 API')
     } else {
       ElMessage.error('获取 API 失败')
     }
   }
-  saveAIConfig()
+
   if (settingsForm.deepseekApi) {
     ElMessage.success('AI 设置已保存')
   }
@@ -373,7 +349,6 @@ const saveShortcutKeySettingsHandler = async () => {
     setTimeout(() => {
       saving.value = false
       ElMessage.success('设置已保存')
-      lastSavedTime.value = getLastUpdated()
     }, 500)
   } catch (error) {
     saving.value = false
@@ -382,10 +357,6 @@ const saveShortcutKeySettingsHandler = async () => {
   }
 }
 
-// 初始化
-onMounted(() => {
-  lastSavedTime.value = getLastUpdated()
-})
 </script>
 
 <style scoped>

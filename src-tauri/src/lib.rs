@@ -3,11 +3,10 @@ use rand::Rng;
 use std::sync::{atomic::AtomicBool, atomic::Ordering, Arc, LazyLock, Mutex};
 use std::thread::{self, sleep};
 use std::time::Duration;
-
+use tauri::{AppHandle, Emitter, Manager};
 static L_TIEM: LazyLock<Mutex<u64>> = LazyLock::new(|| Mutex::new(1));
 static R_TIEM: LazyLock<Mutex<u64>> = LazyLock::new(|| Mutex::new(5));
 static STOP_FLAG: LazyLock<Arc<AtomicBool>> = LazyLock::new(|| Arc::new(AtomicBool::new(false)));
-use tauri::{AppHandle, Emitter};
 
 #[tauri::command]
 fn update_time_range(left: u64, right: u64) {
@@ -54,7 +53,7 @@ fn handle_text(app: AppHandle, text: String) {
             } else {
                 delay = rng.random_range(l_val..r_val);
             }
-            
+
             let check_interval = 10; // 每10ms检查一次
             let mut remaining = delay;
 
@@ -76,7 +75,20 @@ fn handle_text(app: AppHandle, text: String) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default().plugin(tauri_plugin_store::Builder::new().build());
+
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+            let _ = app
+                .get_webview_window("main")
+                .expect("no main window")
+                .set_focus();
+        }));
+    }
+
+    builder = builder
+        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {}))
         .plugin(tauri_plugin_autostart::Builder::new().build())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
@@ -86,7 +98,8 @@ pub fn run() {
             handle_text,
             update_time_range,
             stop_typing
-        ])
+        ]);
+    builder
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

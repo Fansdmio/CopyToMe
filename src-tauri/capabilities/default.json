@@ -25,6 +25,10 @@
     "autostart:allow-enable",
     "autostart:allow-disable",
     "autostart:allow-is-enabled",
+    "store:allow-get",
+    "store:allow-set",
+    "store:allow-save",
+    "store:allow-load",
     {
       "identifier": "http:default",
       "allow": [
@@ -33,6 +37,9 @@
         },
         {
           "url": "https://*.uuyo.fun"
+        },
+        {
+          "url": "http://172.28.193.23:28302"
         }
       ]
     }
