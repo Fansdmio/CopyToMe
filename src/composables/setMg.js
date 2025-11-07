@@ -1,7 +1,8 @@
-import {load} from '@tauri-apps/plugin-store';
+import { load } from '@tauri-apps/plugin-store';
+import { reactive, ref } from 'vue';
 
 const STORAGE_KEY = 'copytome_settings'
-const VERSION = '200251104'
+const VERSION = '200251107'
 
 // 默认配置
 const DEFAULT_SETTINGS = {
@@ -18,20 +19,18 @@ const DEFAULT_SETTINGS = {
 }
 
 const setMg = {
-    version: VERSION,
+    version: ref(VERSION),
     defaultSetting: {
         ...DEFAULT_SETTINGS
     },
-    settings: {
+    settings: reactive({
         ...DEFAULT_SETTINGS,
-    },
+    }),
     store: null,
     async init() {
-        this.store = await load('copytome_settings.json', {autoSave: false});
+        this.store = await load('copytome_settings.json', { autoSave: false });
         const settings = await this.store.get(STORAGE_KEY)
-        console.log("初始化加载的设置:")
-        console.log(settings)
-        this.settings = settings ? {...DEFAULT_SETTINGS, ...settings} : {...DEFAULT_SETTINGS}
+        Object.assign(this.settings, settings)
     },
     get(key) {
         return this.settings[key]
@@ -49,7 +48,7 @@ const setMg = {
         await this.store.set(STORAGE_KEY, this.settings)
     },
     async reset() {
-        this.settings = {...DEFAULT_SETTINGS}
+        Object.assign(this.settings, this.defaultSetting)
         await this.save()
     }
 }

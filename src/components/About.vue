@@ -17,7 +17,7 @@
           <img src="/src/assets/logo.png" style="width: 50px;"></img>
         </el-icon>
         <h1>CopyToMe & Tauri</h1>
-        <el-text type="info">版本 20251104</el-text>
+        <el-text type="info">版本 {{ version }}</el-text>
         <div style="display: flex;flex-direction: column;gap: 4px;margin-top: 10px;">
           <span>免费软件，请勿上当受骗</span>
           <el-link target="_blank" href="https://cp.uuyo.fun" underline="never" type="primary">官网链接</el-link>
@@ -62,12 +62,14 @@
 <script setup>
 import { ref } from 'vue'
 import {
-  Document,
   InfoFilled,
   Picture,
   PictureFilled,
   Close
 } from '@element-plus/icons-vue'
+import setMg from '../composables/setMg'
+
+const { version } = setMg
 
 // 图片显示状态
 const showImage = ref(false)

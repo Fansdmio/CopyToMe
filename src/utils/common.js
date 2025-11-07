@@ -1,4 +1,4 @@
-function debounce(fn, delay = 500) {
+function debounceAfter(fn, delay = 500) {
     // timer 是在闭包中的
     let timer = null;
 
@@ -13,4 +13,4 @@ function debounce(fn, delay = 500) {
     }
 }
 
-export { debounce }
+export { debounceAfter }

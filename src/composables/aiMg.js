@@ -109,7 +109,7 @@ const aiMg = {
         }
     },
     async getQAHistory() {
-        return await this.store.get(QA_HISTORY_KEY)
+        return (await this.store?.get(QA_HISTORY_KEY)) || [];
     },
     async clearQAHistory() {
         this.store.set(QA_HISTORY_KEY, [])

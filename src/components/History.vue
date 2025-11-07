@@ -135,17 +135,8 @@ const loadMoreRecords = () => {
 const handleScroll = (e) => {
   const container = e.target
   const {scrollTop, scrollHeight, clientHeight} = container
-
-  console.log('滚动事件触发', {
-    scrollTop,
-    scrollHeight,
-    clientHeight,
-    distance: scrollHeight - scrollTop - clientHeight
-  })
-
   // 距离底部小于 100px 时加载更多
   if (scrollHeight - scrollTop - clientHeight < 100 && hasMore.value) {
-    console.log('触发加载更多')
     loadMoreRecords()
   }
 }
