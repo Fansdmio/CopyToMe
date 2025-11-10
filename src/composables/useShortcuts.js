@@ -5,6 +5,7 @@
 import { ref } from 'vue'
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut'
 import { ElMessage } from 'element-plus'
+import { info, error, warn } from '@tauri-apps/plugin-log';
 
 /**
  * 快捷键管理 Hook
@@ -22,20 +23,23 @@ export function useShortcuts() {
    * 注册快捷键 (不包括停止键)
    */
   const registerShortcuts = async (textKey, questionKey, textHandler, questionHandler) => {
+    info(`useShortcuts: 注册快捷键 - 文本:${textKey}, 问答:${questionKey}`);
     try {
       // 注册文本处理快捷键
       await register(textKey, textHandler)
+      info(`useShortcuts: 文本快捷键注册成功: ${textKey}`);
       
       // 注册问答快捷键
       await register(questionKey, questionHandler)
+      info(`useShortcuts: 问答快捷键注册成功: ${questionKey}`);
       
       currentKeys.value = { ...currentKeys.value, textKey, questionKey }
       registered.value = true
       
-      console.log('快捷键注册成功:', currentKeys.value)
+      info('useShortcuts: 所有快捷键注册成功');
       return true
     } catch (e) {
-      console.error('快捷键注册失败:', e)
+      error(`useShortcuts: 快捷键注册失败: ${e}`);
       ElMessage.error('快捷键注册失败: ' + e.message)
       return false
     }
@@ -45,15 +49,19 @@ export function useShortcuts() {
    * 注册停止键 (仅在模拟输入时使用)
    */
   const registerStopKey = async (stopHandler) => {
-    if (stopKeyRegistered.value) return true
+    if (stopKeyRegistered.value) {
+      info("useShortcuts: 停止键已注册,跳过");
+      return true
+    }
     
+    info("useShortcuts: 注册停止快捷键 K");
     try {
       await register('K', stopHandler)
       stopKeyRegistered.value = true
-      console.log('停止快捷键 K 已注册')
+      info('useShortcuts: 停止快捷键 K 已注册')
       return true
     } catch (e) {
-      console.warn('停止快捷键注册失败:', e)
+      warn(`useShortcuts: 停止快捷键注册失败: ${e}`);
       return false
     }
   }
@@ -63,18 +71,20 @@ export function useShortcuts() {
    */
   const unregisterStopKey = async () => {
     if (!stopKeyRegistered.value) {
+      info("useShortcuts: 停止键未注册,无需注销");
       return true
     }
     
+    info("useShortcuts: 注销停止快捷键 K");
     try {
       await unregister('K')
       stopKeyRegistered.value = false
-      console.log('停止快捷键 K 已注销')
+      info('useShortcuts: 停止快捷键 K 已注销')
       return true
     } catch (e) {
       // 可能已经被注销了,忽略错误
       stopKeyRegistered.value = false
-      console.log('停止快捷键 K 注销 (可能已注销)')
+      info('useShortcuts: 停止快捷键 K 注销 (可能已注销)')
       return true
     }
   }
@@ -83,23 +93,29 @@ export function useShortcuts() {
    * 注销快捷键 (不包括停止键)
    */
   const unregisterShortcuts = async () => {
-    if (!registered.value) return true
+    if (!registered.value) {
+      info("useShortcuts: 快捷键未注册,无需注销");
+      return true
+    }
 
+    info("useShortcuts: 注销快捷键");
     try {
       if (currentKeys.value.textKey) {
         await unregister(currentKeys.value.textKey)
+        info(`useShortcuts: 已注销文本快捷键: ${currentKeys.value.textKey}`);
       }
       if (currentKeys.value.questionKey) {
         await unregister(currentKeys.value.questionKey)
+        info(`useShortcuts: 已注销问答快捷键: ${currentKeys.value.questionKey}`);
       }
       
       currentKeys.value = { ...currentKeys.value, textKey: null, questionKey: null }
       registered.value = false
       
-      console.log('快捷键注销成功')
+      info('useShortcuts: 快捷键注销成功')
       return true
     } catch (e) {
-      console.error('快捷键注销失败:', e)
+      error(`useShortcuts: 快捷键注销失败: ${e}`);
       return false
     }
   }
@@ -108,6 +124,7 @@ export function useShortcuts() {
    * 更新快捷键
    */
   const updateShortcuts = async (newTextKey, newQuestionKey, textHandler, questionHandler) => {
+    info(`useShortcuts: 更新快捷键 - 新文本:${newTextKey}, 新问答:${newQuestionKey}`);
     // 先注销旧的
     await unregisterShortcuts()
     

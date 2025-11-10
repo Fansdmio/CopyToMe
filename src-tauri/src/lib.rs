@@ -4,9 +4,11 @@ use std::sync::{atomic::AtomicBool, atomic::Ordering, Arc, LazyLock, Mutex};
 use std::thread::{self, sleep};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
+use std::fs;
 static L_TIEM: LazyLock<Mutex<u64>> = LazyLock::new(|| Mutex::new(1));
 static R_TIEM: LazyLock<Mutex<u64>> = LazyLock::new(|| Mutex::new(5));
 static STOP_FLAG: LazyLock<Arc<AtomicBool>> = LazyLock::new(|| Arc::new(AtomicBool::new(false)));
+use tauri_plugin_log::{Target, TargetKind};
 
 #[tauri::command]
 fn update_time_range(left: u64, right: u64) {
@@ -20,6 +22,40 @@ fn update_time_range(left: u64, right: u64) {
 fn stop_typing() {
     STOP_FLAG.store(true, Ordering::Relaxed);
     println!("设置停止标志");
+}
+
+#[tauri::command]
+fn create_directory(path: String) -> Result<(), String> {
+    fs::create_dir_all(&path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn open_folder(path: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    
+    Ok(())
 }
 
 #[tauri::command]
@@ -75,7 +111,15 @@ fn handle_text(app: AppHandle, text: String) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut builder = tauri::Builder::default().plugin(tauri_plugin_store::Builder::new().build());
+    let mut builder = tauri::Builder::default()
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .level(tauri_plugin_log::log::LevelFilter::Info)
+                .build(),
+        )
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_store::Builder::new().build());
 
     #[cfg(desktop)]
     {
@@ -88,6 +132,16 @@ pub fn run() {
     }
 
     builder = builder
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .targets([
+                    Target::new(TargetKind::Stdout),
+                    Target::new(TargetKind::LogDir { file_name: None }),
+                    Target::new(TargetKind::Webview),
+                ])
+                .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
+                .build(),
+        )
         .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {}))
         .plugin(tauri_plugin_autostart::Builder::new().build())
         .plugin(tauri_plugin_http::init())
@@ -97,7 +151,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             handle_text,
             update_time_range,
-            stop_typing
+            stop_typing,
+            create_directory,
+            open_folder
         ]);
     builder
         .run(tauri::generate_context!())

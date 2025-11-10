@@ -4,7 +4,7 @@
       <div class="card-header">
         <div class="header-content">
           <el-icon :size="24" color="#409EFF">
-            <ChatDotRound/>
+            <ChatDotRound />
           </el-icon>
           <h2>AI 问答记录</h2>
           <el-tag v-if="allHistory.length > 0" size="small" type="info">
@@ -13,7 +13,7 @@
         </div>
         <el-button @click="clearHistory" type="danger" size="small" :disabled="allHistory.length === 0">
           <el-icon>
-            <Delete/>
+            <Delete />
           </el-icon>
           清空记录
         </el-button>
@@ -24,7 +24,7 @@
       <el-empty description="暂无问答记录">
         <template #image>
           <el-icon :size="80" color="#c0c4cc">
-            <ChatLineSquare/>
+            <ChatLineSquare />
           </el-icon>
         </template>
       </el-empty>
@@ -32,29 +32,24 @@
 
     <div v-else class="timeline-container" @scroll="handleScroll" ref="scrollContainer">
       <el-timeline class="history-timeline">
-        <el-timeline-item
-            v-for="(item, index) in displayedHistory"
-            :key="index"
-            :timestamp="item.time"
-            placement="top"
-        >
+        <el-timeline-item v-for="(item, index) in displayedHistory" :key="index" :timestamp="item.time" placement="top">
           <el-card class="history-item" shadow="hover">
             <div class="question-section">
               <div class="section-header">
                 <el-icon color="#409EFF">
-                  <QuestionFilled/>
+                  <QuestionFilled />
                 </el-icon>
                 <span class="section-title">问题</span>
               </div>
               <div class="content">{{ item.question }}</div>
             </div>
 
-            <el-divider style="margin: 12px 0"/>
+            <el-divider style="margin: 12px 0" />
 
             <div class="answer-section">
               <div class="section-header">
                 <el-icon color="#67C23A">
-                  <CircleCheck/>
+                  <CircleCheck />
                 </el-icon>
                 <span class="section-title">回答</span>
               </div>
@@ -63,14 +58,9 @@
 
             <div class="item-footer">
               <el-tag size="small" type="info">{{ item.model }}</el-tag>
-              <el-button
-                  type="primary"
-                  size="small"
-                  text
-                  @click="copyToClipboard(item.answer)"
-              >
+              <el-button type="primary" size="small" text @click="copyToClipboard(item.answer)">
                 <el-icon>
-                  <CopyDocument/>
+                  <CopyDocument />
                 </el-icon>
                 复制回答
               </el-button>
@@ -91,8 +81,8 @@
 </template>
 
 <script setup>
-import {ref, onMounted, computed} from 'vue'
-import {ElMessage, ElMessageBox} from 'element-plus'
+import { ref, onMounted, computed } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ChatDotRound,
   Delete,
@@ -103,6 +93,8 @@ import {
 } from '@element-plus/icons-vue'
 
 import aiMg from "../composables/aiMg.js";
+import mitt from '../utils/mitt.js';
+import { info, error } from '@tauri-apps/plugin-log';
 
 const allHistory = ref([])
 const displayedHistory = ref([])
@@ -115,8 +107,18 @@ const hasMore = computed(() => displayedHistory.value.length < allHistory.value.
 
 // 加载历史记录
 const loadHistory = async () => {
-  allHistory.value = await aiMg.getQAHistory()
-  loadMoreRecords()
+  try {
+    info("History: 加载历史记录");
+    currentPage.value = 1
+    displayedHistory.value = []
+    allHistory.value = await aiMg.getQAHistory()
+    info(`History: 加载了 ${allHistory.value.length} 条历史记录`);
+    loadMoreRecords()
+  } catch (e) {
+    error(`History: 加载历史记录失败: ${e}`);
+    allHistory.value = []
+    displayedHistory.value = []
+  }
 }
 
 // 加载更多记录
@@ -127,6 +129,7 @@ const loadMoreRecords = () => {
 
   if (newRecords.length > 0) {
     displayedHistory.value = [...displayedHistory.value, ...newRecords]
+    info(`History: 加载了第 ${currentPage.value} 页,共 ${newRecords.length} 条记录`);
     currentPage.value++
   }
 }
@@ -134,7 +137,7 @@ const loadMoreRecords = () => {
 // 处理滚动事件
 const handleScroll = (e) => {
   const container = e.target
-  const {scrollTop, scrollHeight, clientHeight} = container
+  const { scrollTop, scrollHeight, clientHeight } = container
   // 距离底部小于 100px 时加载更多
   if (scrollHeight - scrollTop - clientHeight < 100 && hasMore.value) {
     loadMoreRecords()
@@ -143,6 +146,7 @@ const handleScroll = (e) => {
 
 // 清空历史记录
 const clearHistory = async () => {
+  info("History: 尝试清空历史记录");
   try {
     await ElMessageBox.confirm('确定要清空所有问答记录吗?', '警告', {
       confirmButtonText: '确定',
@@ -154,33 +158,50 @@ const clearHistory = async () => {
       allHistory.value = []
       displayedHistory.value = []
       currentPage.value = 1
+      info("History: 历史记录已清空");
       ElMessage.success('已清空历史记录')
     } else {
+      error("History: 清空失败");
       ElMessage.error('清空失败')
     }
   } catch {
     // 用户取消
+    info("History: 用户取消清空操作");
   }
 }
 
 // 复制到剪贴板
 const copyToClipboard = async (text) => {
+  info("History: 复制到剪贴板");
   try {
     await navigator.clipboard.writeText(text)
     ElMessage.success('已复制到剪贴板')
   } catch (e) {
+    error(`History: 复制失败: ${e}`);
     ElMessage.error('复制失败')
   }
 }
 
-onMounted(loadHistory)
+
+
+mitt.on('history-update', loadHistory)
+
+onMounted(() => {
+  try {
+    info("History: 组件挂载");
+    loadHistory()
+  } catch (e) {
+    error(`History: 组件挂载失败: ${e}`);
+  }
+})
 </script>
 
 <style scoped>
 .history-card {
   border-radius: 12px;
   overflow: hidden;
-  height: calc(100vh - 70px); /* 占满整个窗口，只留小边距 */
+  height: calc(100vh - 70px);
+  /* 占满整个窗口，只留小边距 */
   display: flex;
   flex-direction: column;
 }
@@ -188,13 +209,15 @@ onMounted(loadHistory)
 .history-card :deep(.el-card__body) {
   padding: 0;
   flex: 1;
-  min-height: 0; /* 允许内容缩小 */
+  min-height: 0;
+  /* 允许内容缩小 */
   overflow: hidden;
 }
 
 .history-card :deep(.el-card__header) {
   padding: 12px 16px;
-  flex-shrink: 0; /* 防止头部被压缩 */
+  flex-shrink: 0;
+  /* 防止头部被压缩 */
 }
 
 .card-header {
@@ -226,7 +249,8 @@ onMounted(loadHistory)
 
 /* 滚动容器 */
 .timeline-container {
-  height: 100%; /* 占满剩余空间 */
+  height: 100%;
+  /* 占满剩余空间 */
   overflow-y: auto;
   padding: 16px;
 }

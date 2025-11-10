@@ -127,6 +127,84 @@
 
 
         <el-divider style="margin: 12px 0" />
+
+        <!-- DLL 注入配置 -->
+        <div class="setting-section">
+          <h3 class="section-title">
+            <div class="section-icon">
+              <el-icon>
+                <Upload />
+              </el-icon>
+              <span>DLL 注入配置</span>
+              <el-tag v-if="injected" type="success" size="small">
+                <div style="display: flex;align-items: center;justify-content: center;height: 100%;">
+                  已注入
+                </div>
+              </el-tag>
+              <el-tag v-else type="info" size="small">
+                <div style="display: flex;align-items: center;justify-content: center;height: 100%;">
+                  未注入
+                </div>
+              </el-tag>
+            </div>
+            <div class=" action-buttons">
+              <el-button v-if="injected" type="danger" @click="handleRemoveInjection" :loading="removing">
+                取消注入
+              </el-button>
+              <el-button type="primary" @click="handleInjectDll" :loading="injecting" :disabled="!canInject">
+                {{ injected ? '重新注入' : '注入 DLL' }}
+              </el-button>
+            </div>
+          </h3>
+
+          <el-form label-width="120px" label-position="left">
+            <el-form-item label="目标程序路径">
+              <el-input v-model="settings.targetProgramPath" placeholder="请选择目标程序 (.exe)" clearable>
+                <template #prepend>
+                  <el-icon>
+                    <Document />
+                  </el-icon>
+                </template>
+                <template #append>
+                  <el-button @click="selectTargetProgram">
+                    <el-icon>
+                      <FolderOpened />
+                    </el-icon>
+                    浏览
+                  </el-button>
+                </template>
+              </el-input>
+            </el-form-item>
+
+            <el-form-item label="DLL 文件路径">
+              <el-input v-model="settings.dllPath" placeholder="请选择 DLL 文件或输入下载 URL (http://... 或 https://...)"
+                clearable>
+                <template #prepend>
+                  <el-icon>
+                    <DocumentCopy />
+                  </el-icon>
+                </template>
+                <template #append>
+                  <el-button @click="selectDllFile">
+                    <el-icon>
+                      <FolderOpened />
+                    </el-icon>
+                    浏览
+                  </el-button>
+                </template>
+              </el-input>
+            </el-form-item>
+          </el-form>
+
+          <el-alert type="primary" :closable="false">
+            <div class="shortcut-tips">
+              <p>• 必须填写 DeepSeek API 才能进行注入操作</p>
+              <p>• DLL 路径支持本地文件路径或 HTTP/HTTPS URL</p>
+            </div>
+          </el-alert>
+        </div>
+
+        <el-divider style="margin: 12px 0" />
         <!-- 预设快捷键模板 -->
         <div class="setting-section">
           <h3 class="section-title">
@@ -166,8 +244,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed, onMounted, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { open } from '@tauri-apps/plugin-dialog'
+import { copyFile, writeTextFile, writeFile, exists, remove, readFile } from '@tauri-apps/plugin-fs'
+import { dirname, join, appCacheDir, appDataDir } from '@tauri-apps/api/path'
+import { fetch } from '@tauri-apps/plugin-http'
+import { invoke } from '@tauri-apps/api/core'
 
 import {
   Collection,
@@ -176,6 +259,10 @@ import {
   QuestionFilled,
   RefreshLeft,
   Tools,
+  Upload,
+  Document,
+  DocumentCopy,
+  FolderOpened,
 } from '@element-plus/icons-vue'
 
 import { validateShortcutKey } from '../utils/textProcessing.js'
@@ -190,12 +277,18 @@ import {
 } from '../constants/config.js'
 import setMg from "../composables/setMg.js";
 import aiMg from "../composables/aiMg.js";
+import { info, error } from '@tauri-apps/plugin-log';
 // Props 和 Emits
 const emit = defineEmits(['update-shortcuts'])
 // 表单数据 (绑定到响应式状态)
 const settings = setMg.settings
 // 保存状态
 const showKeyboardHelp = ref(false)
+
+// DLL 注入相关状态
+const injecting = ref(false)
+const injected = ref(false)
+const removing = ref(false)
 
 // 使用配置常量
 const shortcutFields = SHORTCUT_FIELDS
@@ -205,12 +298,382 @@ const presets = SHORTCUT_PRESETS
 const keyboardHelpData = KEYBOARD_HELP_DATA
 const aiTips = AI_TIPS
 
+// 检查是否可以注入
+const canInject = computed(() => {
+  return settings.deepseekApi &&
+    settings.deepseekApi.trim() !== '' &&
+    settings.targetProgramPath &&
+    settings.dllPath
+})
+
+// 检查目标目录下是否存在已注入的文件
+const checkInjectedFiles = async () => {
+  info("Setting: 检查注入文件状态");
+  if (!settings.targetProgramPath || !settings.dllPath) {
+    info("Setting: 路径未配置,跳过检查");
+    injected.value = false
+    return
+  }
+
+  try {
+    const targetDir = await dirname(settings.targetProgramPath)
+
+    // 获取 DLL 文件名
+    let dllFileName = settings.dllPath.split(/[/\\]/).pop()
+
+    // 如果是URL，需要从URL中提取文件名
+    if (isURL(settings.dllPath)) {
+      const urlPath = new URL(settings.dllPath).pathname
+      dllFileName = urlPath.split('/').pop() || 'downloaded.dll'
+    }
+
+    const targetDllPath = await join(targetDir, dllFileName)
+    const apiFilePath = await join(targetDir, 'eat_rice.txt')
+
+    // 检查两个文件是否都存在
+    const dllExists = await exists(targetDllPath)
+    const apiExists = await exists(apiFilePath)
+
+    injected.value = dllExists && apiExists
+    info(`Setting: 注入状态检查完成 - DLL存在:${dllExists}, API文件存在:${apiExists}, 注入状态:${injected.value}`);
+  } catch (err) {
+    error(`Setting: 检查注入文件失败: ${err}`);
+    injected.value = false
+  }
+}
+
+// 选择目标程序
+const selectTargetProgram = async () => {
+  info("Setting: 打开目标程序选择对话框");
+  try {
+    const selected = await open({
+      multiple: false,
+      filters: [{
+        name: '可执行文件',
+        extensions: ['exe']
+      }]
+    })
+
+    if (selected) {
+      info(`Setting: 选择目标程序: ${selected}`);
+      settings.targetProgramPath = selected
+      await setMg.save()
+      await checkInjectedFiles() // 检查是否已注入
+      ElMessage.success('已选择目标程序')
+    }
+  } catch (err) {
+    error(`Setting: 选择目标程序失败: ${err}`);
+    ElMessage.error('选择目标程序失败')
+  }
+}
+
+// 选择 DLL 文件
+const selectDllFile = async () => {
+  info("Setting: 打开DLL文件选择对话框");
+  try {
+    const selected = await open({
+      multiple: false,
+      filters: [{
+        name: 'DLL 文件',
+        extensions: ['dll']
+      }]
+    })
+
+    if (selected) {
+      info(`Setting: 选择DLL文件: ${selected}`);
+      settings.dllPath = selected
+      await setMg.save()
+      await checkInjectedFiles() // 检查是否已注入
+      ElMessage.success('已选择 DLL 文件')
+    }
+  } catch (err) {
+    error(`Setting: 选择DLL文件失败: ${err}`);
+    ElMessage.error('选择 DLL 文件失败')
+  }
+}
+
+// 判断是否是URL
+const isURL = (str) => {
+  try {
+    const url = new URL(str)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+// 计算文件的 SHA-256 哈希值
+const getFileHash = async (filePath) => {
+  try {
+    const fileContent = await readFile(filePath)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', fileContent)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    return hashHex
+  } catch (err) {
+    error(`Setting: 计算文件哈希失败: ${err}`)
+    return null
+  }
+}
+
+// 比较两个文件是否相同（通过哈希值比较）
+const areFilesIdentical = async (file1Path, file2Path) => {
+  try {
+    // 检查两个文件是否都存在
+    const file1Exists = await exists(file1Path)
+    const file2Exists = await exists(file2Path)
+
+    if (!file1Exists || !file2Exists) {
+      return false
+    }
+
+    // 计算两个文件的哈希值
+    const hash1 = await getFileHash(file1Path)
+    const hash2 = await getFileHash(file2Path)
+
+    if (!hash1 || !hash2) {
+      return false
+    }
+
+    // 比较哈希值
+    const identical = hash1 === hash2
+    info(`Setting: 文件哈希比较 - 文件1:${hash1.substring(0, 16)}... 文件2:${hash2.substring(0, 16)}... 相同:${identical}`)
+
+    return identical
+  } catch (err) {
+    error(`Setting: 比较文件失败: ${err}`)
+    return false
+  }
+}
+
+// 从URL下载DLL
+const downloadDll = async (url) => {
+  info(`Setting: 开始下载DLL: ${url}`);
+  try {
+    ElMessage.info('正在下载 DLL 文件...')
+
+    // 使用 fetch 下载文件
+    const response = await fetch(url, {
+      method: 'GET',
+    })
+
+    if (!response.ok) {
+      throw new Error(`下载失败: ${response.status}`)
+    }
+
+    // 获取二进制数据
+    const blob = await response.blob()
+    const arrayBuffer = await blob.arrayBuffer()
+    const uint8Array = new Uint8Array(arrayBuffer)
+
+    // 获取缓存目录
+    const cacheDir = await appCacheDir()
+
+    // 从URL中提取文件名，如果没有则使用默认名
+    const urlPath = new URL(url).pathname
+    const fileName = urlPath.split('/').pop() || 'downloaded.dll'
+
+    // 保存到缓存目录
+    const localPath = await join(cacheDir, fileName)
+    await writeFile(localPath, uint8Array)
+
+    info(`Setting: DLL下载成功,保存到: ${localPath}`);
+    // ElMessage.success('DLL 下载成功')
+    return localPath
+  } catch (err) {
+    error(`Setting: 下载DLL失败: ${err}`);
+  }
+}
+
+// 处理 DLL 注入
+const handleInjectDll = async () => {
+  info("Setting: 开始DLL注入");
+  // 验证 DeepSeek API
+  if (!settings.deepseekApi || settings.deepseekApi.trim() === '') {
+    info("Setting: DeepSeek API未配置");
+    ElMessage.error('请先填写 DeepSeek API 才能进行注入')
+    return
+  }
+
+  // 验证路径
+  if (!settings.targetProgramPath || !settings.dllPath) {
+    info("Setting: 目标程序或DLL路径未配置");
+    ElMessage.error('请先选择目标程序和 DLL 文件路径')
+    return
+  }
+
+  try {
+    await setMg.save()
+    injecting.value = true
+
+    // 获取应用数据目录（保存准备注入的文件）
+    const appDir = await appDataDir()
+    const injectDir = await join(appDir, 'inject_files')
+    info(`Setting: 应用数据目录: ${injectDir}`);
+
+    // 确保目录存在
+    try {
+      await invoke('create_directory', { path: injectDir })
+    } catch (e) {
+      // 目录可能已存在，忽略错误
+    }
+
+    let sourceDllPath = settings.dllPath
+
+    // 检查是否是URL，如果是则先下载
+    if (isURL(settings.dllPath)) {
+      info("Setting: DLL路径是URL,开始下载");
+      sourceDllPath = await downloadDll(settings.dllPath)
+    }
+
+    // 获取 DLL 文件名
+    const dllFileName = sourceDllPath.split(/[/\\]/).pop()
+
+    // 第一步：复制 DLL 到应用程序目录
+    const appDllPath = await join(injectDir, dllFileName)
+    await copyFile(sourceDllPath, appDllPath)
+    info(`Setting: DLL已复制到应用目录: ${appDllPath}`);
+
+    // 第二步：创建 eat_rice.txt 到应用程序目录
+    const appApiFilePath = await join(injectDir, 'eat_rice.txt')
+    await writeTextFile(appApiFilePath, settings.deepseekApi)
+    info(`Setting: API文件已创建到应用目录: ${appApiFilePath}`);
+
+    // 第三步：准备目标路径
+    const targetDir = await dirname(settings.targetProgramPath)
+    const targetDllPath = await join(targetDir, dllFileName)
+    const targetApiFilePath = await join(targetDir, 'eat_rice.txt')
+
+    // 检查目标 DLL 是否已存在且与新 DLL 相同
+    const targetDllExists = await exists(targetDllPath)
+    if (targetDllExists) {
+      info("Setting: 检测到目标路径下已存在DLL,开始比较文件");
+      const isIdentical = await areFilesIdentical(appDllPath, targetDllPath)
+      if (isIdentical) {
+        info("Setting: 目标DLL与新DLL完全相同");
+        ElMessage.warning('目标路径下已存在相同的 DLL 文件')
+      }
+    }
+
+    // 第四步：尝试复制到目标程序目录
+    try {
+      await copyFile(appDllPath, targetDllPath)
+      await copyFile(appApiFilePath, targetApiFilePath)
+      info(`Setting: 文件已自动复制到目标目录: ${targetDir}`);
+      injected.value = true
+      ElMessage.success('DLL 注入成功！')
+    } catch (err) {
+      error(`Setting: 自动复制失败: ${err}`);
+      // 自动复制失败，引导用户手动复制
+      info("Setting: 提示用户手动复制文件");
+
+      await ElMessageBox.alert(
+        `由于权限限制，无法自动复制文件到目标目录。\n\n请手动完成以下操作：\n\n1. 打开文件夹: ${injectDir}\n2. 复制以下两个文件：\n   - ${dllFileName}\n   - eat_rice.txt\n3. 粘贴到目标程序目录: ${targetDir}\n\n文件已准备好，点击"打开文件夹"按钮即可查看。`,
+        '需要手动复制文件',
+        {
+          confirmButtonText: '打开文件夹',
+          type: 'warning',
+          dangerouslyUseHTMLString: false
+        }
+      )
+
+      // 打开文件夹
+      try {
+        await invoke('open_folder', { path: injectDir })
+      } catch (e) {
+        error(`Setting: 打开文件夹失败: ${e}`);
+      }
+    }
+
+  } catch (err) {
+    if (err !== 'cancel') {
+      error(`Setting: DLL注入失败: ${err}`);
+      ElMessage.error(`DLL 注入失败: ${err.message || err}`)
+    }
+  } finally {
+    injecting.value = false
+    await checkInjectedFiles()
+  }
+}
+
+// 取消注入（删除已注入的文件）
+const handleRemoveInjection = async () => {
+  info("Setting: 开始取消注入");
+  if (!settings.targetProgramPath || !settings.dllPath) {
+    info("Setting: 路径未配置");
+    ElMessage.error('无法确定要删除的文件')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除已注入的 DLL 和配置文件吗？',
+      '取消注入',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+
+    removing.value = true
+
+    const targetDir = await dirname(settings.targetProgramPath)
+
+    // 获取 DLL 文件名
+    let dllFileName = settings.dllPath.split(/[/\\]/).pop()
+
+    // 如果是URL，需要从URL中提取文件名
+    if (isURL(settings.dllPath)) {
+      const urlPath = new URL(settings.dllPath).pathname
+      dllFileName = urlPath.split('/').pop() || 'downloaded.dll'
+    }
+
+    const targetDllPath = await join(targetDir, dllFileName)
+    const apiFilePath = await join(targetDir, 'eat_rice.txt')
+
+    // 删除文件
+    const deletedFiles = []
+
+    if (await exists(targetDllPath)) {
+      await remove(targetDllPath)
+      deletedFiles.push(dllFileName)
+      info(`Setting: 已删除DLL: ${targetDllPath}`);
+    }
+
+    if (await exists(apiFilePath)) {
+      await remove(apiFilePath)
+      deletedFiles.push('eat_rice.txt')
+      info(`Setting: 已删除API文件: ${apiFilePath}`);
+    }
+
+    if (deletedFiles.length > 0) {
+      injected.value = false
+      info(`Setting: 删除完成: ${deletedFiles.join(', ')}`);
+      ElMessage.success(`已删除: ${deletedFiles.join(', ')}`)
+    } else {
+      info("Setting: 没有找到需要删除的文件");
+      ElMessage.info('没有找到需要删除的文件')
+    }
+
+  } catch (err) {
+    if (err !== 'cancel') {
+      error(`Setting: 删除注入文件失败: ${err}`);
+      ElMessage.error(`删除失败: ${err.message || '未知错误'}`)
+    }
+  } finally {
+    removing.value = false
+    await checkInjectedFiles()
+  }
+}
+
 // 检查是否是当前预设
 const isCurrentPreset = (preset) => {
   return settings.textKey === preset.textKey && settings.questionKey === preset.questionKey
 }
 // 应用预设
 const applyPreset = async (preset) => {
+  info(`Setting: 应用快捷键预设: ${preset.name}`);
   settings.textKey = preset.textKey
   settings.questionKey = preset.questionKey
   await setMg.save()
@@ -221,11 +684,13 @@ const applyPreset = async (preset) => {
 
 // 重置设置
 const resetSettingsHandler = () => {
+  info("Setting: 重置所有设置");
   setMg.reset();
 }
 
 //保存ai设置
 const saveAiSettingHandler = async () => {
+  info("Setting: 保存AI设置");
   // 验证 AI 配置
   if (!settings.deepseekApi && !settings.userName) {
     ElMessage.warning('请至少填写 DeepSeek API 或用户名')
@@ -238,6 +703,7 @@ const saveAiSettingHandler = async () => {
   await setMg.save()
   // 如果只有用户名,获取 API
   if (!settings.deepseekApi && settings.userName) {
+    info("Setting: 从服务器获取API");
     ElMessage.info('正在从服务器获取 API...')
     const isSuccee = await aiMg.fetchAPIFromServer()
     if (isSuccee) {
@@ -254,16 +720,20 @@ const saveAiSettingHandler = async () => {
 
 // 保存快捷键设置
 const saveShortcutKeySettingsHandler = async () => {
+  info(`Setting: 保存快捷键设置 - 文本:${settings.textKey}, 问答:${settings.questionKey}`);
   // 验证快捷键
   if (!validateShortcutKey(settings.textKey)) {
+    error("Setting: 模拟输入快捷键格式不正确");
     ElMessage.error('模拟输入快捷键格式不正确')
     return
   }
   if (!validateShortcutKey(settings.questionKey)) {
+    error("Setting: AI问答快捷键格式不正确");
     ElMessage.error('AI 问答快捷键格式不正确')
     return
   }
   if (settings.textKey === settings.questionKey) {
+    error("Setting: 两个快捷键相同");
     ElMessage.error('两个快捷键不能相同')
     return
   }
@@ -271,6 +741,20 @@ const saveShortcutKeySettingsHandler = async () => {
   emit('update-shortcuts')
 
 }
+
+// 组件挂载时检查是否已注入
+onMounted(() => {
+  info("Setting: 组件挂载");
+  checkInjectedFiles()
+})
+
+// 监听路径变化，自动检查注入状态
+watch(
+  () => [settings.targetProgramPath, settings.dllPath],
+  () => {
+    checkInjectedFiles()
+  }
+)
 
 </script>
 
@@ -323,6 +807,16 @@ const saveShortcutKeySettingsHandler = async () => {
   font-size: 16px;
   font-weight: 600;
   color: #303133;
+}
+
+.section-title .section-icon {
+  flex: 1;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .section-title span {

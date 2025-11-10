@@ -1,4 +1,5 @@
 import CryptoJS from 'crypto-js'
+import { error } from '@tauri-apps/plugin-log';
 
 // 密钥 - 与 Rust 代码保持一致
 const SECRET_KEY = '$mmL1oX*ar&xfuFjjIsA7SqC7ad0DE1N'
@@ -38,7 +39,7 @@ export function decrypt(encryptedText) {
     
     return decrypted.toString(CryptoJS.enc.Utf8)
   } catch (e) {
-    console.error('解密失败:', e)
+    error(`crypto: 解密失败: ${e}`);
     return ''
   }
 }
@@ -79,7 +80,7 @@ export async function decryptGCM(encryptedText) {
     
     return new TextDecoder().decode(decrypted)
   } catch (e) {
-    console.error('解密失败:', e)
+    error(`crypto: GCM解密失败: ${e}`);
     return ''
   }
 }

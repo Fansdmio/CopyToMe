@@ -49,7 +49,7 @@
 
         <!-- 问答记录页面 -->
         <div v-show="activeMenu === 'history'" class="page-container">
-          <HistoryPage :key="historyRefreshKey" />
+          <HistoryPage />
         </div>
 
         <!-- 设置页面 -->
@@ -81,10 +81,16 @@ import { invoke } from '@tauri-apps/api/core'
 import { debounceAfter } from './utils/common.js'
 import { useShortcuts } from './composables/useShortcuts.js'
 import { handleWxInput, debounce } from './utils/textProcessing.js'
-import { listen } from '@tauri-apps/api/event';
+import { listen } from '@tauri-apps/api/event'; 
 import aiMg from "./composables/aiMg.js";
 import setMg from "./composables/setMg.js";
 import { fetch } from "@tauri-apps/plugin-http";
+import mitt from './utils/mitt.js'
+import { trace, info, error, attachConsole } from '@tauri-apps/plugin-log';
+// const detach = await attachConsole();
+info('App.vue: 应用启动');
+
+
 // 使用 快捷键管理器
 const { registerShortcuts, updateShortcuts, registerStopKey, unregisterStopKey } = useShortcuts()
 const homeRef = ref(null)
@@ -95,29 +101,29 @@ const settings = setMg.settings
 // 当前激活的菜单
 const activeMenu = ref('home')
 
-// 历史记录刷新key
-const historyRefreshKey = ref(0)
-
 
 // 菜单选择处理
 const handleMenuSelect = (index) => {
+  info(`App.vue: 菜单切换 -> ${index}`)
   activeMenu.value = index
 }
 
 listen('text_handled', () => {
-  console.log("模拟输入完成,注销k键");
+  info("App.vue: 模拟输入完成,注销k键");
   unregisterStopKey()
 })
 
 // 模拟输入快捷键处理函数
 const handleText = debounce(async () => {
-  console.log("触发ctrl+k");
+  info("App.vue: 触发模拟输入快捷键");
   if (!settings.textProcessEnabled) {
+    info("App.vue: 模拟输入功能已禁用");
     ElMessage.warning('模拟输入功能已禁用,请在设置中启用')
     return
   }
 
   const text = await readText()
+  info(`App.vue: 读取到剪贴板文本,长度: ${text?.length || 0}`);
   if (!text?.trim()) return
 
   // 确保之前的停止键已注销
@@ -125,7 +131,7 @@ const handleText = debounce(async () => {
 
   // 停止模拟输入处理函数
   const handleStopTyping = async () => {
-    console.log('用户按下 K 键,发送停止信号')
+    info('App.vue: 用户按下 K 键,发送停止信号')
     await invoke('stop_typing')
     // 立即注销停止键,防止重复触发
     await unregisterStopKey()
@@ -134,48 +140,61 @@ const handleText = debounce(async () => {
   // 开始模拟输入前注册停止键
   const registered = await registerStopKey(handleStopTyping)
   if (!registered) {
+    error('App.vue: 停止键注册失败')
     ElMessage.error('停止键注册失败')
     return
   }
 
-  console.log('处理文本:', text)
+  info(`App.vue: 开始处理文本: ${text.substring(0, 50)}...`);
   // 注意: handle_text 现在在后台线程运行,会立即返回
   await new Promise(resolve => setTimeout(resolve, 500));
   invoke('handle_text', { text })
-  console.log('模拟输入已启动')
+  info('App.vue: 模拟输入已启动')
 })
 
 // AI 问答快捷键处理函数
 const handleQuestion = debounce(async () => {
+  info("App.vue: 触发AI问答快捷键");
   if (!settings.aiQAEnabled) {
+    info("App.vue: AI问答功能已禁用");
     ElMessage.warning('AI 问答功能已禁用,请在设置中启用')
     return
   }
 
   const question = await readText()
+  info(`App.vue: 读取到问题,长度: ${question?.length || 0}`);
   if (!question?.trim()) return
 
-  console.log('处理问题:', question)
+  info(`App.vue: 处理问题: ${question.substring(0, 50)}...`)
 
   // 调用 AI
   let answer = await aiMg.askAi(question)
-  if (!answer) return
+  if (!answer) {
+    info("App.vue: AI未返回答案");
+    return
+  }
+
+  info(`App.vue: AI返回答案,长度: ${answer.length}`);
 
   // 保存记录
-  aiMg.saveQAHistory(question, answer)
-  historyRefreshKey.value++
+  await aiMg.saveQAHistory(question, answer)
+  mitt.emit("history-update")
+
 
   // 微信输入法模式处理
   if (settings.wxInputMode) {
+    info("App.vue: 应用微信输入法模式(去除换行)");
     answer = handleWxInput(answer)
   }
 
   await writeText(answer)
+  info("App.vue: AI回答已写入剪贴板");
   ElMessage.success('AI 回答已复制到剪贴板')
 })
 
 // 更新快捷键处理
 const handleUpdateShortcuts = async () => {
+  info(`App.vue: 更新快捷键 - 文本:${settings.textKey}, 问答:${settings.questionKey}`);
   updateShortcuts(
     settings.textKey,
     settings.questionKey,
@@ -186,14 +205,16 @@ const handleUpdateShortcuts = async () => {
 
 //TODO 从服务器获取信息并显示通知
 const fromServerGetInfo = async () => {
-  console.log("开始从服务器获取信息..");
+  info("App.vue: 开始从服务器获取信息");
   const response = await fetch(`http://172.28.193.23:28302/get_info?v=${setMg.version}`, {
     Method: 'GET'
   });
   const data = await response.json();
-  if (!data) return;
-  console.log("从服务器获取到的信息:");
-  console.log(data)
+  if (!data) {
+    info("App.vue: 服务器未返回数据");
+    return;
+  }
+  info(`App.vue: 从服务器获取到的信息: ${JSON.stringify(data)}`)
   const { title, message, mold, duration, position } = data;
   //渲染数据
 
@@ -214,6 +235,7 @@ const fromServerGetInfo = async () => {
 
 //更新时间范围
 const updateTimeRange = async (val) => {
+  info(`App.vue: 更新时间范围 [${val[0]}, ${val[1]}]`);
   //持久化保存
   await setMg.save();
   try {
@@ -221,7 +243,9 @@ const updateTimeRange = async (val) => {
       left: val[0],
       right: val[1]
     })
+    info("App.vue: 时间范围更新成功");
   } catch (error) {
+    error(`App.vue: 时间范围更新失败: ${error}`);
     ElMessage.warning('时间范围更新失败,但设置已保存')
   }
 }
@@ -230,28 +254,53 @@ const updateTimeRangeDebounce = debounceAfter(updateTimeRange, 500);
 
 
 const saveAutoStart = async (val) => {
+  info(`App.vue: 设置自启动: ${val}`);
   //持久化保存
   await setMg.save();
-  if (val) enable()
+  if (val) {
+    enable()
+    info("App.vue: 已启用自启动");
+  }
   else {
     try {
       disable()
+      info("App.vue: 已禁用自启动");
     } catch (e) {
-      console.error('禁用自启动失败:', e)
+      error(`App.vue: 禁用自启动失败: ${e}`)
     }
   }
 }
 
 // 初始化
 onMounted(async () => {
-  //等待 AI 模块初始化完成
-  await aiMg.init()
-
-  if (setMg.get("hideWindow")) {
-    getCurrentWindow().hide()
+  info("App.vue: 开始初始化");
+  try {
+    //等待 AI 模块初始化完成
+    await aiMg.init()
+    info("App.vue: AI模块初始化完成");
+  } catch (e) {
+    error(`App.vue: AI模块初始化失败: ${e}`);
+    ElMessage.error('初始化失败，请重启应用');
   }
+
+  mitt.emit("history-update")
+
+  try {
+    if (setMg.get("hideWindow")) {
+      info("App.vue: 隐藏窗口");
+      getCurrentWindow().hide()
+    }
+  } catch (e) {
+    error(`App.vue: 窗口操作失败: ${e}`);
+  }
+
   //检查AI健康
-  homeRef.value.checkAi()
+  try {
+    info("App.vue: 开始检查AI健康状态");
+    homeRef.value?.checkAi()
+  } catch (e) {
+    error(`App.vue: AI健康检查失败: ${e}`);
+  }
   //监听4个按钮变化
   watch([
     () => settings.wxInputMode,
@@ -278,18 +327,27 @@ onMounted(async () => {
       left: settings.timeRange[0],
       right: settings.timeRange[1]
     })
-    console.log('已初始化时间范围:', settings.timeRange)
-  } catch (error) {
-    console.error('初始化时间范围失败:', error)
+    info(`App.vue: 已初始化时间范围: [${settings.timeRange[0]}, ${settings.timeRange[1]}]`);
+  } catch (e) {
+    error(`App.vue: 初始化时间范围失败: ${e}`);
   }
 
   // 注册快捷键 (不包括停止键)
-  await registerShortcuts(
-    settings.textKey,
-    settings.questionKey,
-    handleText,
-    handleQuestion
-  )
+  try {
+    info(`App.vue: 注册快捷键 - 文本:${settings.textKey}, 问答:${settings.questionKey}`);
+    await registerShortcuts(
+      settings.textKey,
+      settings.questionKey,
+      handleText,
+      handleQuestion
+    )
+    info("App.vue: 快捷键注册成功");
+  } catch (e) {
+    error(`App.vue: 快捷键注册失败: ${e}`);
+    ElMessage.warning('快捷键注册失败，但应用可以继续使用');
+  }
+
+  info("App.vue: 初始化完成");
 })
 </script>
 

@@ -206,6 +206,8 @@ import {
 import StatusTag from './common/StatusTag.vue'
 import aiMg from "../composables/aiMg.js";
 import setMg from "../composables/setMg.js";
+import mitt from '../utils/mitt.js';
+import { info, error } from '@tauri-apps/plugin-log';
 const { settings } = setMg
 
 
@@ -217,13 +219,21 @@ const aiStatus = ref({
 
 // 问答次数统计
 const qaCount = ref(0)
-let intervalId = null
 
 // 加载问答次数
 const loadQACount = async () => {
-  qaCount.value = (await aiMg.getQAHistory()).length;
-
+  try {
+    info("Home: 加载问答次数");
+    qaCount.value = (await aiMg.getQAHistory()).length;
+    info(`Home: 问答次数: ${qaCount.value}`);
+  } catch (e) {
+    error(`Home: 加载问答次数失败: ${e}`);
+    qaCount.value = 0;
+  }
 }
+
+mitt.on('history-update', loadQACount);
+
 
 // 快捷键配置
 const shortcuts = computed(() => [
@@ -296,46 +306,51 @@ const steps = [
 
 
 const checkAi = async () => {
+  try {
+    if (setMg.get("deepseekApi") === "" && setMg.get("userName") === "") {
+      info("Home: 未配置DeepSeek API或用户名");
+      aiStatus.value = {
+        healthy: "danger",
+        message: '未配置 DeepSeek API 或 用户名，请前往设置页面配置'
+      }
+      return
+    }
 
-  if (setMg.get("deepseekApi") === "" && setMg.get("userName") === "") {
+    info("Home: 开始检验AI状态");
+    aiStatus.value = {
+      healthy: "info",
+      message: '检查AI服务中...'
+    }
+
+    const isHealth = await aiMg.checkHealth();
+    info(`Home: AI健康检查结果: ${isHealth}`);
+
+    if (isHealth) {
+      aiStatus.value = {
+        healthy: "success",
+        message: 'AI 服务正常'
+      }
+    } else {
+      aiStatus.value = {
+        healthy: "danger",
+        message: 'AI 服务异常,点击我再次测试'
+      }
+    }
+  } catch (e) {
+    error(`Home: AI健康检查异常: ${e}`);
     aiStatus.value = {
       healthy: "danger",
-      message: '未配置 DeepSeek API 或 用户名，请前往设置页面配置'
-    }
-    return
-  }
-
-  console.log("检验ai状态");
-  aiStatus.value = {
-    healthy: "info",
-    message: '检查AI服务中...'
-  }
-
-  const isHealth = await aiMg.checkHealth();
-  console.log(isHealth)
-
-  if (isHealth) {
-    aiStatus.value = {
-      healthy: "success",
-      message: 'AI 服务正常'
-    }
-  } else {
-    aiStatus.value = {
-      healthy: "danger",
-      message: 'AI 服务异常,点击我再次测试'
+      message: 'AI 服务检查失败'
     }
   }
 }
 
 onMounted(() => {
-  loadQACount()
-  // 每3秒刷新一次统计
-  intervalId = setInterval(loadQACount, 3000)
-})
-
-onUnmounted(() => {
-  if (intervalId) {
-    clearInterval(intervalId)
+  try {
+    info("Home: 组件挂载");
+    loadQACount()
+  } catch (e) {
+    error(`Home: 组件挂载失败: ${e}`);
   }
 })
 
