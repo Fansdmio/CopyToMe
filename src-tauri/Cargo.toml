@@ -1,6 +1,6 @@
 [package]
 name = "copytomeandtauri"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
@@ -33,11 +33,13 @@ tauri-plugin-store = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-log = "2"
+tauri-plugin-process = "2"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-autostart = "2"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-single-instance = "2"
+tauri-plugin-updater = "2"
 
 
 [profile.release]

@@ -1,10 +1,10 @@
 use enigo::{Enigo, Keyboard, Settings};
 use rand::Rng;
+use std::fs;
 use std::sync::{atomic::AtomicBool, atomic::Ordering, Arc, LazyLock, Mutex};
 use std::thread::{self, sleep};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
-use std::fs;
 static L_TIEM: LazyLock<Mutex<u64>> = LazyLock::new(|| Mutex::new(1));
 static R_TIEM: LazyLock<Mutex<u64>> = LazyLock::new(|| Mutex::new(5));
 static STOP_FLAG: LazyLock<Arc<AtomicBool>> = LazyLock::new(|| Arc::new(AtomicBool::new(false)));
@@ -38,7 +38,7 @@ fn open_folder(path: String) -> Result<(), String> {
             .spawn()
             .map_err(|e| e.to_string())?;
     }
-    
+
     #[cfg(target_os = "macos")]
     {
         std::process::Command::new("open")
@@ -46,7 +46,7 @@ fn open_folder(path: String) -> Result<(), String> {
             .spawn()
             .map_err(|e| e.to_string())?;
     }
-    
+
     #[cfg(target_os = "linux")]
     {
         std::process::Command::new("xdg-open")
@@ -54,7 +54,7 @@ fn open_folder(path: String) -> Result<(), String> {
             .spawn()
             .map_err(|e| e.to_string())?;
     }
-    
+
     Ok(())
 }
 
@@ -112,6 +112,8 @@ fn handle_text(app: AppHandle, text: String) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default()
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(
             tauri_plugin_log::Builder::new()
                 .level(tauri_plugin_log::log::LevelFilter::Info)

@@ -1,27 +1,28 @@
-import {createApp} from "vue";
+import { createApp } from "vue";
 import App from "./App.vue";
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import './assets/global.css'
 
-import {TrayIcon} from '@tauri-apps/api/tray';
-import {defaultWindowIcon} from '@tauri-apps/api/app';
-import {Menu} from '@tauri-apps/api/menu';
-import {getCurrentWindow} from '@tauri-apps/api/window';
+import { TrayIcon } from '@tauri-apps/api/tray';
+import { defaultWindowIcon } from '@tauri-apps/api/app';
+import { Menu } from '@tauri-apps/api/menu';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { trace, info, error, attachConsole } from '@tauri-apps/plugin-log';
 
 info('main.js: 应用开始初始化');
 
 // 捕获未处理的错误
 window.addEventListener('error', (event) => {
-  error(`main.js: 全局错误 - ${event.error?.message || event.message}`);
-  error(`main.js: 错误堆栈 - ${event.error?.stack || 'No stack'}`);
+    error(`main.js: 全局错误 - ${event.error?.message || event.message}`);
+    error(`main.js: 错误堆栈 - ${event.error?.stack || 'No stack'}`);
 });
 
 window.addEventListener('unhandledrejection', (event) => {
-  error(`main.js: 未处理的Promise拒绝 - ${event.reason}`);
+    error(`main.js: 未处理的Promise拒绝 - ${event.reason}`);
 });
 
+//创建托盘图标
 (async () => {
     info('main.js: 创建托盘图标');
     try {
@@ -61,7 +62,7 @@ window.addEventListener('unhandledrejection', (event) => {
     } catch (e) {
         error(`main.js: 托盘图标创建失败: ${e}`);
     }
-})()
+})();
 
 
 const app = createApp(App)

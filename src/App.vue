@@ -63,6 +63,8 @@
         </div>
       </el-main>
     </el-container>
+
+    <Update></Update>
   </div>
 </template>
 
@@ -81,12 +83,14 @@ import { invoke } from '@tauri-apps/api/core'
 import { debounceAfter } from './utils/common.js'
 import { useShortcuts } from './composables/useShortcuts.js'
 import { handleWxInput, debounce } from './utils/textProcessing.js'
-import { listen } from '@tauri-apps/api/event'; 
+import { listen } from '@tauri-apps/api/event';
 import aiMg from "./composables/aiMg.js";
 import setMg from "./composables/setMg.js";
 import { fetch } from "@tauri-apps/plugin-http";
 import mitt from './utils/mitt.js'
 import { trace, info, error, attachConsole } from '@tauri-apps/plugin-log';
+import Update from './components/Update.vue';
+
 // const detach = await attachConsole();
 info('App.vue: 应用启动');
 

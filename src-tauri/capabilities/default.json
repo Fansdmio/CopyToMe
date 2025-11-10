@@ -31,6 +31,8 @@
     "store:allow-load",
     "dialog:default",
     "fs:default",
+    "updater:default",
+    "process:default",
     {
       "identifier": "fs:scope",
       "allow": [
