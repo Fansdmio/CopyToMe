@@ -286,8 +286,11 @@ onMounted(async () => {
     error(`App.vue: AI模块初始化失败: ${e}`);
     ElMessage.error('初始化失败，请重启应用');
   }
-
+  info("发送历史更新事件")
   mitt.emit("history-update")
+
+  info("发送检查更新事件")
+  mitt.emit("check-update")
 
   try {
     if (setMg.get("hideWindow")) {

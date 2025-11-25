@@ -8,7 +8,7 @@
         <div>
           <el-button @click="resetSettingsHandler">
             <el-icon>
-              <RefreshLeft />
+              <RefreshLeft/>
             </el-icon>
             重置
           </el-button>
@@ -24,7 +24,7 @@
           <h3 class="section-title">
             <div class="section-icon">
               <el-icon>
-                <Operation />
+                <Operation/>
               </el-icon>
               <span>快捷键设置</span>
             </div>
@@ -38,13 +38,13 @@
               <el-input v-model="settings[shortcut.key]" :placeholder="shortcut.placeholder" class="shortcut-input">
                 <template #prepend>
                   <el-icon>
-                    <component :is="shortcut.icon" />
+                    <component :is="shortcut.icon"/>
                   </el-icon>
                 </template>
                 <template #append>
                   <el-button @click="showKeyboardHelp = true">
                     <el-icon>
-                      <QuestionFilled />
+                      <QuestionFilled/>
                     </el-icon>
                   </el-button>
                 </template>
@@ -53,14 +53,14 @@
           </el-form>
         </div>
 
-        <el-divider style="margin: 12px 0" />
+        <el-divider style="margin: 12px 0"/>
 
         <!-- AI 配置 -->
         <div class="setting-section">
           <h3 class="section-title">
             <div class="section-icon">
               <el-icon>
-                <Cpu />
+                <Cpu/>
               </el-icon>
               <span>AI 配置</span>
             </div>
@@ -72,10 +72,10 @@
           <el-form label-width=" 120px" label-position="left">
             <el-form-item v-for="field in aiConfigFields" :key="field.key" :label="field.label">
               <el-input v-model="settings[field.key]" :placeholder="field.placeholder" :type="field.type"
-                :show-password="field.showPassword" clearable>
+                        :show-password="field.showPassword" clearable>
                 <template #prepend>
                   <el-icon>
-                    <component :is="field.icon" />
+                    <component :is="field.icon"/>
                   </el-icon>
                 </template>
               </el-input>
@@ -94,14 +94,14 @@
 
         </div>
 
-        <el-divider style="margin: 8px 0" />
+        <el-divider style="margin: 8px 0"/>
 
         <!-- 功能设置 -->
         <div class="setting-section">
           <h3 class="section-title">
             <div class="section-icon">
               <el-icon>
-                <Tools />
+                <Tools/>
               </el-icon>
               <span>功能设置</span>
             </div>
@@ -110,7 +110,7 @@
           <el-form label-width="120px" label-position="left">
             <el-form-item v-for="feature in featureToggles" :key="feature.key" :label="feature.label">
               <div class="switch-container">
-                <el-switch v-model="settings[feature.key]" size="large" active-text="启用" inactive-text="关闭" />
+                <el-switch v-model="settings[feature.key]" size="large" active-text="启用" inactive-text="关闭"/>
                 <el-text size="small" type="info" style="margin-left: 12px">
                   {{ feature.description }}
                 </el-text>
@@ -119,21 +119,21 @@
             <!-- 时间范围 -->
             <el-form-item :label="TEXT_PROCESSING_CONFIG.timeRange.label">
               <el-slider v-model="settings.timeRange" range show-stops :min="TEXT_PROCESSING_CONFIG.timeRange.min"
-                :max="TEXT_PROCESSING_CONFIG.timeRange.max" :step="TEXT_PROCESSING_CONFIG.timeRange.step"
-                :marks="TEXT_PROCESSING_CONFIG.timeRange.marks" />
+                         :max="TEXT_PROCESSING_CONFIG.timeRange.max" :step="TEXT_PROCESSING_CONFIG.timeRange.step"
+                         :marks="TEXT_PROCESSING_CONFIG.timeRange.marks"/>
             </el-form-item>
           </el-form>
         </div>
 
 
-        <el-divider style="margin: 12px 0" />
+        <el-divider style="margin: 12px 0"/>
 
         <!-- DLL 注入配置 -->
         <div class="setting-section">
           <h3 class="section-title">
             <div class="section-icon">
               <el-icon>
-                <Upload />
+                <Upload/>
               </el-icon>
               <span>DLL 注入配置</span>
               <el-tag v-if="injected" type="success" size="small">
@@ -162,13 +162,13 @@
               <el-input v-model="settings.targetProgramPath" placeholder="请选择目标程序 (.exe)" clearable>
                 <template #prepend>
                   <el-icon>
-                    <Document />
+                    <Document/>
                   </el-icon>
                 </template>
                 <template #append>
                   <el-button @click="selectTargetProgram">
                     <el-icon>
-                      <FolderOpened />
+                      <FolderOpened/>
                     </el-icon>
                     浏览
                   </el-button>
@@ -177,17 +177,18 @@
             </el-form-item>
 
             <el-form-item label="DLL 文件路径">
-              <el-input v-model="settings.dllPath" placeholder="请选择 DLL 文件或输入下载 URL (http://... 或 https://...)"
-                clearable>
+              <el-input v-model="settings.dllPath"
+                        placeholder="请选择 DLL 文件或输入下载 URL (http://... 或 https://...)"
+                        clearable>
                 <template #prepend>
                   <el-icon>
-                    <DocumentCopy />
+                    <DocumentCopy/>
                   </el-icon>
                 </template>
                 <template #append>
                   <el-button @click="selectDllFile">
                     <el-icon>
-                      <FolderOpened />
+                      <FolderOpened/>
                     </el-icon>
                     浏览
                   </el-button>
@@ -204,13 +205,13 @@
           </el-alert>
         </div>
 
-        <el-divider style="margin: 12px 0" />
+        <el-divider style="margin: 12px 0"/>
         <!-- 预设快捷键模板 -->
         <div class="setting-section">
           <h3 class="section-title">
             <div class="section-icon">
               <el-icon>
-                <Collection />
+                <Collection/>
               </el-icon>
               <span>快捷键预设模板</span>
             </div>
@@ -218,7 +219,7 @@
 
           <el-space wrap :size="12">
             <el-card v-for="preset in presets" :key="preset.name" class="preset-card"
-              :class="{ active: isCurrentPreset(preset) }" shadow="hover" @click="applyPreset(preset)">
+                     :class="{ active: isCurrentPreset(preset) }" shadow="hover" @click="applyPreset(preset)">
               <div class="preset-content">
                 <h4>{{ preset.name }}</h4>
                 <el-space direction="vertical" :size="4">
@@ -236,21 +237,21 @@
   <!-- 快捷键帮助对话框 -->
   <el-dialog v-model="showKeyboardHelp" title="快捷键帮助" width="600px">
     <el-table :data="keyboardHelpData" stripe>
-      <el-table-column prop="key" label="键名" width="180" />
-      <el-table-column prop="description" label="说明" />
-      <el-table-column prop="example" label="示例" width="150" />
+      <el-table-column prop="key" label="键名" width="180"/>
+      <el-table-column prop="description" label="说明"/>
+      <el-table-column prop="example" label="示例" width="150"/>
     </el-table>
   </el-dialog>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { open } from '@tauri-apps/plugin-dialog'
-import { copyFile, writeTextFile, writeFile, exists, remove, readFile } from '@tauri-apps/plugin-fs'
-import { dirname, join, appCacheDir, appDataDir } from '@tauri-apps/api/path'
-import { fetch } from '@tauri-apps/plugin-http'
-import { invoke } from '@tauri-apps/api/core'
+import {ref, computed, onMounted, watch} from 'vue'
+import {ElMessage, ElMessageBox} from 'element-plus'
+import {open} from '@tauri-apps/plugin-dialog'
+import {copyFile, writeTextFile, writeFile, exists, remove, readFile} from '@tauri-apps/plugin-fs'
+import {dirname, join, appCacheDir, appDataDir} from '@tauri-apps/api/path'
+import {fetch} from '@tauri-apps/plugin-http'
+import {invoke} from '@tauri-apps/api/core'
 
 import {
   Collection,
@@ -265,7 +266,7 @@ import {
   FolderOpened,
 } from '@element-plus/icons-vue'
 
-import { validateShortcutKey } from '../utils/textProcessing.js'
+import {validateShortcutKey} from '../utils/textProcessing.js'
 import {
   SHORTCUT_FIELDS,
   AI_CONFIG_FIELDS,
@@ -277,7 +278,7 @@ import {
 } from '../constants/config.js'
 import setMg from "../composables/setMg.js";
 import aiMg from "../composables/aiMg.js";
-import { info, error } from '@tauri-apps/plugin-log';
+import {info, error} from '@tauri-apps/plugin-log';
 // Props 和 Emits
 const emit = defineEmits(['update-shortcuts'])
 // 表单数据 (绑定到响应式状态)
@@ -301,11 +302,10 @@ const aiTips = AI_TIPS
 // 检查是否可以注入
 const canInject = computed(() => {
   return settings.deepseekApi &&
-    settings.deepseekApi.trim() !== '' &&
-    settings.targetProgramPath &&
-    settings.dllPath
+      settings.deepseekApi.trim() !== '' &&
+      settings.targetProgramPath &&
+      settings.dllPath
 })
-
 // 检查目标目录下是否存在已注入的文件
 const checkInjectedFiles = async () => {
   info("Setting: 检查注入文件状态");
@@ -513,7 +513,7 @@ const handleInjectDll = async () => {
 
     // 确保目录存在
     try {
-      await invoke('create_directory', { path: injectDir })
+      await invoke('create_directory', {path: injectDir})
     } catch (e) {
       // 目录可能已存在，忽略错误
     }
@@ -568,18 +568,18 @@ const handleInjectDll = async () => {
       info("Setting: 提示用户手动复制文件");
 
       await ElMessageBox.alert(
-        `由于权限限制，无法自动复制文件到目标目录。\n\n请手动完成以下操作：\n\n1. 打开文件夹: ${injectDir}\n2. 复制以下两个文件：\n   - ${dllFileName}\n   - eat_rice.txt\n3. 粘贴到目标程序目录: ${targetDir}\n\n文件已准备好，点击"打开文件夹"按钮即可查看。`,
-        '需要手动复制文件',
-        {
-          confirmButtonText: '打开文件夹',
-          type: 'warning',
-          dangerouslyUseHTMLString: false
-        }
+          `由于权限限制，无法自动复制文件到目标目录。\n\n请手动完成以下操作：\n\n1. 打开文件夹: ${injectDir}\n2. 复制以下两个文件：\n   - ${dllFileName}\n   - eat_rice.txt\n3. 粘贴到目标程序目录: ${targetDir}\n\n文件已准备好，点击"打开文件夹"按钮即可查看。`,
+          '需要手动复制文件',
+          {
+            confirmButtonText: '打开文件夹',
+            type: 'warning',
+            dangerouslyUseHTMLString: false
+          }
       )
 
       // 打开文件夹
       try {
-        await invoke('open_folder', { path: injectDir })
+        await invoke('open_folder', {path: injectDir})
       } catch (e) {
         error(`Setting: 打开文件夹失败: ${e}`);
       }
@@ -607,13 +607,13 @@ const handleRemoveInjection = async () => {
 
   try {
     await ElMessageBox.confirm(
-      '确定要删除已注入的 DLL 和配置文件吗？',
-      '取消注入',
-      {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
+        '确定要删除已注入的 DLL 和配置文件吗？',
+        '取消注入',
+        {
+          confirmButtonText: '确定删除',
+          cancelButtonText: '取消',
+          type: 'warning',
+        }
     )
 
     removing.value = true
@@ -750,10 +750,10 @@ onMounted(() => {
 
 // 监听路径变化，自动检查注入状态
 watch(
-  () => [settings.targetProgramPath, settings.dllPath],
-  () => {
-    checkInjectedFiles()
-  }
+    () => [settings.targetProgramPath, settings.dllPath],
+    () => {
+      checkInjectedFiles()
+    }
 )
 
 </script>

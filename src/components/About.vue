@@ -1,13 +1,16 @@
 <template>
   <el-card class="about-card" shadow="hover">
     <template #header>
-      <div class="card-header">
-        <div class="header-content">
+      <div class="header-content">
+        <div style="display: flex; align-items: center; gap: 10px;">
           <el-icon :size="24" color="#409EFF">
             <InfoFilled />
           </el-icon>
           <h2>关于</h2>
         </div>
+        <el-button type="text" @click="mitt.emit('check-update', true)">
+          <span>点我更新</span>
+        </el-button>
       </div>
     </template>
 
@@ -22,7 +25,6 @@
           <span>免费软件，请勿上当受骗</span>
           <el-link target="_blank" href="https://cp.uuyo.fun" underline="never" type="primary">官网链接</el-link>
         </div>
-
       </div>
 
       <!-- 图片占位符区域 -->
@@ -68,7 +70,7 @@ import {
   Close
 } from '@element-plus/icons-vue'
 import setMg from '../composables/setMg'
-
+import mitt from '../utils/mitt'
 const { version } = setMg
 
 // 图片显示状态
@@ -99,6 +101,7 @@ const showImage = ref(false)
   display: flex;
   align-items: center;
   gap: 10px;
+  justify-content: space-between;
 }
 
 .header-content h2 {

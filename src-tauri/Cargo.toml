@@ -1,8 +1,8 @@
 [package]
 name = "copytomeandtauri"
-version = "0.1.1"
-description = "A Tauri App"
-authors = ["you"]
+version = "0.1.2"
+description = "绕过禁止粘贴限制的剪贴板工具"
+authors = ["uuyo"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

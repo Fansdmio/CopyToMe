@@ -4,12 +4,7 @@
         <div class="update-content">
             <!-- 顶部图标 -->
             <div class="update-icon">
-                <el-icon :size="60" color="#409EFF">
-                    <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-                        <path fill="currentColor"
-                            d="M512 64a448 448 0 1 1 0 896 448 448 0 0 1 0-896zm0 832a384 384 0 0 0 0-768 384 384 0 0 0 0 768zm48-176a48 48 0 1 1-96 0 48 48 0 0 1 96 0zm-48-464c-26.5 0-48 21.5-48 48v288c0 26.5 21.5 48 48 48s48-21.5 48-48V304c0-26.5-21.5-48-48-48z" />
-                    </svg>
-                </el-icon>
+                <img src="../assets/logo.png" style="width: 50px;" alt="Update Icon" />
             </div>
 
             <!-- 版本信息 -->
@@ -76,7 +71,11 @@ import { onMounted, ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Clock, Loading } from '@element-plus/icons-vue'
 import { marked } from 'marked'
+import mitt from '../utils/mitt.js'
+import setMg from '../composables/setMg'
+import { info } from '@tauri-apps/plugin-log'
 
+const { settings } = setMg
 // 配置 marked
 marked.setOptions({
     breaks: true,        // 支持 GitHub 风格的换行
@@ -92,7 +91,6 @@ const installing = ref(false)
 const downloaded = ref(0)
 const contentLength = ref(0)
 const downloadStatus = ref('准备下载...')
-const skippedVersions = ref(new Set())
 let rawUpdate = null
 
 // 计算下载百分比
@@ -144,24 +142,30 @@ const formatReleaseNotes = (notes) => {
 }
 
 // 检查更新
-const checkUpdate = async () => {
+const checkUpdate = async (disSkipVersion) => {
     try {
         const update = await check()
         console.log(update);
 
-        if (update) {
-            // 检查是否跳过了此版本
-            if (skippedVersions.value.has(update.version)) {
-                console.log(`版本 ${update.version} 已被跳过`)
-                return
+        if (!update) {
+            if (disSkipVersion) {
+                ElMessage.primary('当前已是最新版本')
             }
-            updateInfo.value = update
-            rawUpdate = update
-            updateDialogVisible.value = true
-            console.log(`发现新版本: ${update.version}`)
-            console.log(`发布日期: ${update.date}`)
-            console.log(`更新说明: ${update.body}`)
+            return
         }
+
+        disSkipVersion && info("不跳过版本检查,强制提示更新");
+        // 检查是否跳过了此版本
+        if (!disSkipVersion && settings.skippedVersions.includes(update.version)) {
+            console.log(`版本 ${update.version} 已被跳过`)
+            return
+        }
+        updateInfo.value = update
+        rawUpdate = update
+        updateDialogVisible.value = true
+        console.log(`发现新版本: ${update.version}`)
+        console.log(`发布日期: ${update.date}`)
+        console.log(`更新说明: ${update.body}`)
     } catch (error) {
         console.error('检查更新失败:', error)
     }
@@ -175,7 +179,7 @@ const startUpdate = async () => {
         downloading.value = true
         downloaded.value = 0
         contentLength.value = 0
-        console.log("updataInfo.value");
+        console.log("updateInfo.value");
         console.log(updateInfo.value);
         console.log(rawUpdate);
 
@@ -219,11 +223,14 @@ const startUpdate = async () => {
 // 跳过此版本
 const skipVersion = () => {
     if (updateInfo.value) {
-        skippedVersions.value.add(updateInfo.value.version)
+        //添加到跳过列表
+        settings.skippedVersions.push(updateInfo.value.version)
         ElMessage.info(`已跳过版本 ${updateInfo.value.version}`)
         console.log(`跳过版本: ${updateInfo.value.version}`)
     }
     updateDialogVisible.value = false
+    //保存设置
+    setMg.save()
 }
 
 // 稍后提醒
@@ -233,7 +240,8 @@ const remindLater = () => {
 }
 
 onMounted(() => {
-    checkUpdate()
+    //订阅更新事件
+    mitt.on('check-update', checkUpdate)
 })
 </script>
 
@@ -244,7 +252,7 @@ onMounted(() => {
 }
 
 .update-dialog :deep(.el-dialog__header) {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #409EFF 0%, #1989fa 100%);
     color: white;
     padding: 20px 24px;
     margin: 0;
@@ -333,12 +341,25 @@ onMounted(() => {
 }
 
 .notes-title {
-    margin: 0 0 12px 0;
+    margin: 0 0 16px 0;
     font-size: 15px;
     font-weight: 600;
     color: #303133;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #409EFF;
+    position: relative;
+    padding-left: 12px;
+}
+
+.notes-title::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 18px;
+    background: linear-gradient(180deg, #409EFF 0%, #66b1ff 100%);
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(64, 158, 255, 0.4);
 }
 
 .notes-content {
@@ -362,14 +383,42 @@ onMounted(() => {
 
 .notes-content :deep(h1) {
     font-size: 18px;
-    border-bottom: 2px solid #e1e4e8;
-    padding-bottom: 6px;
+    padding-left: 12px;
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.notes-content :deep(h1)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 20px;
+    background: linear-gradient(180deg, #409EFF 0%, #66b1ff 100%);
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(64, 158, 255, 0.4);
 }
 
 .notes-content :deep(h2) {
     font-size: 17px;
-    border-bottom: 1px solid #e1e4e8;
-    padding-bottom: 4px;
+    padding-left: 10px;
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.notes-content :deep(h2)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 16px;
+    background: linear-gradient(180deg, #66b1ff 0%, #a0cfff 100%);
+    border-radius: 2px;
+    box-shadow: 0 0 6px rgba(102, 177, 255, 0.4);
 }
 
 .notes-content :deep(h3) {
@@ -401,30 +450,106 @@ onMounted(() => {
 /* 列表样式 */
 .notes-content :deep(ul),
 .notes-content :deep(ol) {
-    margin: 8px 0;
-    padding-left: 24px;
+    margin: 12px 0;
+    padding-left: 0;
+    list-style: none;
 }
 
 .notes-content :deep(li) {
-    margin: 4px 0;
+    position: relative;
+    margin: 8px 0;
+    padding-left: 28px;
+    line-height: 1.8;
+    transition: all 0.2s ease;
 }
 
-.notes-content :deep(ul) {
-    list-style-type: disc;
+.notes-content :deep(li:hover) {
+    transform: translateX(2px);
 }
 
+/* 一级列表 - 使用现代化的图标 */
+.notes-content :deep(ul > li)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 6px;
+    height: 6px;
+    background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.15);
+    transition: all 0.3s ease;
+}
+
+.notes-content :deep(ul > li:hover)::before {
+    transform: scale(1.3);
+    box-shadow: 0 0 0 5px rgba(64, 158, 255, 0.25);
+}
+
+/* 数字列表样式 */
 .notes-content :deep(ol) {
-    list-style-type: decimal;
+    counter-reset: custom-counter;
 }
 
+.notes-content :deep(ol > li) {
+    counter-increment: custom-counter;
+}
+
+.notes-content :deep(ol > li)::before {
+    content: counter(custom-counter);
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+    color: white;
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(64, 158, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.notes-content :deep(ol > li:hover)::before {
+    transform: scale(1.15);
+    box-shadow: 0 3px 8px rgba(64, 158, 255, 0.4);
+}
+
+/* 二级列表 */
+.notes-content :deep(ul ul > li)::before {
+    background: linear-gradient(135deg, #66b1ff 0%, #a0cfff 100%);
+    box-shadow: 0 0 0 3px rgba(102, 177, 255, 0.15);
+    width: 5px;
+    height: 5px;
+}
+
+.notes-content :deep(ol ol > li)::before {
+    background: linear-gradient(135deg, #66b1ff 0%, #a0cfff 100%);
+}
+
+/* 三级列表 */
+.notes-content :deep(ul ul ul > li)::before {
+    background: linear-gradient(135deg, #a0cfff 0%, #d9ecff 100%);
+    box-shadow: 0 0 0 3px rgba(160, 207, 255, 0.15);
+    width: 4px;
+    height: 4px;
+}
+
+.notes-content :deep(ol ol ol > li)::before {
+    background: linear-gradient(135deg, #a0cfff 0%, #d9ecff 100%);
+}
+
+/* 嵌套列表间距调整 */
 .notes-content :deep(ul ul),
-.notes-content :deep(ol ul) {
-    list-style-type: circle;
-}
-
-.notes-content :deep(ul ul ul),
-.notes-content :deep(ol ul ul) {
-    list-style-type: square;
+.notes-content :deep(ol ul),
+.notes-content :deep(ul ol),
+.notes-content :deep(ol ol) {
+    margin: 6px 0;
+    padding-left: 20px;
 }
 
 /* 代码样式 */
@@ -553,7 +678,7 @@ onMounted(() => {
     justify-content: center;
     gap: 8px;
     padding: 12px;
-    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    background: linear-gradient(135deg, rgba(64, 158, 255, 0.1) 0%, rgba(102, 177, 255, 0.1) 100%);
     border-radius: 8px;
     color: #409EFF;
     font-weight: 500;
