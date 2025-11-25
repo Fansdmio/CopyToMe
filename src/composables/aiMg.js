@@ -83,7 +83,7 @@ const aiMg = {
         info(`aiMg: AI 服务健康检查结果: ${isHealthy}`);
         return isHealthy;
     },
-    async askAi(question, systemPrompt = '你是一个说话极简的老师,不要使用markdown语法等,回答只需要普通文本即可') {
+    async askAi(question, customSystemPrompt = null) {
         info(`aiMg: 发起 AI 请求, 问题长度: ${question.length}`);
         
         const apiKey = this.getApiKey()
@@ -91,6 +91,14 @@ const aiMg = {
             error("aiMg: 未获取到 API Key");
             return null
         }
+        
+        // 使用自定义提示词或用户设置的提示词
+        const systemPrompt = customSystemPrompt || setMg.get('systemPrompt') || '你是一个说话极简的老师,不要使用markdown语法等,回答只需要普通文本即可';
+        
+        // 根据深度思考配置选择模型
+        const isDeepThinking = setMg.get('deepThinking') || false;
+        const model = isDeepThinking ? 'deepseek-reasoner' : 'deepseek-chat';
+        info(`aiMg: 使用模型: ${model}, 深度思考模式: ${isDeepThinking}`);
         
         try {
             const response = await fetch('https://api.deepseek.com/chat/completions', {
@@ -100,13 +108,13 @@ const aiMg = {
                     'Authorization': `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
-                    model: 'deepseek-chat',
+                    model: model,
                     messages: [
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: question }
                     ],
                     stream: false,
-                    max_tokens: 1500,           // 限制最大token数,让回答更精简
+                    max_tokens: isDeepThinking ? 4000 : 1500,  // 深度思考模式允许更多token
                     temperature: 0.3,          // 降低随机性,回答更准确、更一致
                     top_p: 0.85,              // 采样范围,配合temperature提高准确性
                     frequency_penalty: 0.2,   // 减少重复内容
@@ -123,7 +131,18 @@ const aiMg = {
             }
             
             const answer = completion?.choices?.[0]?.message?.content ?? null
-            info(`aiMg: AI 返回答案, 长度: ${answer?.length || 0}`);
+            // 获取推理内容（如果有）
+            const reasoningContent = completion?.choices?.[0]?.message?.reasoning_content ?? null;
+            if (reasoningContent) {
+                info(`aiMg: AI 深度思考, 推理长度: ${reasoningContent.length}`);
+            }
+            info(`aiMg: AI 返回答案, 长度: ${answer?.length || 0}, 模型: ${model}`);
+            
+            // 保存历史记录
+            if (answer) {
+                await this.saveQAHistory(question, answer, model);
+            }
+            
             return answer
         } catch (e) {
             error(`aiMg: AI 请求异常: ${e}`);

@@ -180,8 +180,7 @@ const handleQuestion = debounce(async () => {
 
   info(`App.vue: AI返回答案,长度: ${answer.length}`);
 
-  // 保存记录
-  await aiMg.saveQAHistory(question, answer)
+  // 发送历史更新事件（历史记录已在 askAi 中保存）
   mitt.emit("history-update")
 
 
@@ -313,7 +312,8 @@ onMounted(async () => {
     () => settings.wxInputMode,
     () => settings.textProcessEnabled,
     () => settings.aiQAEnabled,
-    () => settings.hideWindow
+    () => settings.hideWindow,
+    () => settings.deepThinking
   ], () => {
     setMg.save()
   })

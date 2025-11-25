@@ -6,7 +6,8 @@ import {
   Document,
   ChatDotRound,
   Key,
-  User
+  User,
+  EditPen
 } from '@element-plus/icons-vue'
 
 /**
@@ -48,6 +49,23 @@ export const AI_CONFIG_FIELDS = [
     showPassword: false,
     icon: User,
     hint: '当 API 为空时,使用此用户名从服务器获取 API'
+  },
+  {
+    key: 'deepThinking',
+    label: '深度思考',
+    placeholder: '',
+    type: 'switch',
+    showPassword: false,
+    hint: '启用后AI将使用 deepseek-reasoner 模型进行深度思考,提供更详细的分析和推理过程'
+  },
+  {
+    key: 'systemPrompt',
+    label: 'AI 提示词',
+    placeholder: '请输入自定义的 AI 提示词',
+    type: 'textarea',
+    showPassword: false,
+    icon: EditPen,
+    hint: '设置 AI 助手的角色和行为,例如: 你是一个极简的助手,回答要简洁明了'
   }
 ]
 

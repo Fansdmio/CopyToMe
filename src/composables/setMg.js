@@ -17,6 +17,8 @@ const DEFAULT_SETTINGS = {
     timeRange: [1, 5],  // 时间范围 [最小值, 最大值] (毫秒),
     deepseekApi: '',
     userName: '',
+    systemPrompt: '你是一个说话极简的老师,不要使用markdown语法等,回答只需要普通文本即可',  // AI提示词
+    deepThinking: false,  // 深度思考模式
     targetProgramPath: '',  // 目标程序路径
     dllPath: '',  // DLL 文件路径
     skippedVersions: [],  // 跳过的版本列表

@@ -135,7 +135,7 @@
               <h4 class="tips-title">日常使用场景</h4>
             </div>
             <div class="tips-desc">
-              <span class="highlight-require">开启模拟输入</span>，使用模拟输入,可绕过禁止粘贴限制, 设置里可调节打字速度
+              <span class="highlight-require">开启模拟输入</span>，使用模拟输入(Ctrl+K),可绕过禁止粘贴限制, 设置里可调节打字速度
             </div>
           </div>
 
@@ -149,8 +149,8 @@
             </div>
             <div class="tips-desc">
               <span class="highlight-require">微信输入法</span> + <span class="highlight-require">开启去除换行</span> +
-              <span class="highlight-require">开启AI问答</span>，把问题复制到剪切板，再使用<span class="highlight">AI问答</span>，按 <code
-                class="code-snippet">v->2->空格</code>
+              <span class="highlight-require">开启AI问答</span>，把问题复制到剪切板(Ctrl+C)，再使用<span
+                class="highlight">AI问答(Ctrl+J)</span>，按 <code class="code-snippet">v->2->空格</code>
               即可调出AI的回答
             </div>
           </div>
@@ -160,8 +160,8 @@
             </div>
             <div class="tips-desc">
               <span class="highlight-require">开启AI问答</span> + <span
-                class="highlight-require">管理员模式运行</span>，把问题复制到剪切板，再使用<span class="highlight">AI问答</span>,再使用<span
-                class="highlight">模拟输入</span>
+                class="highlight-require">管理员模式运行</span>，把问题复制到剪切板(Ctrl+C)，再使用<span
+                class="highlight">AI问答(Ctrl+J)</span>,再使用<span class="highlight">模拟输入(Ctrl+K)</span>
               即可调出AI的回答
             </div>
           </div>

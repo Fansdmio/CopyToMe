@@ -71,14 +71,21 @@
 
           <el-form label-width=" 120px" label-position="left">
             <el-form-item v-for="field in aiConfigFields" :key="field.key" :label="field.label">
-              <el-input v-model="settings[field.key]" :placeholder="field.placeholder" :type="field.type"
-                        :show-password="field.showPassword" clearable>
+              <!-- 文本输入框 -->
+              <el-input v-if="field.type !== 'switch'" v-model="settings[field.key]" :placeholder="field.placeholder" 
+                        :type="field.type"
+                        :show-password="field.showPassword" :rows="field.type === 'textarea' ? 4 : null"
+                        :clearable="field.type !== 'textarea'">
                 <template #prepend>
                   <el-icon>
                     <component :is="field.icon"/>
                   </el-icon>
                 </template>
               </el-input>
+              <!-- 开关控件 -->
+              <div v-else class="switch-container">
+                <el-switch v-model="settings[field.key]" size="large" active-text="启用" inactive-text="关闭"/>
+              </div>
               <template #extra>
                 <el-text size="small" type="info">
                   {{ field.hint }}
