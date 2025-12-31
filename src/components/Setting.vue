@@ -103,6 +103,143 @@
 
         <el-divider style="margin: 8px 0"/>
 
+        <!-- 自定义AI设置 -->
+        <div class="setting-section">
+          <h3 class="section-title">
+            <div class="section-icon">
+              <el-icon>
+                <Setting/>
+              </el-icon>
+              <span>自定义AI设置</span>
+            </div>
+            <el-button type="primary" @click="saveAiSettingHandler">
+              保存设置
+            </el-button>
+          </h3>
+
+          <el-form label-width="120px" label-position="left">
+            <!-- 启用自定义AI -->
+            <el-form-item label="启用自定义AI">
+              <div class="switch-container">
+                <el-switch v-model="settings.useCustomAI" size="large" active-text="启用" inactive-text="关闭"/>
+                <el-text size="small" type="info" style="margin-left: 12px">
+                  启用后将使用自定义AI端点，而不是DeepSeek
+                </el-text>
+              </div>
+            </el-form-item>
+
+            <!-- 自定义AI配置（仅在启用时显示） -->
+            <template v-if="settings.useCustomAI">
+              <el-form-item label="API端点">
+                <el-input v-model="settings.customAIEndpoint" placeholder="例如: https://api.openai.com/v1 或 https://qwen.uuyo.fun/v1">
+                  <template #prepend>
+                    <el-icon><Link/></el-icon>
+                  </template>
+                </el-input>
+                <el-text size="small" type="info">只需填写到 /v1，会自动补全 /chat/completions</el-text>
+              </el-form-item>
+
+              <el-form-item label="模型名称">
+                <el-space direction="vertical" style="width: 100%; align-items: flex-start;" :size="8">
+                  <div style="display: flex; gap: 8px; width: 100%;">
+                    <el-select 
+                      v-if="availableModels.length > 0"
+                      v-model="settings.customAIModel" 
+                      placeholder="选择模型" 
+                      filterable
+                      allow-create
+                      style="flex: 1"
+                    >
+                      <el-option
+                        v-for="model in availableModels"
+                        :key="model"
+                        :label="model"
+                        :value="model"
+                      />
+                    </el-select>
+                    <el-input 
+                      v-else
+                      v-model="settings.customAIModel" 
+                      placeholder="例如: gpt-3.5-turbo 或 gemini-pro"
+                      style="flex: 1"
+                    >
+                      <template #prepend>
+                        <el-icon><Cpu/></el-icon>
+                      </template>
+                    </el-input>
+                    <el-button 
+                      @click="fetchModels" 
+                      :loading="loadingModels"
+                      :disabled="!settings.customAIEndpoint"
+                    >
+                      <el-icon v-if="!loadingModels"><Refresh/></el-icon>
+                      {{ availableModels.length > 0 ? '刷新' : '获取模型' }}
+                    </el-button>
+                  </div>
+                  <el-text size="small" type="info" style="text-align: left; display: block; width: 100%;">
+                    {{ availableModels.length > 0 ? `已获取 ${availableModels.length} 个可用模型` : '点击"获取模型"按钮自动获取可用模型列表' }}
+                  </el-text>
+                </el-space>
+              </el-form-item>
+
+              <el-form-item label="API格式">
+                <el-radio-group v-model="settings.customAIFormat">
+                  <el-radio value="openai">OpenAI格式</el-radio>
+                  <el-radio value="google">Google格式</el-radio>
+                </el-radio-group>
+              </el-form-item>
+
+              <el-form-item label="API Key">
+                <el-input v-model="settings.customAIKey" type="password" show-password placeholder="自定义AI的API Key">
+                  <template #prepend>
+                    <el-icon><Key/></el-icon>
+                  </template>
+                </el-input>
+              </el-form-item>
+            </template>
+
+            <!-- 高级设置（可折叠） -->
+            <el-form-item>
+              <el-button @click="showAdvancedSettings = !showAdvancedSettings" text>
+                <el-icon><CaretRight v-if="!showAdvancedSettings"/><CaretBottom v-else/></el-icon>
+                高级设置
+              </el-button>
+            </el-form-item>
+
+            <!-- 高级参数（折叠区域） -->
+            <el-collapse-transition>
+              <div v-show="showAdvancedSettings" class="advanced-settings">
+                <el-form-item label="Temperature">
+                  <el-slider v-model="settings.aiTemperature" :min="0" :max="2" :step="0.1" show-input :marks="{0: '0', 1: '1', 2: '2'}" style="margin-bottom: -8px;"/>
+                  <el-text size="small" type="info" style="margin-top: 16px; display: block;">控制输出的随机性，值越高越随机</el-text>
+                </el-form-item>
+
+                <el-form-item label="Top P">
+                  <el-slider v-model="settings.aiTopP" :min="0" :max="1" :step="0.05" show-input :marks="{0: '0', 0.5: '0.5', 1: '1'}" style="margin-bottom: -8px;"/>
+                  <el-text size="small" type="info" style="margin-top: 16px; display: block;">控制采样范围，与temperature配合使用</el-text>
+                </el-form-item>
+
+                <el-form-item label="最大Tokens">
+                  <el-input-number v-model="settings.aiMaxTokens" :min="100" :max="8000" :step="100" style="width: 100%; margin-bottom: -8px;"/>
+                  <el-text size="small" type="info" style="margin-top: 16px; display: block;">限制AI回答的最大长度</el-text>
+                </el-form-item>
+
+                <el-form-item label="频率惩罚">
+                  <el-slider v-model="settings.aiFrequencyPenalty" :min="-2" :max="2" :step="0.1" show-input :marks="{'-2': '-2', 0: '0', 2: '2'}" style="margin-bottom: -8px;"/>
+                  <el-text size="small" type="info" style="margin-top: 16px; display: block;">减少重复内容的出现频率</el-text>
+                </el-form-item>
+
+                <el-form-item label="存在惩罚">
+                  <el-slider v-model="settings.aiPresencePenalty" :min="-2" :max="2" :step="0.1" show-input :marks="{'-2': '-2', 0: '0', 2: '2'}" style="margin-bottom: -8px;"/>
+                  <el-text size="small" type="info" style="margin-top: 16px; display: block;">鼓励谈论新话题</el-text>
+                </el-form-item>
+              </div>
+            </el-collapse-transition>
+          </el-form>
+        </div>
+
+        <el-divider style="margin: 8px 0"/>
+
         <!-- 功能设置 -->
         <div class="setting-section">
           <h3 class="section-title">
@@ -271,6 +408,12 @@ import {
   Document,
   DocumentCopy,
   FolderOpened,
+  Setting,
+  Link,
+  Key,
+  CaretRight,
+  CaretBottom,
+  Refresh
 } from '@element-plus/icons-vue'
 
 import {validateShortcutKey} from '../utils/textProcessing.js'
@@ -292,6 +435,11 @@ const emit = defineEmits(['update-shortcuts'])
 const settings = setMg.settings
 // 保存状态
 const showKeyboardHelp = ref(false)
+const showAdvancedSettings = ref(false)
+
+// 自定义AI相关状态
+const availableModels = ref([])
+const loadingModels = ref(false)
 
 // DLL 注入相关状态
 const injecting = ref(false)
@@ -695,6 +843,32 @@ const resetSettingsHandler = () => {
   setMg.reset();
 }
 
+// 获取可用模型列表
+const fetchModels = async () => {
+  info("Setting: 获取可用模型列表");
+  if (!settings.customAIEndpoint) {
+    ElMessage.warning('请先填写API端点');
+    return;
+  }
+  
+  loadingModels.value = true;
+  try {
+    const models = await aiMg.fetchAvailableModels();
+    if (models && models.length > 0) {
+      availableModels.value = models;
+      ElMessage.success(`成功获取 ${models.length} 个可用模型`);
+    } else {
+      availableModels.value = [];
+      ElMessage.info('未获取到可用模型');
+    }
+  } catch (e) {
+    error(`Setting: 获取模型失败: ${e}`);
+    ElMessage.error('获取模型失败');
+  } finally {
+    loadingModels.value = false;
+  }
+}
+
 //保存ai设置
 const saveAiSettingHandler = async () => {
   info("Setting: 保存AI设置");
@@ -913,6 +1087,41 @@ watch(
 
 :deep(.el-alert__title) {
   font-size: 13px;
+}
+
+/* 高级设置样式 */
+.advanced-settings {
+  padding: 16px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.advanced-settings .el-form-item {
+  margin-bottom: 20px;
+}
+
+.advanced-settings .el-text {
+  display: block;
+  margin-top: 4px;
+}
+
+/* 模型选择框样式优化 */
+:deep(.el-select) {
+  text-align: left;
+}
+
+:deep(.el-select .el-input__inner) {
+  text-align: left;
+}
+
+:deep(.el-select-dropdown__item) {
+  text-align: left;
+  white-space: normal;
+  height: auto;
+  min-height: 34px;
+  line-height: 1.5;
+  padding: 8px 20px;
 }
 
 /* 响应式调整 */

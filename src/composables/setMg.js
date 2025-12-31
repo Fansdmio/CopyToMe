@@ -21,6 +21,18 @@ const DEFAULT_SETTINGS = {
     userName: '',
     systemPrompt: '你是一个说话极简的答题助手,不要使用md语法',  // AI提示词
     deepThinking: false,  // 深度思考模式
+    // 自定义AI设置
+    useCustomAI: false,  // 是否使用自定义AI
+    customAIEndpoint: '',  // 自定义AI端点
+    customAIModel: '',  // 自定义AI模型
+    customAIFormat: 'openai',  // API格式: 'openai' 或 'google'
+    customAIKey: '',  // 自定义AI的API Key
+    // AI高级参数
+    aiTemperature: 0.7,  // 温度参数 0-2
+    aiTopP: 0.85,  // top_p参数 0-1
+    aiMaxTokens: 1500,  // 最大token数
+    aiFrequencyPenalty: 0.2,  // 频率惩罚 -2到2
+    aiPresencePenalty: 0.1,  // 存在惩罚 -2到2
     targetProgramPath: '',  // 目标程序路径
     dllPath: '',  // DLL 文件路径
     skippedVersions: [],  // 跳过的版本列表
