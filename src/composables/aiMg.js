@@ -187,7 +187,8 @@ const aiMg = {
         if (format === 'openai') {
             endpoint = `${baseUrl}/chat/completions`;
         } else {
-            endpoint = baseUrl;
+            // Google格式: /v1/models/{model}:generateContent
+            endpoint = `${baseUrl}/models/${model}:generateContent`;
         }
         
         info(`aiMg: 使用自定义AI, 端点: ${endpoint}, 模型: ${model}, 格式: ${format}`);
@@ -347,7 +348,7 @@ const aiMg = {
     },
     
     /**
-     * 补全API端点URL
+     * 补全API端点URL（仅返回基础路径，不包含具体的 API 路径）
      */
     completeEndpoint(endpoint, format = 'openai') {
         if (!endpoint) return endpoint;
@@ -355,20 +356,27 @@ const aiMg = {
         // 移除末尾的斜杠
         endpoint = endpoint.replace(/\/+$/, '');
         
-        // 如果已经包含完整路径，直接返回
-        if (endpoint.includes('/chat/completions') || endpoint.includes('/models')) {
-            return endpoint;
-        }
+        // 移除可能已经包含的 API 路径（只保留基础 URL）
+        // 注意：要先移除这些路径，再处理 :generateContent
+        endpoint = endpoint.replace(/\/chat\/completions.*$/, '');
+        endpoint = endpoint.replace(/\/models.*$/, '');
         
-        // 根据格式补全
+        // 移除 :generateContent 这样的后缀（但不要移除 https:// 中的冒号）
+        // 使用更精确的正则：匹配路径中的冒号开头的内容
+        endpoint = endpoint.replace(/(\/[^/]+):generateContent.*$/, '$1');
+        
+        // 根据格式补全基础路径
         if (format === 'openai') {
-            // OpenAI格式
+            // OpenAI格式: 补全 /v1
             if (!endpoint.endsWith('/v1')) {
                 endpoint += '/v1';
             }
             return endpoint;
         } else {
-            // Google格式不需要补全
+            // Google格式: 补全 /v1 (Google API 也使用 /v1 作为基础路径)
+            if (!endpoint.endsWith('/v1')) {
+                endpoint += '/v1';
+            }
             return endpoint;
         }
     },
@@ -421,11 +429,47 @@ const aiMg = {
                 info(`aiMg: 获取到 ${models.length} 个可用模型`);
                 return models;
             } else {
-                // Google格式 - 通常需要不同的API
-                // Gemini使用 /v1/models 但返回格式不同
-                info(`aiMg: Google格式暂不支持自动获取模型列表`);
-                ElMessage.warning('Google格式暂不支持自动获取模型，请手动输入模型名称');
-                return [];
+                // Google格式 - 使用 /v1/models 端点
+                const baseUrl = this.completeEndpoint(endpoint, format);
+                let modelsUrl = `${baseUrl}/models`;
+                
+                // Google API使用查询参数传递key
+                if (customKey) {
+                    modelsUrl += `?key=${customKey}`;
+                }
+                
+                info(`aiMg: 请求Google模型列表: ${modelsUrl}`);
+                const response = await fetch(modelsUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    error(`aiMg: 获取模型列表失败: ${data.error.message}`);
+                    ElMessage.error('获取模型列表失败: ' + data.error.message);
+                    return [];
+                }
+                
+                // 兼容两种格式：
+                // 1. OpenAI格式（很多代理使用）: {data: [{id: "model-name"}, ...]}
+                // 2. 真正的Google格式: {models: [{name: "models/model-name"}, ...]}
+                let models = [];
+                if (data.data && Array.isArray(data.data)) {
+                    // OpenAI兼容格式
+                    models = data.data.map(m => m.id);
+                } else if (data.models && Array.isArray(data.models)) {
+                    // 真正的Google Gemini格式
+                    models = data.models.map(m => {
+                        // 提取模型名称（去除 "models/" 前缀）
+                        return m.name?.replace('models/', '') || m.name;
+                    });
+                }
+                info(`aiMg: 获取到 ${models.length} 个可用模型`);
+                return models;
             }
         } catch (e) {
             error(`aiMg: 获取模型列表异常: ${e}`);
