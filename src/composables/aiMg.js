@@ -185,6 +185,24 @@ const aiMg = {
         info("aiMg: 清空问答历史记录");
         this.store.set(QA_HISTORY_KEY, [])
         await this.store.save()
+    },
+    async deleteQAHistoryByIndex(index) {
+        info(`aiMg: 删除问答记录, 索引: ${index}`);
+        try {
+            let history = await this.store.get(QA_HISTORY_KEY) || [];
+            if (index >= 0 && index < history.length) {
+                history.splice(index, 1);
+                this.store.set(QA_HISTORY_KEY, history);
+                await this.store.save();
+                info(`aiMg: 问答记录删除成功, 剩余记录数: ${history.length}`);
+                return true;
+            }
+            error(`aiMg: 无效的索引: ${index}`);
+            return false;
+        } catch (e) {
+            error(`aiMg: 删除问答记录失败: ${e}`);
+            return false;
+        }
     }
 }
 

@@ -11,12 +11,6 @@
             共 {{ allHistory.length }} 条
           </el-tag>
         </div>
-        <el-button @click="clearHistory" type="danger" size="small" :disabled="allHistory.length === 0">
-          <el-icon>
-            <Delete />
-          </el-icon>
-          清空记录
-        </el-button>
       </div>
     </template>
 
@@ -34,6 +28,15 @@
       <el-timeline class="history-timeline">
         <el-timeline-item v-for="(item, index) in displayedHistory" :key="index" :timestamp="item.time" placement="top">
           <el-card class="history-item" shadow="hover">
+            <!-- 删除按钮（右上角） -->
+            <div class="delete-button-wrapper">
+              <el-button type="info" size="small" text @click="deleteHistoryItem(index)" circle>
+                <el-icon>
+                  <Delete />
+                </el-icon>
+              </el-button>
+            </div>
+            
             <div class="question-section">
               <div class="section-header">
                 <el-icon color="#409EFF">
@@ -182,6 +185,39 @@ const copyToClipboard = async (text) => {
   }
 }
 
+// 删除单条历史记录
+const deleteHistoryItem = async (index) => {
+  info(`History: 尝试删除历史记录, 索引: ${index}`);
+  try {
+    await ElMessageBox.confirm('确定要删除这条问答记录吗?', '确认删除', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+
+    // 找到在全部历史中的真实索引
+    const item = displayedHistory.value[index]
+    const realIndex = allHistory.value.findIndex(h => 
+      h.question === item.question && 
+      h.answer === item.answer && 
+      h.time === item.time
+    )
+
+    if (realIndex !== -1 && await aiMg.deleteQAHistoryByIndex(realIndex)) {
+      info("History: 历史记录已删除");
+      ElMessage.success('已删除记录')
+      // 重新加载历史记录
+      await loadHistory()
+    } else {
+      error("History: 删除失败");
+      ElMessage.error('删除失败')
+    }
+  } catch {
+    // 用户取消
+    info("History: 用户取消删除操作");
+  }
+}
+
 
 
 mitt.on('history-update', loadHistory)
@@ -289,10 +325,29 @@ onMounted(() => {
 
 .history-item {
   margin-bottom: 8px;
+  position: relative;
 }
 
 .history-item :deep(.el-card__body) {
   padding: 12px;
+  padding-top: 8px;
+}
+
+.delete-button-wrapper {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+}
+
+.delete-button-wrapper .el-button {
+  color: #909399;
+  transition: all 0.3s;
+}
+
+.delete-button-wrapper .el-button:hover {
+  color: #f56c6c;
+  background-color: #fef0f0;
 }
 
 .question-section,
