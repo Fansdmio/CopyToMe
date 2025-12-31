@@ -107,7 +107,7 @@ export const FEATURE_TOGGLES = [
   },
   {
     key: 'autoHideTray',
-    label: '自动隐藏托盘图标',
+    label: '自动隐藏托盘',
     description: '打开程序时自动隐藏系统托盘图标'
   }
 ]

@@ -22,6 +22,64 @@ window.addEventListener('unhandledrejection', (event) => {
     error(`main.js: 未处理的Promise拒绝 - ${event.reason}`);
 });
 
+// 禁用浏览器默认快捷键
+window.addEventListener('keydown', (event) => {
+    // 禁用 Ctrl+R / Cmd+R (刷新)
+    if ((event.ctrlKey || event.metaKey) && event.key === 'r') {
+        event.preventDefault();
+        info('main.js: 阻止刷新操作');
+        return false;
+    }
+    
+    // 禁用 Ctrl+P / Cmd+P (打印)
+    if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
+        event.preventDefault();
+        info('main.js: 阻止打印操作');
+        return false;
+    }
+    
+    // 禁用 F5 (刷新)
+    if (event.key === 'F5') {
+        event.preventDefault();
+        info('main.js: 阻止F5刷新');
+        return false;
+    }
+    
+    // 禁用 Ctrl+Shift+R / Cmd+Shift+R (强制刷新)
+    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'r') {
+        event.preventDefault();
+        info('main.js: 阻止强制刷新操作');
+        return false;
+    }
+    
+    // 禁用 F12 (开发者工具) - 可选
+    if (event.key === 'F12') {
+        event.preventDefault();
+        info('main.js: 阻止开发者工具');
+        return false;
+    }
+    
+    // 禁用 Ctrl+Shift+I / Cmd+Option+I (开发者工具)
+    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'i') {
+        event.preventDefault();
+        info('main.js: 阻止开发者工具');
+        return false;
+    }
+    
+    // 禁用 Ctrl+U / Cmd+U (查看源代码)
+    if ((event.ctrlKey || event.metaKey) && event.key === 'u') {
+        event.preventDefault();
+        info('main.js: 阻止查看源代码');
+        return false;
+    }
+}, true);
+
+// 禁用右键菜单（可选）
+window.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+    return false;
+});
+
 // 全局托盘图标变量
 let globalTrayIcon = null;
 

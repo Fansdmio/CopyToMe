@@ -3,6 +3,22 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  /* 禁用文本选中 */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 允许输入框和文本域选中文本 */
+input,
+textarea,
+.el-input__inner,
+.el-textarea__inner {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }
 
 body, html {

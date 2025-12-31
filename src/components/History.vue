@@ -322,6 +322,12 @@ onMounted(() => {
   border-radius: 6px;
   white-space: pre-wrap;
   word-break: break-word;
+  /* 允许选中文本 */
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  cursor: text;
 }
 
 /* 回答内容添加最大高度和滚动条 */

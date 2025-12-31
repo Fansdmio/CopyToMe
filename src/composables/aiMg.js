@@ -79,12 +79,12 @@ const aiMg = {
         info("aiMg: 检查 AI 服务健康状态");
         //尝试刷新缓存的 API Key
         await this.refreshCachedApi();
-        const isHealthy = !!(await this.askAi("hello"));
+        const isHealthy = !!(await this.askAi("hello", null, false)); // 不保存健康检查记录
         info(`aiMg: AI 服务健康检查结果: ${isHealthy}`);
         return isHealthy;
     },
-    async askAi(question, customSystemPrompt = null) {
-        info(`aiMg: 发起 AI 请求, 问题长度: ${question.length}`);
+    async askAi(question, customSystemPrompt = null, saveHistory = true) {
+        info(`aiMg: 发起 AI 请求, 问题长度: ${question.length}, 保存记录: ${saveHistory}`);
         
         const apiKey = this.getApiKey()
         if (!apiKey) {
@@ -138,9 +138,11 @@ const aiMg = {
             }
             info(`aiMg: AI 返回答案, 长度: ${answer?.length || 0}, 模型: ${model}`);
             
-            // 保存历史记录
-            if (answer) {
+            // 保存历史记录（如果需要）
+            if (answer && saveHistory) {
                 await this.saveQAHistory(question, answer, model);
+            } else if (answer && !saveHistory) {
+                info(`aiMg: 跳过保存历史记录（健康检查或其他不需要保存的请求）`);
             }
             
             return answer
