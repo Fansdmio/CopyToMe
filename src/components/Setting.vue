@@ -428,6 +428,7 @@ import {
 } from '../constants/config.js'
 import setMg from "../composables/setMg.js";
 import aiMg from "../composables/aiMg.js";
+import mitt from '../utils/mitt.js';
 import {info, error} from '@tauri-apps/plugin-log';
 // Props 和 Emits
 const emit = defineEmits(['update-shortcuts'])
@@ -466,7 +467,11 @@ const checkInjectedFiles = async () => {
   info("Setting: 检查注入文件状态");
   if (!settings.targetProgramPath || !settings.dllPath) {
     info("Setting: 路径未配置,跳过检查");
+    const oldValue = injected.value;
     injected.value = false
+    if (oldValue !== injected.value) {
+      mitt.emit('injection-update'); // 状态变化，通知 Home
+    }
     return
   }
 
@@ -489,11 +494,22 @@ const checkInjectedFiles = async () => {
     const dllExists = await exists(targetDllPath)
     const apiExists = await exists(apiFilePath)
 
+    const oldValue = injected.value;
     injected.value = dllExists && apiExists
     info(`Setting: 注入状态检查完成 - DLL存在:${dllExists}, API文件存在:${apiExists}, 注入状态:${injected.value}`);
+    
+    // 如果状态发生变化，通知 Home 页面
+    if (oldValue !== injected.value) {
+      info(`Setting: 注入状态变化 ${oldValue} -> ${injected.value}, 发送更新事件`);
+      mitt.emit('injection-update');
+    }
   } catch (err) {
     error(`Setting: 检查注入文件失败: ${err}`);
+    const oldValue = injected.value;
     injected.value = false
+    if (oldValue !== injected.value) {
+      mitt.emit('injection-update'); // 状态变化，通知 Home
+    }
   }
 }
 
@@ -716,6 +732,7 @@ const handleInjectDll = async () => {
       await copyFile(appApiFilePath, targetApiFilePath)
       info(`Setting: 文件已自动复制到目标目录: ${targetDir}`);
       injected.value = true
+      mitt.emit('injection-update'); // 通知 Home 页面更新注入状态
       ElMessage.success('DLL 注入成功！')
     } catch (err) {
       error(`Setting: 自动复制失败: ${err}`);
@@ -804,6 +821,7 @@ const handleRemoveInjection = async () => {
 
     if (deletedFiles.length > 0) {
       injected.value = false
+      mitt.emit('injection-update'); // 通知 Home 页面更新注入状态
       info(`Setting: 删除完成: ${deletedFiles.join(', ')}`);
       ElMessage.success(`已删除: ${deletedFiles.join(', ')}`)
     } else {

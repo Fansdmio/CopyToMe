@@ -25,8 +25,9 @@
               <span style="font-size: 14px; color: #909399;">次</span>
             </template>
           </el-statistic>
-          <div class="ai-status">
+          <div class="status-bar">
             <el-tag @click="checkAi" :type="aiStatus.healthy" effect="light" round>{{ aiStatus.message }}</el-tag>
+            <el-tag @click="checkInjection" :type="injectionStatus.type" effect="light" round>{{ injectionStatus.message }}</el-tag>
           </div>
         </el-col>
       </el-row>
@@ -209,6 +210,8 @@ import aiMg from "../composables/aiMg.js";
 import setMg from "../composables/setMg.js";
 import mitt from '../utils/mitt.js';
 import { info, error } from '@tauri-apps/plugin-log';
+import { exists } from '@tauri-apps/plugin-fs';
+import { dirname, join } from '@tauri-apps/api/path';
 const { settings } = setMg
 
 
@@ -217,6 +220,10 @@ const aiStatus = ref({
   message: '检查AI服务中...'
 })
 
+const injectionStatus = ref({
+  type: "info",
+  message: '检查注入状态中...'
+})
 
 // 问答次数统计
 const qaCount = ref(0)
@@ -355,10 +362,86 @@ const checkAi = async () => {
   }
 }
 
+// 判断是否是URL
+const isURL = (str) => {
+  try {
+    const url = new URL(str)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+const checkInjection = async () => {
+  try {
+    info("Home: 开始检查注入状态");
+    injectionStatus.value = {
+      type: "info",
+      message: '检查注入状态中...'
+    }
+
+    const targetProgramPath = setMg.get('targetProgramPath');
+    const dllPath = setMg.get('dllPath');
+
+    // 未配置路径时也显示未注入
+    if (!targetProgramPath || !dllPath) {
+      info("Home: 未配置目标程序或DLL路径，显示未注入");
+      injectionStatus.value = {
+        type: "warning",
+        message: '未注入'
+      }
+      return
+    }
+
+    const targetDir = await dirname(targetProgramPath);
+
+    // 获取 DLL 文件名
+    let dllFileName = dllPath.split(/[\/\\]/).pop();
+
+    // 如果是URL，需要从URL中提取文件名
+    if (isURL(dllPath)) {
+      const urlPath = new URL(dllPath).pathname;
+      dllFileName = urlPath.split('/').pop() || 'downloaded.dll';
+    }
+
+    const targetDllPath = await join(targetDir, dllFileName);
+    const apiFilePath = await join(targetDir, 'eat_rice.txt');
+
+    // 检查两个文件是否都存在
+    const dllExists = await exists(targetDllPath);
+    const apiExists = await exists(apiFilePath);
+
+    const isInjected = dllExists && apiExists;
+    info(`Home: 注入状态检查完成 - DLL存在:${dllExists}, API文件存在:${apiExists}, 注入状态:${isInjected}`);
+
+    if (isInjected) {
+      injectionStatus.value = {
+        type: "success",
+        message: '已注入'
+      }
+    } else {
+      injectionStatus.value = {
+        type: "warning",
+        message: '未注入'
+      }
+    }
+  } catch (e) {
+    error(`Home: 注入状态检查异常: ${e}`);
+    injectionStatus.value = {
+      type: "warning",
+      message: '未注入'
+    }
+  }
+}
+
+// 监听注入状态更新事件
+mitt.on('injection-update', checkInjection);
+
 onMounted(() => {
   try {
     info("Home: 组件挂载");
     loadQACount()
+    checkInjection()
   } catch (e) {
     error(`Home: 组件挂载失败: ${e}`);
   }
@@ -370,14 +453,15 @@ defineExpose({
 </script>
 
 <style scoped>
-.ai-status {
+.status-bar {
   display: flex;
   justify-content: center;
-  margin-top: 5px;
-
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
 }
 
-.ai-status>span {
+.status-bar>span {
   cursor: pointer;
 }
 
