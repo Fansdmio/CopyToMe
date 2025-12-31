@@ -5,7 +5,7 @@ import { fetch } from '@tauri-apps/plugin-http'
 import { info, error } from '@tauri-apps/plugin-log';
 
 const QA_HISTORY_KEY = 'copytome_qa_history'
-const MAX_HISTORY = 200
+const MAX_HISTORY = 2000
 
 const aiMg = {
     cachedApi: '',
@@ -93,7 +93,7 @@ const aiMg = {
         }
         
         // 使用自定义提示词或用户设置的提示词
-        const systemPrompt = customSystemPrompt || setMg.get('systemPrompt') || '你是一个说话极简的老师,不要使用markdown语法等,回答只需要普通文本即可';
+        const systemPrompt = customSystemPrompt || setMg.get('systemPrompt') || '你是一个说话极简的答题助手,不要使用md语法';
         
         // 根据深度思考配置选择模型
         const isDeepThinking = setMg.get('deepThinking') || false;

@@ -13,9 +13,11 @@ import { info, error, warn } from '@tauri-apps/plugin-log';
 export function useShortcuts() {
   const registered = ref(false)
   const stopKeyRegistered = ref(false)
+  const toggleWindowRegistered = ref(false)
   const currentKeys = ref({
     textKey: null,
     questionKey: null,
+    toggleWindowKey: null,
     stopKey: 'K'
   })
 
@@ -42,6 +44,52 @@ export function useShortcuts() {
       error(`useShortcuts: 快捷键注册失败: ${e}`);
       ElMessage.error('快捷键注册失败: ' + e.message)
       return false
+    }
+  }
+
+  /**
+   * 注册显示/隐藏托盘图标快捷键
+   */
+  const registerToggleWindowKey = async (toggleWindowKey, toggleWindowHandler) => {
+    if (toggleWindowRegistered.value) {
+      info(`useShortcuts: 显示/隐藏托盘图标快捷键已注册,跳过`);
+      return true
+    }
+    
+    info(`useShortcuts: 注册显示/隐藏托盘图标快捷键 ${toggleWindowKey}`);
+    try {
+      await register(toggleWindowKey, toggleWindowHandler)
+      currentKeys.value.toggleWindowKey = toggleWindowKey
+      toggleWindowRegistered.value = true
+      info(`useShortcuts: 显示/隐藏托盘图标快捷键 ${toggleWindowKey} 已注册`)
+      return true
+    } catch (e) {
+      error(`useShortcuts: 显示/隐藏托盘图标快捷键注册失败: ${e}`);
+      ElMessage.error('显示/隐藏托盘图标快捷键注册失败: ' + e.message)
+      return false
+    }
+  }
+
+  /**
+   * 注销显示/隐藏托盘图标快捷键
+   */
+  const unregisterToggleWindowKey = async () => {
+    if (!toggleWindowRegistered.value || !currentKeys.value.toggleWindowKey) {
+      info(`useShortcuts: 显示/隐藏托盘图标快捷键未注册,无需注销`);
+      return true
+    }
+    
+    info(`useShortcuts: 注销显示/隐藏托盘图标快捷键 ${currentKeys.value.toggleWindowKey}`);
+    try {
+      await unregister(currentKeys.value.toggleWindowKey)
+      currentKeys.value.toggleWindowKey = null
+      toggleWindowRegistered.value = false
+      info(`useShortcuts: 显示/隐藏托盘图标快捷键已注销`)
+      return true
+    } catch (e) {
+      error(`useShortcuts: 显示/隐藏托盘图标快捷键注销失败: ${e}`);
+      toggleWindowRegistered.value = false
+      return true
     }
   }
 
@@ -135,11 +183,14 @@ export function useShortcuts() {
   return {
     registered,
     stopKeyRegistered,
+    toggleWindowRegistered,
     currentKeys,
     registerShortcuts,
     unregisterShortcuts,
     updateShortcuts,
     registerStopKey,
-    unregisterStopKey
+    unregisterStopKey,
+    registerToggleWindowKey,
+    unregisterToggleWindowKey
   }
 }

@@ -9,15 +9,17 @@ const VERSION = '200251110v3'
 const DEFAULT_SETTINGS = {
     textKey: 'CmdOrControl+K',
     questionKey: 'CmdOrControl+J',
+    toggleWindowKey: 'CmdOrControl+Shift+Y',  // 显示/隐藏窗口快捷键
     wxInputMode: true,
     textProcessEnabled: true,
     aiQAEnabled: true,
     hideWindow: false,
     autoStart: false,
+    autoHideTray: false,  // 自动隐藏托盘图标
     timeRange: [1, 5],  // 时间范围 [最小值, 最大值] (毫秒),
     deepseekApi: '',
     userName: '',
-    systemPrompt: '你是一个说话极简的老师,不要使用markdown语法等,回答只需要普通文本即可',  // AI提示词
+    systemPrompt: '你是一个说话极简的答题助手,不要使用md语法',  // AI提示词
     deepThinking: false,  // 深度思考模式
     targetProgramPath: '',  // 目标程序路径
     dllPath: '',  // DLL 文件路径

@@ -200,7 +200,8 @@ import {
   CopyDocument,
   Key,
   Position,
-  VideoPause
+  VideoPause,
+  View
 } from '@element-plus/icons-vue'
 
 import StatusTag from './common/StatusTag.vue'
@@ -254,6 +255,15 @@ const shortcuts = computed(() => [
     color: '#67C23A',
     tagType: 'success',
     keyValue: settings.questionKey
+  },
+  {
+    key: 'toggleWindow',
+    title: '显示/隐藏托盘图标',
+    description: '快速切换系统托盘图标的显示和隐藏',
+    icon: View,
+    color: '#E6A23C',
+    tagType: 'warning',
+    keyValue: settings.toggleWindowKey
   }
 ])
 

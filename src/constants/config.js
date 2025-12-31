@@ -7,7 +7,8 @@ import {
   ChatDotRound,
   Key,
   User,
-  EditPen
+  EditPen,
+  View
 } from '@element-plus/icons-vue'
 
 /**
@@ -25,6 +26,12 @@ export const SHORTCUT_FIELDS = [
     label: 'AI 问答快捷键',
     placeholder: '例如: CmdOrControl+J',
     icon: ChatDotRound
+  },
+  {
+    key: 'toggleWindowKey',
+    label: '显示/隐藏托盘',
+    placeholder: '例如: CmdOrControl+Shift+Y',
+    icon: View
   }
 ]
 
@@ -97,6 +104,11 @@ export const FEATURE_TOGGLES = [
     key: 'autoStart',
     label: '开机自启动',
     description: '开机自启动'
+  },
+  {
+    key: 'autoHideTray',
+    label: '自动隐藏托盘图标',
+    description: '打开程序时自动隐藏系统托盘图标'
   }
 ]
 

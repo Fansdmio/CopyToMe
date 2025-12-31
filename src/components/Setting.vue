@@ -727,7 +727,7 @@ const saveAiSettingHandler = async () => {
 
 // 保存快捷键设置
 const saveShortcutKeySettingsHandler = async () => {
-  info(`Setting: 保存快捷键设置 - 文本:${settings.textKey}, 问答:${settings.questionKey}`);
+  info(`Setting: 保存快捷键设置 - 文本:${settings.textKey}, 问答:${settings.questionKey}, 窗口切换:${settings.toggleWindowKey}`);
   // 验证快捷键
   if (!validateShortcutKey(settings.textKey)) {
     error("Setting: 模拟输入快捷键格式不正确");
@@ -739,14 +739,21 @@ const saveShortcutKeySettingsHandler = async () => {
     ElMessage.error('AI 问答快捷键格式不正确')
     return
   }
-  if (settings.textKey === settings.questionKey) {
-    error("Setting: 两个快捷键相同");
-    ElMessage.error('两个快捷键不能相同')
+  if (!validateShortcutKey(settings.toggleWindowKey)) {
+    error("Setting: 显示/隐藏托盘图标快捷键格式不正确");
+    ElMessage.error('显示/隐藏托盘图标快捷键格式不正确')
+    return
+  }
+  if (settings.textKey === settings.questionKey || 
+      settings.textKey === settings.toggleWindowKey || 
+      settings.questionKey === settings.toggleWindowKey) {
+    error("Setting: 快捷键有重复");
+    ElMessage.error('快捷键不能重复')
     return
   }
   await setMg.save()
   emit('update-shortcuts')
-
+  ElMessage.success('快捷键设置已保存')
 }
 
 // 组件挂载时检查是否已注入

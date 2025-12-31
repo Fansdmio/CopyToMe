@@ -90,13 +90,14 @@ import { fetch } from "@tauri-apps/plugin-http";
 import mitt from './utils/mitt.js'
 import { trace, info, error, attachConsole } from '@tauri-apps/plugin-log';
 import Update from './components/Update.vue';
+import { toggleTrayIcon, isTrayIconVisible, hideTrayIcon, showTrayIcon } from './main.js';
 
 // const detach = await attachConsole();
 info('App.vue: 应用启动');
 
 
 // 使用 快捷键管理器
-const { registerShortcuts, updateShortcuts, registerStopKey, unregisterStopKey } = useShortcuts()
+const { registerShortcuts, updateShortcuts, registerStopKey, unregisterStopKey, registerToggleWindowKey, unregisterToggleWindowKey } = useShortcuts()
 const homeRef = ref(null)
 
 // 初始化设置为默认值，会在 onBeforeMount 中更新为实际值
@@ -195,15 +196,39 @@ const handleQuestion = debounce(async () => {
   ElMessage.success('AI 回答已复制到剪贴板')
 })
 
+// 托盘图标显示/隐藏切换处理函数
+const handleToggleWindow = debounce(async () => {
+  info("App.vue: 触发托盘图标显示/隐藏快捷键");
+  try {
+    const wasVisible = isTrayIconVisible();
+    await toggleTrayIcon();
+    const isVisible = isTrayIconVisible();
+    
+    if (isVisible && !wasVisible) {
+      info("App.vue: 托盘图标已显示");
+      ElMessage.success('托盘图标已显示');
+    } else if (!isVisible && wasVisible) {
+      info("App.vue: 托盘图标已隐藏");
+      ElMessage.success('托盘图标已隐藏');
+    }
+  } catch (e) {
+    error(`App.vue: 托盘图标显示/隐藏切换失败: ${e}`);
+    ElMessage.error('托盘图标操作失败: ' + e.message);
+  }
+})
+
 // 更新快捷键处理
 const handleUpdateShortcuts = async () => {
-  info(`App.vue: 更新快捷键 - 文本:${settings.textKey}, 问答:${settings.questionKey}`);
+  info(`App.vue: 更新快捷键 - 文本:${settings.textKey}, 问答:${settings.questionKey}, 托盘图标切换:${settings.toggleWindowKey}`);
   updateShortcuts(
     settings.textKey,
     settings.questionKey,
     handleText,
     handleQuestion
   )
+  // 更新托盘图标切换快捷键
+  await unregisterToggleWindowKey()
+  await registerToggleWindowKey(settings.toggleWindowKey, handleToggleWindow)
 }
 
 //TODO 从服务器获取信息并显示通知
@@ -300,6 +325,16 @@ onMounted(async () => {
     error(`App.vue: 窗口操作失败: ${e}`);
   }
 
+  // 处理自动隐藏托盘图标
+  try {
+    if (setMg.get("autoHideTray")) {
+      info("App.vue: 自动隐藏托盘图标");
+      await hideTrayIcon()
+    }
+  } catch (e) {
+    error(`App.vue: 托盘图标操作失败: ${e}`);
+  }
+
   //检查AI健康
   try {
     info("App.vue: 开始检查AI健康状态");
@@ -313,7 +348,8 @@ onMounted(async () => {
     () => settings.textProcessEnabled,
     () => settings.aiQAEnabled,
     () => settings.hideWindow,
-    () => settings.deepThinking
+    () => settings.deepThinking,
+    () => settings.autoHideTray
   ], () => {
     setMg.save()
   })
@@ -326,6 +362,18 @@ onMounted(async () => {
   //监听自启动按钮
   watch(() => settings.autoStart, (val) => {
     saveAutoStart(val)
+  })
+
+  // 监听自动隐藏托盘图标设置变化
+  watch(() => settings.autoHideTray, async (val) => {
+    info(`App.vue: 自动隐藏托盘图标设置变更: ${val}`);
+    if (val) {
+      await hideTrayIcon()
+      ElMessage.success('托盘图标已隐藏，可通过快捷键恢复显示')
+    } else {
+      await showTrayIcon()
+      ElMessage.success('托盘图标已显示')
+    }
   })
 
   // 初始化时间范围到 Rust 后端
@@ -352,6 +400,16 @@ onMounted(async () => {
   } catch (e) {
     error(`App.vue: 快捷键注册失败: ${e}`);
     ElMessage.warning('快捷键注册失败，但应用可以继续使用');
+  }
+
+  // 注册托盘图标切换快捷键
+  try {
+    info(`App.vue: 注册托盘图标切换快捷键: ${settings.toggleWindowKey}`);
+    await registerToggleWindowKey(settings.toggleWindowKey, handleToggleWindow)
+    info("App.vue: 托盘图标切换快捷键注册成功");
+  } catch (e) {
+    error(`App.vue: 托盘图标切换快捷键注册失败: ${e}`);
+    ElMessage.warning('托盘图标切换快捷键注册失败，但应用可以继续使用');
   }
 
   info("App.vue: 初始化完成");
