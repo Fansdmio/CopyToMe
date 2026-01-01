@@ -52,12 +52,21 @@ const deploy_web = () => {
     console.log("网站页面已更新");
 }
 
+const deploy_dumpweb = () => {
+    const deploy_cmd = `scp ./website.dump.html root@uuio:/usr/local/nginx/html/CopyToMeWeb/index.html`;
+    execSync(deploy_cmd, { stdio: 'inherit' });
+    console.log("网站页面已更新");
+}
+
 switch (deploy_mode) {
     case 'app':
         deploy_app();
         break;
     case 'web':
         deploy_web();
+        break;
+    case 'dumpweb':
+        deploy_dumpweb();
         break;
     case 'md':
         update_latest();
