@@ -24,7 +24,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-website.html
+# website.html
 CLAUDE.md
 AGENTS.md
 UPDATE*.md

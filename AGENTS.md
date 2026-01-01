@@ -1,247 +1,98 @@
-# CopyToMeAndTauri - AI 剪贴板助手
+# AI 代理项目指南：CopyToMeAndTauri
 
-## 项目概述
+本指南旨在为 AI 代理提供 `CopyToMeAndTauri` 项目的深度解析，以便快速理解项目的功能、架构和代码实现，从而高效地进行后续开发与维护。
 
-CopyToMeAndTauri 是一个基于 Tauri 框架开发的跨平台桌面应用程序，旨在帮助用户绕过禁止粘贴的限制。该应用集成了 AI 问答功能和智能文本处理，通过快捷键实现剪贴板内容的智能输入和 AI 交互。
+## 1. 项目总览
 
-### 核心功能
-- **绕过粘贴限制**: 通过模拟键盘输入的方式，将剪贴板内容输入到禁止粘贴的应用程序中
-- **AI 问答集成**: 集成 DeepSeek API，支持通过快捷键调用 AI 问答功能
-- **DLL 注入**: 支持向目标程序注入 DLL 文件以扩展功能
-- **全局快捷键**: 可自定义的全局快捷键系统
-- **微信输入模式**: 针对微信等应用优化的输入模式
+`CopyToMeAndTauri` 是一个基于 Tauri (Rust 后端) 和 Vue.js (前端) 构建的桌面剪贴板增强工具。它的核心定位是作为用户剪贴板和其它应用程序之间的智能“中间人”，通过注册全局快捷键来触发一系列特殊的“粘贴”行为。
 
-## 技术栈
+**主要目标:**
 
-### 前端技术
-- **Vue 3**: 主前端框架
-- **Element Plus**: UI 组件库
-- **Vite**: 构建工具
-- **JavaScript/ES6+**: 主要编程语言
+1.  **绕过粘贴限制**: 通过模拟真实的人类按键输入，将文本粘贴到那些禁用了标准粘贴命令（如 `Ctrl+V`）的应用程序或网站中。
+2.  **AI 文本处理**: 集成多种 AI 服务（如 DeepSeek、自定义 OpenAI/Google API），允许用户将剪贴板中的文本（如问题）发送给 AI，然后将 AI 的回答自动复制回剪贴板。
 
-### 后端技术
-- **Tauri 2.0**: Rust-based 桌面应用框架
-- **Rust**: 系统级功能实现
-- **Enigo**: 键盘模拟输入库
+## 2. 核心功能详解
 
-### 关键依赖
-- **@tauri-apps/api**: Tauri 前端 API
-- **@tauri-apps/plugin-clipboard-manager**: 剪贴板管理
-- **@tauri-apps/plugin-global-shortcut**: 全局快捷键
-- **@tauri-apps/plugin-http**: HTTP 请求
-- **openai**: OpenAI API 客户端（用于 DeepSeek）
-- **marked**: Markdown 解析
-- **crypto-js**: 加密功能
+应用的两大核心功能均通过全局快捷键激活。
 
-## 项目架构
+### a. 模拟输入
 
-### 目录结构
-```
-CopyToMeAndTauri/
-├── src/                      # 前端源代码
-│   ├── components/           # Vue 组件
-│   │   ├── Home.vue         # 主页组件
-│   │   ├── History.vue      # 问答历史
-│   │   ├── Setting.vue      # 设置页面
-│   │   ├── About.vue        # 关于页面
-│   │   └── Update.vue       # 更新组件
-│   ├── composables/         # Vue Composables
-│   │   ├── aiMg.js          # AI 管理
-│   │   ├── setMg.js         # 设置管理
-│   │   └── useShortcuts.js  # 快捷键管理
-│   ├── utils/               # 工具函数
-│   │   ├── crypto.js        # 加密解密
-│   │   ├── textProcessing.js # 文本处理
-│   │   └── common.js        # 通用工具
-│   ├── assets/              # 静态资源
-│   └── main.js              # 应用入口
-├── src-tauri/               # Tauri 后端代码
-│   ├── src/
-│   │   ├── lib.rs          # 主要 Rust 代码
-│   │   └── main.rs         # 应用入口
-│   ├── Cargo.toml          # Rust 依赖配置
-│   └── tauri.conf.json     # Tauri 配置
-├── dist/                    # 构建输出
-└── node_modules/            # Node.js 依赖
-```
+-   **功能描述**: 此功能读取剪贴板中的文本，然后逐字模拟键盘按键输入。为了使其行为更像人类，每次按键之间会有一个可配置的随机延迟。
+-   **使用场景**: 在一些考试软件、网页表单或远程桌面环境中，常规的粘贴操作可能被禁用，此功能可以有效规避该限制。
+-   **触发方式**: 默认快捷键 `CmdOrControl+K`。
+-   **技术实现**:
+    -   **后端**: 核心逻辑位于 Rust 后端 `src-tauri/src/lib.rs` 中的 `handle_text` 函数。
+    -   **输入模拟**: 使用 `enigo` 这个 Rust 库来跨平台地模拟键盘和鼠标事件。
+    -   **异步执行**: `handle_text` 在一个独立的线程中运行，避免阻塞 UI 主线程。
+    -   **中断机制**: 用户在模拟输入过程中可以随时按下 `K` 键来中断操作。这是通过一个全局的原子布尔值 `STOP_FLAG` (类型为 `Arc<AtomicBool>`) 实现的。`stop_typing` 命令将其设置为 `true`，而 `handle_text` 线程中的循环会持续检查此标志。
+    -   **延迟配置**: 输入延迟的时间范围（如 1-5ms）由前端通过 `update_time_range` 命令设置，并保存在后端的静态变量中。
 
-### 核心模块
+### b. AI 问答
 
-#### 1. 前端核心模块
+-   **功能描述**: 读取剪贴板中的文本作为一个问题，将其发送给配置好的 AI 模型，并将返回的答案写回剪贴板。
+-   **使用场景**: 快速使用 AI 回答问题、润色文本、翻译等，无需离开当前工作窗口。
+-   **触发方式**: 默认快捷键 `CmdOrControl+J`。
+-   **技术实现**:
+    -   **前端**: 此功能的绝大部分逻辑都在前端 `src/composables/aiMg.js` 中实现。
+    -   **AI 服务抽象**: `aiMg.js` 封装了对不同 AI 服务的调用逻辑，目前支持：
+        1.  **DeepSeek**: 默认服务，支持 `deepseek-chat` 和 `deepseek-reasoner` (深度思考) 模型。
+        2.  **自定义 AI**: 支持任何与 OpenAI API 或 Google Gemini API 格式兼容的自定义端点。
+    -   **API 密钥管理**:
+        -   用户可以直接在设置中填入 DeepSeek API Key。
+        -   如果 key 为空，但配置了用户名，程序会从一个中心服务器 `https://cp.uuyo.fun` 获取一个加密的 API Key，然后在本地使用 `crypto.js` 中的 `decryptGCM` 函数进行解密。这个解密后的 key 会被缓存，但不会被持久化。
+    -   **历史记录**: AI 问答的历史记录会通过 `tauri-plugin-store`保存在本地的 `copytome_settings.json` 文件中。
 
-**AI 管理 (aiMg.js)**
-- 管理 DeepSeek API 调用
-- 支持本地 API Key 和服务器获取
-- 问答历史记录管理
-- 健康状态检查
+## 3. 项目架构
 
-**设置管理 (setMg.js)**
-- 持久化设置存储
-- 默认配置管理
-- 设置变更监听
+### a. 前端 (Vue.js + Vite)
 
-**快捷键管理 (useShortcuts.js)**
-- 全局快捷键注册/注销
-- 快捷键冲突处理
-- 停止键管理
+-   **目录**: `src/`
+-   **UI 框架**: 使用 Vue 3 和 [Element Plus](https://element-plus.org/) 组件库。
+-   **页面导航**: 应用是一个单页面应用 (SPA)，但没有使用 `vue-router`。页面切换是通过 `App.vue` 中的 `v-show` 指令来控制不同组件的显示和隐藏。当前激活的菜单项由 `activeMenu` 这个 ref 变量决定。
+-   **状态管理**:
+    -   项目的核心状态（所有用户配置）都存放在 `src/composables/setMg.js` 中的一个 `reactive` 对象 `settings` 中。
+    -   使用 `tauri-plugin-store` 将 `settings` 对象持久化到本地的 JSON 文件中。`setMg.js` 封装了加载 (`init`) 和保存 (`save`) 的逻辑。
+-   **核心逻辑**:
+    -   **AI 相关**: `src/composables/aiMg.js` 是整个项目的“大脑”，负责处理所有与 AI 相关的逻辑。
+    -   **快捷键**: `src/composables/useShortcuts.js` 封装了使用 `tauri-plugin-global-shortcut` 注册和更新全局快捷键的逻辑。
 
-#### 2. 后端核心模块
+### b. 后端 (Tauri + Rust)
 
-**文本处理 (lib.rs)**
-- 模拟键盘输入
-- 随机延迟控制
-- 停止信号处理
-- 多线程执行
+-   **目录**: `src-tauri/`
+-   **主要职责**: 提供前端无法实现或性能较低的系统级功能。
+-   **暴露的命令**: 通过 `#[tauri::command]` 宏，向前端暴露了以下核心命令：
+    -   `handle_text`: 执行模拟输入。
+    -   `stop_typing`: 中断模拟输入。
+    -   `update_time_range`: 更新模拟输入的时间延迟范围。
+    -   `create_directory`, `open_folder`: 文件系统操作，主要用于 DLL 注入功能。
 
-## 构建和开发
+## 4. 关键文件分析
 
-### 环境要求
-- Node.js 16+
-- Rust 1.70+
-- Tauri CLI
+理解以下文件对于开发至关重要：
 
-### 安装依赖
-```bash
-npm install
-```
+-   `src-tauri/src/lib.rs`: **后端核心**。实现了模拟输入 `handle_text` 和中断机制。代码简洁、功能明确。
+-   `src/composables/aiMg.js`: **AI 逻辑中心**。管理 API Key 的获取（包括从服务器解密）、支持多种 AI 服务 (DeepSeek/Custom)、构建请求、处理响应，并保存历史记录。是项目中最复杂的模块。
+-   `src/composables/setMg.js`: **全局设置管理器**。定义了所有设置的默认值 (`DEFAULT_SETTINGS`)，并使用 `tauri-plugin-store` 进行持久化。任何配置的读取和修改都应通过此模块。
+-   `src/App.vue`: **主组件**。应用的根组件，负责：
+    -   构建基本 UI 布局（侧边栏和主内容区）。
+    -   在 `onMounted` hook 中初始化应用，包括注册快捷键。
+    -   定义快捷键的回调函数 `handleText` 和 `handleQuestion`，作为功能的入口点。
+    -   管理不同页面组件的切换。
+-   `src/components/Setting.vue`: **设置页面**。提供了所有用户可配置项的 UI 界面，包括快捷键、AI 配置、功能开关等。它通过 `emit('update-shortcuts')` 事件通知 `App.vue` 更新快捷键。
+-   `src/components/Home.vue`: **主页**。作为应用的仪表盘，显示了功能状态、快捷键说明、AI 服务健康状态以及详细的使用指南。
+-   `package.json`: **前端依赖与脚本**。定义了项目的前端依赖库（如 `vue`, `element-plus`, `@tauri-apps/api` 等）和核心开发脚本 (`tauri dev`, `tauri build`)。
+-   `src-tauri/tauri.conf.json`: **Tauri 应用配置**。定义了应用的窗口行为、插件列表、允许的后端命令、图标、以及自动更新等关键信息。
 
-### 开发模式
-```bash
-cargo tauri dev
-```
+## 5. 开发与构建
 
-### 构建应用
-```bash
-cargo tauri build
-```
+-   **开发模式**:
+    ```bash
+    npm run tauri dev
+    ```
+    此命令会同时启动前端的 Vite 开发服务器和后端的 Tauri 应用，并提供热重载功能。
 
-### Tauri 命令
-```bash
-cargo tauri dev    # 开发模式
-cargo tauri build  # 构建生产版本
-```
-
-## 功能详解
-
-### 1. 文本模拟输入
-- **触发方式**: Cmd/Ctrl + K（可配置）
-- **处理流程**: 读取剪贴板 → 逐字符模拟输入 → 随机延迟
-- **停止机制**: 按 K 键可随时停止输入
-- **时间范围**: 可配置的输入延迟范围 [1-5]ms
-
-### 2. AI 问答功能
-- **触发方式**: Cmd/Ctrl + J（可配置）
-- **处理流程**: 读取剪贴板问题 → 调用 DeepSeek API → 写入回答到剪贴板
-- **API 管理**: 支持本地配置和服务器获取 API Key
-- **历史记录**: 自动保存问答历史（最多 200 条）
-
-### 3. DLL 注入功能
-- **目标**: 向指定程序注入 DLL 以扩展功能
-- **流程**: 复制文件到应用目录 → 尝试自动复制到目标目录 → 失败则引导手动复制
-- **安全**: 支持权限受限目录的处理
-
-### 4. 全局快捷键系统
-- **注册**: 应用启动时自动注册
-- **冲突处理**: 友好的错误提示
-- **动态更新**: 支持运行时修改快捷键
-- **停止键**: 临时注册的单键停止功能
-
-## 配置说明
-
-### 默认快捷键
-- **文本输入**: Cmd/Ctrl + K
-- **AI 问答**: Cmd/Ctrl + J
-- **停止输入**: K（仅在输入过程中有效）
-
-### 可配置选项
-- 微信输入模式（去除换行）
-- 自动启动
-- 窗口隐藏
-- 输入时间范围
-- DeepSeek API Key
-- 用户名（用于服务器获取 API）
-
-### 存储位置
-- **设置文件**: `~/.config/com.uuyo.copytomeandtauri/copytome_settings.json`
-- **日志文件**: `~/.config/com.uuyo.copytomeandtauri/logs/`
-- **DLL 文件**: 应用数据目录下的 `inject_files/`
-
-## 安全考虑
-
-### API 安全
-- API Key 加密存储
-- 支持从服务器获取加密的 API Key
-- 本地 API Key 优先使用
-
-### 系统安全
-- 最小权限原则
-- 剪贴板访问权限控制
-- 文件系统访问限制
-
-### 输入安全
-- 输入过程可随时停止
-- 线程安全的停止机制
-- 错误处理和恢复
-
-## 部署和发布
-
-### 构建配置
-- **优化**: Release 模式下启用 LTO 和大小优化
-- **平台**: 支持 Windows、macOS、Linux
-- **更新**: 集成自动更新功能
-
-### 发布流程
-1. 版本号更新（前端 package.json 和 Cargo.toml）
-2. 构建生产版本
-3. 生成更新文件
-4. 上传到更新服务器
-
-## 开发规范
-
-### 代码风格
-- Vue 3 Composition API
-- 中文注释和界面
-- 详细的日志记录
-- 错误边界处理
-
-### 命名规范
-- 组件: PascalCase
-- 工具函数: camelCase
-- 常量: UPPER_SNAKE_CASE
-- 文件名: kebab-case
-
-### 日志规范
-- 使用 @tauri-apps/plugin-log
-- 分级日志（trace, info, error）
-- 中文日志内容
-- 包含上下文信息
-
-## 故障排除
-
-### 常见问题
-1. **快捷键注册失败**: 检查系统快捷键冲突
-2. **API 调用失败**: 验证 API Key 和网络连接
-3. **输入不流畅**: 调整时间范围设置
-4. **DLL 注入失败**: 检查目标程序权限
-
-### 调试方法
-- 查看日志文件
-- 使用开发者工具
-- 检查系统权限
-- 验证配置文件
-
-## 更新和维护
-
-### 自动更新
-- 检查更新服务器
-- 支持跳过版本
-- 增量更新
-- 回滚机制
-
-### 维护建议
-- 定期检查依赖更新
-- 监控 API 服务状态
-- 收集用户反馈
-- 性能优化
-# 不要尝试运行该应用
-不要尝试运行该应用
+-   **生产构建**:
+    ```bash
+    npm run tauri build
+    ```
+    此命令会打包整个应用，生成针对当前操作系统的可执行安装文件。
