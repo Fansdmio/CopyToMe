@@ -25,3 +25,6 @@ dist-ssr
 *.sln
 *.sw?
 website.html
+CLAUDE.md
+AGENTS.md
+UPDATE*.md

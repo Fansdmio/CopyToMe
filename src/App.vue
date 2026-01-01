@@ -82,7 +82,7 @@ import AboutPage from './components/About.vue'
 import { invoke } from '@tauri-apps/api/core'
 import { debounceAfter } from './utils/common.js'
 import { useShortcuts } from './composables/useShortcuts.js'
-import { handleWxInput, debounce } from './utils/textProcessing.js'
+import { handleWxInput, debounce, removeThinkingTags } from './utils/textProcessing.js'
 import { listen } from '@tauri-apps/api/event';
 import aiMg from "./composables/aiMg.js";
 import setMg from "./composables/setMg.js";
@@ -184,14 +184,17 @@ const handleQuestion = debounce(async () => {
   // 发送历史更新事件（历史记录已在 askAi 中保存）
   mitt.emit("history-update")
 
+  // 准备写入剪贴板的内容（去除思考标签）
+  let clipboardAnswer = removeThinkingTags(answer)
+  info(`App.vue: 去除思考标签后,长度: ${clipboardAnswer.length}`);
 
   // 微信输入法模式处理
   if (settings.wxInputMode) {
     info("App.vue: 应用微信输入法模式(去除换行)");
-    answer = handleWxInput(answer)
+    clipboardAnswer = handleWxInput(clipboardAnswer)
   }
 
-  await writeText(answer)
+  await writeText(clipboardAnswer)
   info("App.vue: AI回答已写入剪贴板");
   ElMessage.success('AI 回答已复制到剪贴板')
 })

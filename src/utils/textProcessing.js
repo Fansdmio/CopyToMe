@@ -13,6 +13,19 @@ export function handleWxInput(text) {
 }
 
 /**
+ * 去除AI回答中的思考标签内容
+ * 支持多种思考标签格式: <think></think>, <thinking></thinking> 等
+ * @param {string} text - 待处理的文本
+ * @returns {string} 去除思考标签后的文本
+ */
+export function removeThinkingTags(text) {
+  if (!text) return ''
+  // 匹配 <think>...</think>, <thinking>...</thinking> 等标签及其内容
+  // 使用非贪婪匹配，支持多行内容
+  return text.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, '').trim()
+}
+
+/**
  * 创建防抖函数
  * @param {Function} fn - 要防抖的函数
  * @param {number} delay - 延迟时间(毫秒)

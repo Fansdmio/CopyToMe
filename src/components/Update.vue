@@ -34,8 +34,8 @@
                     <span class="progress-label">{{ downloadStatus }}</span>
                     <span class="progress-size">{{ formatSize(downloaded) }} / {{ formatSize(contentLength) }}</span>
                 </div>
-                <el-progress :percentage="downloadPercentage" :color="progressColors" :stroke-width="12"
-                    :show-text="false" />
+                <el-progress :percentage="downloadPercentage" :color="progressColors" :stroke-width="8"
+                    :show-text="false" class="custom-progress" />
             </div>
 
             <!-- 安装中提示 -->
@@ -99,13 +99,13 @@ const downloadPercentage = computed(() => {
     return Math.round((downloaded.value / contentLength.value) * 100)
 })
 
-// 进度条颜色
+// 进度条颜色 - 平滑的渐变色系
 const progressColors = [
-    { color: '#f56c6c', percentage: 20 },
-    { color: '#e6a23c', percentage: 40 },
-    { color: '#5cb87a', percentage: 60 },
-    { color: '#1989fa', percentage: 80 },
-    { color: '#409EFF', percentage: 100 }
+    { color: '#409EFF', percentage: 20 },
+    { color: '#66b1ff', percentage: 40 },
+    { color: '#5bacf5', percentage: 60 },
+    { color: '#3aa1f5', percentage: 80 },
+    { color: '#1890ff', percentage: 100 }
 ]
 
 // 格式化日期
@@ -652,7 +652,11 @@ onMounted(() => {
 .download-progress {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(64, 158, 255, 0.05) 0%, rgba(102, 177, 255, 0.05) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(64, 158, 255, 0.1);
 }
 
 .progress-info {
@@ -670,6 +674,34 @@ onMounted(() => {
 .progress-size {
     color: #909399;
     font-family: 'Consolas', 'Monaco', monospace;
+}
+
+/* 自定义进度条样式 */
+.custom-progress :deep(.el-progress-bar__outer) {
+    background-color: rgba(64, 158, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.custom-progress :deep(.el-progress-bar__inner) {
+    border-radius: 10px;
+    background: linear-gradient(90deg, #409EFF 0%, #66b1ff 50%, #409EFF 100%);
+    background-size: 200% 100%;
+    animation: progressShine 2s ease-in-out infinite;
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes progressShine {
+    0% {
+        background-position: 200% 0;
+    }
+    50% {
+        background-position: 0% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
 }
 
 .installing-hint {
