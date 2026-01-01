@@ -1,7 +1,7 @@
 {
   "version": "0.2.1",
-  "notes": "# 更新介绍\r\n这是我们最大的一次更新,建议更新到此版本\r\n此次更新的版本为: `0.2.1`\r\n# 更新内容\r\n## 核心更新\r\n- 增加隐藏托盘图标快捷方式,增加隐蔽性\r\n## 其他更新\r\n- 增加自定义ai功能,支持openai,google格式,可进行各种参数调节\r\n- 历史记录添加删除功能\r\n- 更换了下载时的进度条样式\r\n- 提高历史记录上限为2000\r\n- 优化了图标\r\n## 修复\r\n- 修复了ai健康检查会污染历史记录",
-  "pub_date": "2026-01-01T10:06:46.617Z",
+  "notes": "# 少女少年请留步 ⬇\r\n这是我们最大的一次更新,建议***更新到此版本***\r\n此次更新的版本为: `0.2.1`\r\n\r\n# 少年少女请留步 ⬆\r\n# 更新内容\r\n## 核心更新\r\n- 增加隐藏托盘图标快捷方式,增加隐蔽性\r\n## 其他更新\r\n- 增加自定义ai功能,支持openai,google格式,可进行各种参数调节\r\n- 历史记录添加删除功能\r\n- 更换了下载时的进度条样式\r\n- 提高历史记录上限为2000\r\n- 优化了图标\r\n## 修复\r\n- 修复了ai健康检查会污染历史记录",
+  "pub_date": "2026-01-01T15:03:27.995Z",
   "platforms": {
     "windows-x86_64": {
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVScDYwTk1iY0lvQ1dwT2t0bDRvV3g3SUw5amIrbEZUOCttam12QmZ1YnVZTFFlaENDb3hDTDRtU0Q3RVZFSC9aQkJ5SzlabEtxTFptWk5EUUt5UGRGYXR5ZWYzSHJpU1FZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY3MjYyMDAyCWZpbGU6Q29weVRvTWVBbmRUYXVyaV8wLjIuMV94NjQtc2V0dXAuZXhlCnpSZmFZSDc2SmVVMzhjc1VteVYyUmNtN0ZySjlTeUZ6M0x3aXJDNGVSSGJ4ZEtucmVkb3RCWlR1T2FvU2JOZ0taaE4zZ1Q4VVhkOE1rMjl3blAzYkFRPT0K",
