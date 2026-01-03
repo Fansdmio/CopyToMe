@@ -28,25 +28,34 @@
               </el-icon>
               <span>快捷键设置</span>
             </div>
-            <el-button type="primary" @click="saveShortcutKeySettingsHandler">
-              保存快捷键设置
-            </el-button>
           </h3>
 
           <el-form :model="settings" label-width="120px" label-position="left">
             <el-form-item v-for="shortcut in shortcutFields" :key="shortcut.key" :label="shortcut.label">
-              <el-input v-model="settings[shortcut.key]" :placeholder="shortcut.placeholder" class="shortcut-input">
+              <el-input 
+                :model-value="capturingKey === shortcut.key ? '' : settings[shortcut.key]"
+                :placeholder="capturingKey === shortcut.key ? '请按下快捷键...' : shortcut.placeholder" 
+                class="shortcut-input"
+                readonly
+                @click="startCapture(shortcut.key)">
                 <template #prepend>
                   <el-icon>
                     <component :is="shortcut.icon"/>
                   </el-icon>
                 </template>
                 <template #append>
-                  <el-button @click="showKeyboardHelp = true">
-                    <el-icon>
-                      <QuestionFilled/>
-                    </el-icon>
-                  </el-button>
+                  <el-button-group>
+                    <el-button 
+                      :type="capturingKey === shortcut.key ? 'primary' : 'default'"
+                      @click.stop="toggleCapture(shortcut.key)">
+                      {{ capturingKey === shortcut.key ? '取消' : '捕获' }}
+                    </el-button>
+                    <el-button @click.stop="showKeyboardHelp = true">
+                      <el-icon>
+                        <QuestionFilled/>
+                      </el-icon>
+                    </el-button>
+                  </el-button-group>
                 </template>
               </el-input>
             </el-form-item>
@@ -349,31 +358,7 @@
           </el-alert>
         </div>
 
-        <el-divider style="margin: 12px 0"/>
-        <!-- 预设快捷键模板 -->
-        <div class="setting-section">
-          <h3 class="section-title">
-            <div class="section-icon">
-              <el-icon>
-                <Collection/>
-              </el-icon>
-              <span>快捷键预设模板</span>
-            </div>
-          </h3>
 
-          <el-space wrap :size="12">
-            <el-card v-for="preset in presets" :key="preset.name" class="preset-card"
-                     :class="{ active: isCurrentPreset(preset) }" shadow="hover" @click="applyPreset(preset)">
-              <div class="preset-content">
-                <h4>{{ preset.name }}</h4>
-                <el-space direction="vertical" :size="4">
-                  <el-tag size="small">文本: {{ preset.textKey }}</el-tag>
-                  <el-tag size="small">问答: {{ preset.questionKey }}</el-tag>
-                </el-space>
-              </div>
-            </el-card>
-          </el-space>
-        </div>
       </div>
     </el-space>
   </el-card>
@@ -389,7 +374,7 @@
 </template>
 
 <script setup>
-import {ref, computed, onMounted, watch} from 'vue'
+import {ref, computed, onMounted, onUnmounted, watch} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {open} from '@tauri-apps/plugin-dialog'
 import {copyFile, writeTextFile, writeFile, exists, remove, readFile} from '@tauri-apps/plugin-fs'
@@ -398,7 +383,6 @@ import {fetch} from '@tauri-apps/plugin-http'
 import {invoke} from '@tauri-apps/api/core'
 
 import {
-  Collection,
   Cpu,
   Operation,
   QuestionFilled,
@@ -421,7 +405,6 @@ import {
   SHORTCUT_FIELDS,
   AI_CONFIG_FIELDS,
   FEATURE_TOGGLES,
-  SHORTCUT_PRESETS,
   KEYBOARD_HELP_DATA,
   AI_TIPS,
   TEXT_PROCESSING_CONFIG
@@ -438,6 +421,10 @@ const settings = setMg.settings
 const showKeyboardHelp = ref(false)
 const showAdvancedSettings = ref(false)
 
+// 快捷键捕获状态
+const capturingKey = ref(null) // 当前正在捕获的快捷键字段
+const pressedKeys = ref(new Set()) // 当前按下的按键集合
+
 // 自定义AI相关状态
 const availableModels = ref([])
 const loadingModels = ref(false)
@@ -451,7 +438,6 @@ const removing = ref(false)
 const shortcutFields = SHORTCUT_FIELDS
 const aiConfigFields = AI_CONFIG_FIELDS
 const featureToggles = FEATURE_TOGGLES
-const presets = SHORTCUT_PRESETS
 const keyboardHelpData = KEYBOARD_HELP_DATA
 const aiTips = AI_TIPS
 
@@ -840,21 +826,6 @@ const handleRemoveInjection = async () => {
   }
 }
 
-// 检查是否是当前预设
-const isCurrentPreset = (preset) => {
-  return settings.textKey === preset.textKey && settings.questionKey === preset.questionKey
-}
-// 应用预设
-const applyPreset = async (preset) => {
-  info(`Setting: 应用快捷键预设: ${preset.name}`);
-  settings.textKey = preset.textKey
-  settings.questionKey = preset.questionKey
-  await setMg.save()
-  // 通知父组件更新快捷键
-  emit('update-shortcuts')
-  ElMessage.success(`已应用 ${preset.name}`)
-}
-
 // 重置设置
 const resetSettingsHandler = () => {
   info("Setting: 重置所有设置");
@@ -917,41 +888,161 @@ const saveAiSettingHandler = async () => {
   }
 }
 
-// 保存快捷键设置
-const saveShortcutKeySettingsHandler = async () => {
-  info(`Setting: 保存快捷键设置 - 文本:${settings.textKey}, 问答:${settings.questionKey}, 窗口切换:${settings.toggleWindowKey}`);
-  // 验证快捷键
-  if (!validateShortcutKey(settings.textKey)) {
-    error("Setting: 模拟输入快捷键格式不正确");
-    ElMessage.error('模拟输入快捷键格式不正确')
+// 按键映射表
+const keyMapping = {
+  'Control': 'Ctrl',
+  'Meta': 'Super',
+  'ArrowUp': 'Up',
+  'ArrowDown': 'Down',
+  'ArrowLeft': 'Left',
+  'ArrowRight': 'Right',
+  ' ': 'Space'
+}
+
+// 标准化按键名称
+const normalizeKey = (key) => {
+  return keyMapping[key] || key
+}
+
+// 开始捕获快捷键
+const startCapture = async (key) => {
+  if (capturingKey.value !== key) {
+    // 注销所有快捷键，避免在捕获过程中触发原有功能
+    try {
+      const { unregister } = await import('@tauri-apps/plugin-global-shortcut')
+      
+      // 注销所有已注册的快捷键
+      for (const field of shortcutFields) {
+        if (settings[field.key]) {
+          try {
+            await unregister(settings[field.key])
+            info(`Setting: 已注销快捷键: ${settings[field.key]}`)
+          } catch (err) {
+            // 忽略已注销的错误
+          }
+        }
+      }
+    } catch (err) {
+      error(`Setting: 注销快捷键失败: ${err}`)
+    }
+    
+    capturingKey.value = key
+    pressedKeys.value.clear()
+  }
+}
+
+// 切换捕获状态
+const toggleCapture = (key) => {
+  if (capturingKey.value === key) {
+    stopCapture()
+  } else {
+    startCapture(key)
+  }
+}
+
+// 停止捕获
+const stopCapture = () => {
+  capturingKey.value = null
+  pressedKeys.value.clear()
+  
+  // 重新注册快捷键（如果用户取消了捕获）
+  emit('update-shortcuts')
+}
+
+// 处理按键按下
+const handleKeyDown = async (event) => {
+  if (!capturingKey.value) return
+  
+  event.preventDefault()
+  event.stopPropagation()
+  
+  const key = event.key
+  
+  // 如果只按了 Escape，取消捕获
+  if (key === 'Escape' && pressedKeys.value.size === 0) {
+    stopCapture()
     return
   }
-  if (!validateShortcutKey(settings.questionKey)) {
-    error("Setting: AI问答快捷键格式不正确");
-    ElMessage.error('AI 问答快捷键格式不正确')
+  
+  // 忽略单独的修饰键
+  if (['Control', 'Alt', 'Shift', 'Meta'].includes(key)) {
     return
   }
-  if (!validateShortcutKey(settings.toggleWindowKey)) {
-    error("Setting: 显示/隐藏托盘图标快捷键格式不正确");
-    ElMessage.error('显示/隐藏托盘图标快捷键格式不正确')
+  
+  // 收集所有按下的键
+  const keys = []
+  
+  // Windows/Linux 使用 Ctrl，Mac 使用 Command
+  if (event.ctrlKey || event.metaKey) {
+    keys.push('CmdOrControl')
+  }
+  if (event.altKey) {
+    keys.push('Alt')
+  }
+  if (event.shiftKey) {
+    keys.push('Shift')
+  }
+  
+  // 添加主键
+  const mainKey = normalizeKey(key)
+  if (mainKey.length === 1) {
+    keys.push(mainKey.toUpperCase())
+  } else {
+    keys.push(mainKey)
+  }
+  
+  // 至少需要一个修饰键或特殊键
+  if (keys.length < 2 && !['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'].includes(mainKey)) {
     return
   }
-  if (settings.textKey === settings.questionKey || 
-      settings.textKey === settings.toggleWindowKey || 
-      settings.questionKey === settings.toggleWindowKey) {
-    error("Setting: 快捷键有重复");
-    ElMessage.error('快捷键不能重复')
+  
+  // 构建快捷键字符串
+  const shortcutString = keys.join('+')
+  
+  // 检查是否与其他快捷键重复
+  const otherKeys = shortcutFields.filter(f => f.key !== capturingKey.value)
+  const isDuplicate = otherKeys.some(field => settings[field.key] === shortcutString)
+  
+  if (isDuplicate) {
+    ElMessage.warning('该快捷键已被使用')
     return
   }
+  
+  // 设置快捷键
+  settings[capturingKey.value] = shortcutString
+  
+  // 停止捕获状态
+  capturingKey.value = null
+  pressedKeys.value.clear()
+  
+  // 自动保存并注册（会重新注册所有快捷键）
   await setMg.save()
   emit('update-shortcuts')
-  ElMessage.success('快捷键设置已保存')
+  
+  // 提示成功
+  ElMessage.success(`已设置快捷键: ${shortcutString}`)
+}
+
+// 处理按键释放
+const handleKeyUp = (event) => {
+  if (!capturingKey.value) return
+  event.preventDefault()
+  event.stopPropagation()
 }
 
 // 组件挂载时检查是否已注入
 onMounted(() => {
   info("Setting: 组件挂载");
   checkInjectedFiles()
+  // 添加键盘事件监听
+  window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('keyup', handleKeyUp)
+})
+
+// 组件卸载时移除事件监听
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('keyup', handleKeyUp)
 })
 
 // 监听路径变化，自动检查注入状态
@@ -1047,35 +1138,6 @@ watch(
   align-items: center;
 }
 
-/* 预设卡片 */
-.preset-card {
-  width: 180px;
-  cursor: pointer;
-  transition: all 0.3s;
-  border: 2px solid transparent;
-}
-
-.preset-card :deep(.el-card__body) {
-  padding: 12px;
-}
-
-.preset-card:hover {
-  transform: translateY(-2px);
-  border-color: #409EFF;
-}
-
-.preset-card.active {
-  border-color: #409EFF;
-  background: linear-gradient(135deg, #409EFF10 0%, #66b1ff10 100%);
-}
-
-.preset-content h4 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  color: #303133;
-  font-weight: 600;
-}
-
 /* Element Plus 表单样式优化 */
 :deep(.el-form-item) {
   margin-bottom: 14px;
@@ -1148,10 +1210,6 @@ watch(
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
-  }
-
-  .preset-card {
-    width: 100%;
   }
 
   :deep(.el-form-item__label) {
