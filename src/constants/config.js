@@ -19,19 +19,25 @@ export const SHORTCUT_FIELDS = [
     key: 'textKey',
     label: '模拟输入快捷键',
     placeholder: '例如: CmdOrControl+K',
-    icon: Document
+    icon: Document,
+    enableKey: 'textProcessEnabled', // 关联的功能开关字段
+    enableLabel: '模拟输入' // 功能名称
   },
   {
     key: 'questionKey',
     label: 'AI 问答快捷键',
     placeholder: '例如: CmdOrControl+J',
-    icon: ChatDotRound
+    icon: ChatDotRound,
+    enableKey: 'aiQAEnabled',
+    enableLabel: 'AI问答'
   },
   {
     key: 'toggleWindowKey',
     label: '显示/隐藏托盘',
     placeholder: '例如: CmdOrControl+Shift+Y',
-    icon: View
+    icon: View,
+    enableKey: 'toggleWindowEnabled', // 添加功能开关
+    enableLabel: '显示/隐藏托盘'
   }
 ]
 

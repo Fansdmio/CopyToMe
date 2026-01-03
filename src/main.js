@@ -38,6 +38,27 @@ window.addEventListener('keydown', (event) => {
         return false;
     }
     
+    // 禁用 Ctrl+J / Cmd+J (下载历史)
+    if ((event.ctrlKey || event.metaKey) && event.key === 'j') {
+        event.preventDefault();
+        info('main.js: 阻止浏览器下载历史');
+        return false;
+    }
+    
+    // 禁用 Ctrl+K / Cmd+K (浏览器搜索)
+    if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        info('main.js: 阻止浏览器搜索');
+        return false;
+    }
+    
+    // 禁用 Ctrl+H / Cmd+H (浏览器历史记录)
+    if ((event.ctrlKey || event.metaKey) && event.key === 'h') {
+        event.preventDefault();
+        info('main.js: 阻止浏览器历史记录');
+        return false;
+    }
+    
     // 禁用 F5 (刷新)
     if (event.key === 'F5') {
         event.preventDefault();
@@ -52,12 +73,12 @@ window.addEventListener('keydown', (event) => {
         return false;
     }
     
-    // 禁用 F12 (开发者工具) - 可选
-    if (event.key === 'F12') {
-        event.preventDefault();
-        info('main.js: 阻止开发者工具');
-        return false;
-    }
+    // // 禁用 F12 (开发者工具) - 可选
+    // if (event.key === 'F12') {
+    //     event.preventDefault();
+    //     info('main.js: 阻止开发者工具');
+    //     return false;
+    // }
     
     // 禁用 Ctrl+Shift+I / Cmd+Option+I (开发者工具)
     if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'i') {

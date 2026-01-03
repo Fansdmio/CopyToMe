@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS = {
     wxInputMode: true,
     textProcessEnabled: true,
     aiQAEnabled: true,
+    toggleWindowEnabled: true,  // 显示/隐藏托盘功能开关
     hideWindow: false,
     autoStart: false,
     autoHideTray: false,  // 自动隐藏托盘图标
@@ -35,6 +36,7 @@ const DEFAULT_SETTINGS = {
     aiPresencePenalty: 0.1,  // 存在惩罚 -2到2
     targetProgramPath: '',  // 目标程序路径
     dllPath: '',  // DLL 文件路径
+    dllPassword: '',  // DLL 注入密码
     skippedVersions: [],  // 跳过的版本列表
 }
 

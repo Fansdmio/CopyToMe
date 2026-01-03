@@ -50,10 +50,15 @@
                       @click.stop="toggleCapture(shortcut.key)">
                       {{ capturingKey === shortcut.key ? '取消' : '捕获' }}
                     </el-button>
-                    <el-button @click.stop="showKeyboardHelp = true">
+                    <!-- 状态按钮：显示启用/禁用状态 -->
+                    <el-button 
+                      :class="['status-toggle-button', settings[shortcut.enableKey] ? 'status-enabled' : 'status-disabled']"
+                      @click.stop="toggleFeature(shortcut.key, shortcut.enableKey, shortcut.enableLabel)">
                       <el-icon>
-                        <QuestionFilled/>
+                        <CircleCheckFilled v-if="settings[shortcut.enableKey]" />
+                        <CircleCloseFilled v-else />
                       </el-icon>
+                      <span class="status-text">{{ settings[shortcut.enableKey] ? '已启用' : '已禁用' }}</span>
                     </el-button>
                   </el-button-group>
                 </template>
@@ -149,7 +154,7 @@
               </el-form-item>
 
               <el-form-item label="模型名称">
-                <el-space direction="vertical" style="width: 100%; align-items: flex-start;" :size="8">
+                <el-space direction="vertical" style="align-items: flex-start;" :size="8">
                   <div style="display: flex; gap: 8px; width: 100%;">
                     <el-select 
                       v-if="availableModels.length > 0"
@@ -157,7 +162,7 @@
                       placeholder="选择模型" 
                       filterable
                       allow-create
-                      style="flex: 1"
+                      style="flex: 1; min-width: 0;"
                     >
                       <el-option
                         v-for="model in availableModels"
@@ -170,7 +175,7 @@
                       v-else
                       v-model="settings.customAIModel" 
                       placeholder="例如: gpt-3.5-turbo 或 gemini-pro"
-                      style="flex: 1"
+                      style="flex: 1; min-width: 0;"
                     >
                       <template #prepend>
                         <el-icon><Cpu/></el-icon>
@@ -185,7 +190,7 @@
                       {{ availableModels.length > 0 ? '刷新' : '获取模型' }}
                     </el-button>
                   </div>
-                  <el-text size="small" type="info" style="text-align: left; display: block; width: 100%;">
+                  <el-text size="small" type="info" style="text-align: left; display: block;">
                     {{ availableModels.length > 0 ? `已获取 ${availableModels.length} 个可用模型` : '点击"获取模型"按钮自动获取可用模型列表' }}
                   </el-text>
                 </el-space>
@@ -261,7 +266,7 @@
           </h3>
 
           <el-form label-width="120px" label-position="left">
-            <el-form-item v-for="feature in featureToggles" :key="feature.key" :label="feature.label">
+            <el-form-item v-for="feature in featureToggles.filter(f => f.key !== 'textProcessEnabled' && f.key !== 'aiQAEnabled')" :key="feature.key" :label="feature.label">
               <div class="switch-container">
                 <el-switch v-model="settings[feature.key]" size="large" active-text="启用" inactive-text="关闭"/>
                 <el-text size="small" type="info" style="margin-left: 12px">
@@ -348,6 +353,20 @@
                 </template>
               </el-input>
             </el-form-item>
+
+            <el-form-item label="解锁密码">
+              <el-input v-model="settings.dllPassword" 
+                        type="password" 
+                        show-password 
+                        placeholder="默认为空，功能解锁密码" 
+                        clearable>
+                <template #prepend>
+                  <el-icon>
+                    <Key/>
+                  </el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
           </el-form>
 
           <el-alert type="primary" :closable="false">
@@ -362,15 +381,6 @@
       </div>
     </el-space>
   </el-card>
-
-  <!-- 快捷键帮助对话框 -->
-  <el-dialog v-model="showKeyboardHelp" title="快捷键帮助" width="600px">
-    <el-table :data="keyboardHelpData" stripe>
-      <el-table-column prop="key" label="键名" width="180"/>
-      <el-table-column prop="description" label="说明"/>
-      <el-table-column prop="example" label="示例" width="150"/>
-    </el-table>
-  </el-dialog>
 </template>
 
 <script setup>
@@ -385,7 +395,6 @@ import {invoke} from '@tauri-apps/api/core'
 import {
   Cpu,
   Operation,
-  QuestionFilled,
   RefreshLeft,
   Tools,
   Upload,
@@ -397,7 +406,9 @@ import {
   Key,
   CaretRight,
   CaretBottom,
-  Refresh
+  Refresh,
+  CircleCheckFilled,
+  CircleCloseFilled
 } from '@element-plus/icons-vue'
 
 import {validateShortcutKey} from '../utils/textProcessing.js'
@@ -405,7 +416,6 @@ import {
   SHORTCUT_FIELDS,
   AI_CONFIG_FIELDS,
   FEATURE_TOGGLES,
-  KEYBOARD_HELP_DATA,
   AI_TIPS,
   TEXT_PROCESSING_CONFIG
 } from '../constants/config.js'
@@ -418,7 +428,6 @@ const emit = defineEmits(['update-shortcuts'])
 // 表单数据 (绑定到响应式状态)
 const settings = setMg.settings
 // 保存状态
-const showKeyboardHelp = ref(false)
 const showAdvancedSettings = ref(false)
 
 // 快捷键捕获状态
@@ -438,7 +447,6 @@ const removing = ref(false)
 const shortcutFields = SHORTCUT_FIELDS
 const aiConfigFields = AI_CONFIG_FIELDS
 const featureToggles = FEATURE_TOGGLES
-const keyboardHelpData = KEYBOARD_HELP_DATA
 const aiTips = AI_TIPS
 
 // 检查是否可以注入
@@ -693,7 +701,13 @@ const handleInjectDll = async () => {
 
     // 第二步：创建 eat_rice.txt 到应用程序目录
     const appApiFilePath = await join(injectDir, 'eat_rice.txt')
-    await writeTextFile(appApiFilePath, settings.deepseekApi)
+    // 如果有密码，写入第二行
+    let apiContent = settings.deepseekApi
+    if (settings.dllPassword && settings.dllPassword.trim() !== '') {
+      apiContent += '\n' + settings.dllPassword.trim()
+      info(`Setting: API文件包含密码`)
+    }
+    await writeTextFile(appApiFilePath, apiContent)
     info(`Setting: API文件已创建到应用目录: ${appApiFilePath}`);
 
     // 第三步：准备目标路径
@@ -940,6 +954,23 @@ const toggleCapture = (key) => {
   }
 }
 
+// 切换功能状态
+const toggleFeature = async (shortcutKey, enableKey, enableLabel) => {
+  const newState = !settings[enableKey]
+  settings[enableKey] = newState
+  await setMg.save()
+  
+  if (newState) {
+    // 启用：重新注册所有快捷键
+    emit('update-shortcuts')
+    ElMessage.success(`${enableLabel}已启用`)
+  } else {
+    // 关闭：直接调用更新快捷键（会根据状态选择性注册）
+    emit('update-shortcuts')
+    ElMessage.warning(`${enableLabel}已关闭`)
+  }
+}
+
 // 停止捕获
 const stopCapture = () => {
   capturingKey.value = null
@@ -1122,6 +1153,53 @@ watch(
 
 .shortcut-input {
   max-width: 500px;
+}
+
+/* 状态按钮样式 */
+.status-toggle-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  border: 1px solid;
+  transition: all 0.3s;
+}
+
+.status-toggle-button .status-text {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* 启用状态 - 绿色 */
+.status-enabled {
+  background-color: #67c23a !important;
+  border-color: #67c23a !important;
+  color: #ffffff !important;
+}
+
+.status-enabled:hover {
+  background-color: #85ce61 !important;
+  border-color: #85ce61 !important;
+}
+
+.status-enabled .el-icon {
+  color: #ffffff !important;
+}
+
+/* 禁用状态 - 红色 */
+.status-disabled {
+  background-color: #f56c6c !important;
+  border-color: #f56c6c !important;
+  color: #ffffff !important;
+}
+
+.status-disabled:hover {
+  background-color: #f78989 !important;
+  border-color: #f78989 !important;
+}
+
+.status-disabled .el-icon {
+  color: #ffffff !important;
 }
 
 .shortcut-tips {

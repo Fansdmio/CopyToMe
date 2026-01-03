@@ -222,16 +222,22 @@ const handleToggleWindow = debounce(async () => {
 
 // 更新快捷键处理
 const handleUpdateShortcuts = async () => {
-  info(`App.vue: 更新快捷键 - 文本:${settings.textKey}, 问答:${settings.questionKey}, 托盘图标切换:${settings.toggleWindowKey}`);
+  info(`App.vue: 更新快捷键 - 文本:${settings.textKey}(${settings.textProcessEnabled}), 问答:${settings.questionKey}(${settings.aiQAEnabled}), 托盘图标切换:${settings.toggleWindowKey}(${settings.toggleWindowEnabled})`);
   updateShortcuts(
     settings.textKey,
     settings.questionKey,
     handleText,
-    handleQuestion
+    handleQuestion,
+    settings.textProcessEnabled,
+    settings.aiQAEnabled
   )
   // 更新托盘图标切换快捷键
   await unregisterToggleWindowKey()
-  await registerToggleWindowKey(settings.toggleWindowKey, handleToggleWindow)
+  if (settings.toggleWindowEnabled) {
+    await registerToggleWindowKey(settings.toggleWindowKey, handleToggleWindow)
+  } else {
+    info('App.vue: 托盘图标切换快捷键已禁用，跳过注册')
+  }
 }
 
 //TODO 从服务器获取信息并显示通知
@@ -392,12 +398,14 @@ onMounted(async () => {
 
   // 注册快捷键 (不包括停止键)
   try {
-    info(`App.vue: 注册快捷键 - 文本:${settings.textKey}, 问答:${settings.questionKey}`);
+    info(`App.vue: 注册快捷键 - 文本:${settings.textKey}(${settings.textProcessEnabled}), 问答:${settings.questionKey}(${settings.aiQAEnabled})`);
     await registerShortcuts(
       settings.textKey,
       settings.questionKey,
       handleText,
-      handleQuestion
+      handleQuestion,
+      settings.textProcessEnabled,
+      settings.aiQAEnabled
     )
     info("App.vue: 快捷键注册成功");
   } catch (e) {
@@ -407,9 +415,13 @@ onMounted(async () => {
 
   // 注册托盘图标切换快捷键
   try {
-    info(`App.vue: 注册托盘图标切换快捷键: ${settings.toggleWindowKey}`);
-    await registerToggleWindowKey(settings.toggleWindowKey, handleToggleWindow)
-    info("App.vue: 托盘图标切换快捷键注册成功");
+    if (settings.toggleWindowEnabled) {
+      info(`App.vue: 注册托盘图标切换快捷键: ${settings.toggleWindowKey}`);
+      await registerToggleWindowKey(settings.toggleWindowKey, handleToggleWindow)
+      info("App.vue: 托盘图标切换快捷键注册成功");
+    } else {
+      info('App.vue: 托盘图标切换快捷键已禁用，跳过注册');
+    }
   } catch (e) {
     error(`App.vue: 托盘图标切换快捷键注册失败: ${e}`);
     ElMessage.warning('托盘图标切换快捷键注册失败，但应用可以继续使用');

@@ -23,22 +23,39 @@ export function useShortcuts() {
 
   /**
    * 注册快捷键 (不包括停止键)
+   * @param {string} textKey - 文本快捷键
+   * @param {string} questionKey - 问答快捷键
+   * @param {function} textHandler - 文本处理回调
+   * @param {function} questionHandler - 问答处理回调
+   * @param {boolean} textEnabled - 文本功能是否启用
+   * @param {boolean} questionEnabled - 问答功能是否启用
    */
-  const registerShortcuts = async (textKey, questionKey, textHandler, questionHandler) => {
-    info(`useShortcuts: 注册快捷键 - 文本:${textKey}, 问答:${questionKey}`);
+  const registerShortcuts = async (textKey, questionKey, textHandler, questionHandler, textEnabled = true, questionEnabled = true) => {
+    info(`useShortcuts: 注册快捷键 - 文本:${textKey}(${textEnabled ? '启用' : '禁用'}), 问答:${questionKey}(${questionEnabled ? '启用' : '禁用'})`);
     try {
-      // 注册文本处理快捷键
-      await register(textKey, textHandler)
-      info(`useShortcuts: 文本快捷键注册成功: ${textKey}`);
+      // 只有启用时才注册文本处理快捷键
+      if (textEnabled) {
+        await register(textKey, textHandler)
+        info(`useShortcuts: 文本快捷键注册成功: ${textKey}`);
+        currentKeys.value.textKey = textKey
+      } else {
+        info(`useShortcuts: 文本快捷键已禁用，跳过注册: ${textKey}`);
+        currentKeys.value.textKey = null
+      }
       
-      // 注册问答快捷键
-      await register(questionKey, questionHandler)
-      info(`useShortcuts: 问答快捷键注册成功: ${questionKey}`);
+      // 只有启用时才注册问答快捷键
+      if (questionEnabled) {
+        await register(questionKey, questionHandler)
+        info(`useShortcuts: 问答快捷键注册成功: ${questionKey}`);
+        currentKeys.value.questionKey = questionKey
+      } else {
+        info(`useShortcuts: 问答快捷键已禁用，跳过注册: ${questionKey}`);
+        currentKeys.value.questionKey = null
+      }
       
-      currentKeys.value = { ...currentKeys.value, textKey, questionKey }
-      registered.value = true
+      registered.value = textEnabled || questionEnabled
       
-      info('useShortcuts: 所有快捷键注册成功');
+      info('useShortcuts: 快捷键注册完成');
       return true
     } catch (e) {
       error(`useShortcuts: 快捷键注册失败: ${e}`);
@@ -141,20 +158,25 @@ export function useShortcuts() {
    * 注销快捷键 (不包括停止键)
    */
   const unregisterShortcuts = async () => {
-    if (!registered.value) {
-      info("useShortcuts: 快捷键未注册,无需注销");
-      return true
-    }
-
     info("useShortcuts: 注销快捷键");
     try {
       if (currentKeys.value.textKey) {
-        await unregister(currentKeys.value.textKey)
-        info(`useShortcuts: 已注销文本快捷键: ${currentKeys.value.textKey}`);
+        try {
+          await unregister(currentKeys.value.textKey)
+          info(`useShortcuts: 已注销文本快捷键: ${currentKeys.value.textKey}`);
+        } catch (e) {
+          // 快捷键可能已被注销，忽略错误
+          info(`useShortcuts: 文本快捷键可能已被注销: ${currentKeys.value.textKey}`);
+        }
       }
       if (currentKeys.value.questionKey) {
-        await unregister(currentKeys.value.questionKey)
-        info(`useShortcuts: 已注销问答快捷键: ${currentKeys.value.questionKey}`);
+        try {
+          await unregister(currentKeys.value.questionKey)
+          info(`useShortcuts: 已注销问答快捷键: ${currentKeys.value.questionKey}`);
+        } catch (e) {
+          // 快捷键可能已被注销，忽略错误
+          info(`useShortcuts: 问答快捷键可能已被注销: ${currentKeys.value.questionKey}`);
+        }
       }
       
       currentKeys.value = { ...currentKeys.value, textKey: null, questionKey: null }
@@ -171,13 +193,13 @@ export function useShortcuts() {
   /**
    * 更新快捷键
    */
-  const updateShortcuts = async (newTextKey, newQuestionKey, textHandler, questionHandler) => {
-    info(`useShortcuts: 更新快捷键 - 新文本:${newTextKey}, 新问答:${newQuestionKey}`);
+  const updateShortcuts = async (newTextKey, newQuestionKey, textHandler, questionHandler, textEnabled = true, questionEnabled = true) => {
+    info(`useShortcuts: 更新快捷键 - 新文本:${newTextKey}(${textEnabled ? '启用' : '禁用'}), 新问答:${newQuestionKey}(${questionEnabled ? '启用' : '禁用'})`);
     // 先注销旧的
     await unregisterShortcuts()
     
     // 注册新的
-    return await registerShortcuts(newTextKey, newQuestionKey, textHandler, questionHandler)
+    return await registerShortcuts(newTextKey, newQuestionKey, textHandler, questionHandler, textEnabled, questionEnabled)
   }
 
   return {
