@@ -27,6 +27,12 @@
             </el-icon>
             <span>设置</span>
           </el-menu-item>
+          <el-menu-item index="notifications">
+            <el-icon>
+              <BellFilled />
+            </el-icon>
+            <span>通知中心</span>
+          </el-menu-item>
           <el-menu-item index="about">
             <el-icon>
               <InfoFilled />
@@ -57,12 +63,20 @@
           <SettingPage @update-shortcuts="handleUpdateShortcuts" />
         </div>
 
+        <!-- 通知中心 -->
+        <div v-show="activeMenu === 'notifications'" class="page-container">
+          <NotificationsPage />
+        </div>
+
         <!-- 关于 -->
         <div v-show="activeMenu === 'about'" class="page-container">
           <AboutPage />
         </div>
       </el-main>
     </el-container>
+
+    <!-- 通知视图组件 -->
+    <NotificationView :notification="activeNotification" />
 
     <Update></Update>
   </div>
@@ -73,12 +87,14 @@ import { ref, watch, onMounted, h } from 'vue'
 import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { ElMessage, ElNotification } from 'element-plus'
-import { HomeFilled, Setting, InfoFilled, ChatDotRound } from '@element-plus/icons-vue'
+import { HomeFilled, Setting, InfoFilled, ChatDotRound, BellFilled } from '@element-plus/icons-vue'
 import { enable, disable } from '@tauri-apps/plugin-autostart'
 import HomePage from './components/Home.vue'
 import HistoryPage from './components/History.vue'
 import SettingPage from './components/Setting.vue'
 import AboutPage from './components/About.vue'
+import NotificationsPage from './components/Notifications.vue'
+import NotificationView from './components/NotificationView.vue'
 import { invoke } from '@tauri-apps/api/core'
 import { debounceAfter } from './utils/common.js'
 import { useShortcuts } from './composables/useShortcuts.js'
@@ -91,6 +107,7 @@ import mitt from './utils/mitt.js'
 import { trace, info, error, attachConsole } from '@tauri-apps/plugin-log';
 import Update from './components/Update.vue';
 import { toggleTrayIcon, isTrayIconVisible, hideTrayIcon, showTrayIcon } from './main.js';
+import { useNotifications } from './composables/notificationMg.js';
 
 // const detach = await attachConsole();
 info('App.vue: 应用启动');
@@ -99,6 +116,13 @@ info('App.vue: 应用启动');
 // 使用 快捷键管理器
 const { registerShortcuts, updateShortcuts, registerStopKey, unregisterStopKey, registerToggleWindowKey, unregisterToggleWindowKey } = useShortcuts()
 const homeRef = ref(null)
+
+// 使用通知管理器
+const { 
+  activeNotification, 
+  loadStoredNotifications, 
+  checkAndShowNotifications 
+} = useNotifications()
 
 // 初始化设置为默认值，会在 onBeforeMount 中更新为实际值
 const settings = setMg.settings
@@ -240,34 +264,16 @@ const handleUpdateShortcuts = async () => {
   }
 }
 
-//TODO 从服务器获取信息并显示通知
+// 从服务器获取信息并显示通知
 const fromServerGetInfo = async () => {
-  info("App.vue: 开始从服务器获取信息");
-  const response = await fetch(`http://172.28.193.23:28302/get_info?v=${setMg.version}`, {
-    Method: 'GET'
-  });
-  const data = await response.json();
-  if (!data) {
-    info("App.vue: 服务器未返回数据");
-    return;
+  try {
+    info("App.vue: 开始检查服务器通知");
+    await loadStoredNotifications();
+    await checkAndShowNotifications();
+    info("App.vue: 通知检查完成");
+  } catch (e) {
+    error(`App.vue: 检查通知失败: ${e}`);
   }
-  info(`App.vue: 从服务器获取到的信息: ${JSON.stringify(data)}`)
-  const { title, message, mold, duration, position } = data;
-  //渲染数据
-
-  const notificationMessage = h(
-    message.tag,
-    message.props,
-    message.children
-  )
-
-  ElNotification({
-    title: title,
-    message: notificationMessage,
-    type: mold,
-    duration: duration,
-    position: position
-  });
 }
 
 //更新时间范围
@@ -324,6 +330,9 @@ onMounted(async () => {
 
   info("发送检查更新事件")
   mitt.emit("check-update")
+
+  // 检查服务器通知
+  await fromServerGetInfo()
 
   try {
     if (setMg.get("hideWindow")) {

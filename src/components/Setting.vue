@@ -1172,14 +1172,14 @@ watch(
 
 /* 启用状态 - 绿色 */
 .status-enabled {
-  background-color: #67c23a !important;
-  border-color: #67c23a !important;
+  background-color: #8dd466 !important;
+  border-color: #8dd466 !important;
   color: #ffffff !important;
 }
 
 .status-enabled:hover {
-  background-color: #85ce61 !important;
-  border-color: #85ce61 !important;
+  background-color: #8dd466 !important;
+  border-color: #8dd466 !important;
 }
 
 .status-enabled .el-icon {

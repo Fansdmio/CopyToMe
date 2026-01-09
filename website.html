@@ -363,9 +363,9 @@
 
         createApp({
             setup() {
-                const appVersion = ref('v0.2.1');
-                const releaseDate = ref('2026-01-01');
-                const downloadLink = ref('https://cp.wojwo.xyz/download/CopyToMeAndTauri_0.2.1_x64-setup.exe');
+                const appVersion = ref('v0.2.2');
+                const releaseDate = ref('2026-01-03');
+                const downloadLink = ref(`https://cp.uuyo.fun/download/CopyToMeAndTauri_${appVersion.value.slice(1)}_x64-setup.exe`);
                 const githubLink = ref('https://github.com/leokun0210/CopyToMeAndTauri');
 
                 const features = reactive([
@@ -399,12 +399,20 @@
 
                 const changelog = reactive([
                     {
-                        version: 'v0.2.1',
-                        date: '2026-01-01',
+                        version: 'v0.2.2',
+                        date: '2026-01-03',
                         colorClass: 'secondary-soft',
                         items: [
-                            { text: '优化 DeepSeek R1 支持：自动过滤 <think> 标签', color: 'text-secondary-soft' },
-                            { text: '优化下载进度条显示', color: 'text-secondary-soft' }]
+                            { text: '加入启动关闭快捷键功能', color: 'text-secondary-soft' }
+                        ]
+                    },
+                    {
+                        version: 'v0.2.1',
+                        date: '2026-01-01',
+                        colorClass: 'primary-soft',
+                        items: [
+                            { text: '优化 DeepSeek R1 支持：自动过滤 <think> 标签', color: 'text-primary-soft' },
+                            { text: '优化下载进度条显示', color: 'text-primary-soft' }]
                     },
                     {
                         version: 'v0.2.0',
