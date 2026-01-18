@@ -73,7 +73,7 @@ const isNotificationValid = (notification, currentVersion) => {
 export const fetchNotifications = async () => {
     try {
         console.log('开始获取通知...')
-        const response = await fetch('https://cp.uuyo.fun/notifications/notifications_dev.json')
+        const response = await fetch('https://cp.uuyo.fun/notifications/notifications.json')
 
         if (!response.ok) {
             console.error('通知服务器响应错误:', response.status)

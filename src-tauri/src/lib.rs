@@ -59,7 +59,7 @@ fn open_folder(path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn handle_text(app: AppHandle, text: String) {
+fn handle_text(app: AppHandle, text: String, start_position: usize) {
     // 重置停止标志
     STOP_FLAG.store(false, Ordering::Relaxed);
 
@@ -70,19 +70,27 @@ fn handle_text(app: AppHandle, text: String) {
         let r_val = *R_TIEM.lock().expect("");
         let mut rng = rand::rng();
         let mut enigo = Enigo::new(&Settings::default()).expect("初始化enigo失败");
-        for c in text.chars() {
+        
+        let chars: Vec<char> = text.chars().collect();
+        let mut current_pos = start_position;
+        
+        for (index, c) in chars.iter().enumerate().skip(start_position) {
             // 检查停止标志
             if stop_flag.load(Ordering::Relaxed) {
-                println!("检测到停止信号,中断输入");
-                break;
+                println!("检测到停止信号,中断输入,当前位置: {}", current_pos);
+                let _ = app.emit("text_paused", current_pos);
+                return;
             }
 
             if let Err(e) = enigo.text(&c.to_string()) {
                 eprintln!("输入字符失败: {}", e);
-                break;
+                let _ = app.emit("text_paused", current_pos);
+                return;
             }
+            
+            current_pos = index + 1;
+            
             // 在延迟期间也检查停止标志
-
             let mut delay = 0u64;
             if r_val == 0 && l_val == 0 {
                 // 无延迟
@@ -95,7 +103,8 @@ fn handle_text(app: AppHandle, text: String) {
 
             while remaining > 0 {
                 if stop_flag.load(Ordering::Relaxed) {
-                    println!("延迟期间检测到停止信号,中断输入");
+                    println!("延迟期间检测到停止信号,中断输入,当前位置: {}", current_pos);
+                    let _ = app.emit("text_paused", current_pos);
                     return;
                 }
 
@@ -105,7 +114,7 @@ fn handle_text(app: AppHandle, text: String) {
             }
         }
         let _ = app.emit("text_handled", "");
-        println!("文本输入完成或已中断");
+        println!("文本输入完成,总字符数: {}", chars.len());
     });
 }
 

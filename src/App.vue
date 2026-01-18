@@ -117,11 +117,18 @@ info('App.vue: 应用启动');
 const { registerShortcuts, updateShortcuts, registerStopKey, unregisterStopKey, registerToggleWindowKey, unregisterToggleWindowKey } = useShortcuts()
 const homeRef = ref(null)
 
+// 模拟输入状态管理
+const typingState = ref({
+  isTyping: false,        // 是否正在输入
+  cachedText: '',         // 缓存的文本
+  currentPosition: 0      // 当前输入位置
+})
+
 // 使用通知管理器
-const { 
-  activeNotification, 
-  loadStoredNotifications, 
-  checkAndShowNotifications 
+const {
+  activeNotification,
+  loadStoredNotifications,
+  checkAndShowNotifications
 } = useNotifications()
 
 // 初始化设置为默认值，会在 onBeforeMount 中更新为实际值
@@ -138,8 +145,19 @@ const handleMenuSelect = (index) => {
 }
 
 listen('text_handled', () => {
-  info("App.vue: 模拟输入完成,注销k键");
+  info("App.vue: 模拟输入完成");
+  typingState.value.isTyping = false
+  typingState.value.cachedText = ''
+  typingState.value.currentPosition = 0
   unregisterStopKey()
+})
+
+listen('text_paused', (event) => {
+  const position = event.payload
+  info(`App.vue: 模拟输入暂停,位置: ${position}`);
+  typingState.value.isTyping = false
+  typingState.value.currentPosition = position
+  // 暂停时不注销 K 键，因为缓存区还有内容
 })
 
 // 模拟输入快捷键处理函数
@@ -151,35 +169,77 @@ const handleText = debounce(async () => {
     return
   }
 
+  // 如果正在输入，则暂停
+  if (typingState.value.isTyping) {
+    info("App.vue: 正在输入中，发送暂停信号");
+    await invoke('stop_typing')
+    ElMessage.info('已暂停输入，再次按下可继续')
+    return
+  }
+
+  // 如果有缓存且未完成，则继续输入
+  if (typingState.value.cachedText && typingState.value.currentPosition < typingState.value.cachedText.length) {
+    info(`App.vue: 继续输入，从位置 ${typingState.value.currentPosition} 开始`);
+    typingState.value.isTyping = true
+
+    // 注册停止键（清空缓存）
+    await registerStopKey(handleStopTypingAndClear)
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+    invoke('handle_text', {
+      text: typingState.value.cachedText,
+      startPosition: typingState.value.currentPosition
+    })
+    return
+  }
+
+  // 开始新的输入
   const text = await readText()
   info(`App.vue: 读取到剪贴板文本,长度: ${text?.length || 0}`);
   if (!text?.trim()) return
 
-  // 确保之前的停止键已注销
-  await unregisterStopKey()
+  // 初始化新的输入状态
+  typingState.value.cachedText = text
+  typingState.value.currentPosition = 0
+  typingState.value.isTyping = true
 
-  // 停止模拟输入处理函数
-  const handleStopTyping = async () => {
-    info('App.vue: 用户按下 K 键,发送停止信号')
-    await invoke('stop_typing')
-    // 立即注销停止键,防止重复触发
-    await unregisterStopKey()
-  }
-
-  // 开始模拟输入前注册停止键
-  const registered = await registerStopKey(handleStopTyping)
+  // 注册停止键（清空缓存）
+  const registered = await registerStopKey(handleStopTypingAndClear)
   if (!registered) {
     error('App.vue: 停止键注册失败')
     ElMessage.error('停止键注册失败')
+    typingState.value.isTyping = false
     return
   }
 
   info(`App.vue: 开始处理文本: ${text.substring(0, 50)}...`);
-  // 注意: handle_text 现在在后台线程运行,会立即返回
   await new Promise(resolve => setTimeout(resolve, 500));
-  invoke('handle_text', { text })
+  invoke('handle_text', { text, startPosition: 0 })
   info('App.vue: 模拟输入已启动')
-})
+}, 300)
+
+// 停止模拟输入并清空缓存的处理函数
+const handleStopTypingAndClear = async () => {
+  info('App.vue: 用户按下 K 键，停止输入并清空缓存')
+
+  // 如果正在输入，发送停止信号
+  if (typingState.value.isTyping) {
+    await invoke('stop_typing')
+    ElMessage.warning('已停止输入并清空缓存')
+  } else if (typingState.value.cachedText) {
+    // 不在输入但有缓存，直接清空
+    ElMessage.info('已清空缓存')
+  }
+
+  // 清空状态
+  typingState.value.isTyping = false
+  typingState.value.cachedText = ''
+  typingState.value.currentPosition = 0
+
+  // 注销 K 键
+  await unregisterStopKey()
+  info('App.vue: 缓存已清空，K 键已注销')
+}
 
 // AI 问答快捷键处理函数
 const handleQuestion = debounce(async () => {
@@ -230,7 +290,7 @@ const handleToggleWindow = debounce(async () => {
     const wasVisible = isTrayIconVisible();
     await toggleTrayIcon();
     const isVisible = isTrayIconVisible();
-    
+
     if (isVisible && !wasVisible) {
       info("App.vue: 托盘图标已显示");
       ElMessage.success('托盘图标已显示');
@@ -360,6 +420,21 @@ onMounted(async () => {
   } catch (e) {
     error(`App.vue: AI健康检查失败: ${e}`);
   }
+
+  // 监听输入状态变化，动态管理 K 键注册
+  watch(
+    () => [typingState.value.isTyping, typingState.value.cachedText],
+    async ([isTyping, cachedText]) => {
+      // 如果没有在输入且缓存为空，则注销 K 键
+      if (!isTyping && !cachedText) {
+        info('App.vue: 输入状态空闲且无缓存，注销 K 键')
+        await unregisterStopKey()
+      }
+      // 否则保持 K 键注册状态（在 handleText 中已注册）
+    },
+    { deep: true }
+  )
+
   //监听4个按钮变化
   watch([
     () => settings.wxInputMode,

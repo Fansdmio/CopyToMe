@@ -8,7 +8,7 @@
         <div>
           <el-button @click="resetSettingsHandler">
             <el-icon>
-              <RefreshLeft/>
+              <RefreshLeft />
             </el-icon>
             重置
           </el-button>
@@ -24,7 +24,7 @@
           <h3 class="section-title">
             <div class="section-icon">
               <el-icon>
-                <Operation/>
+                <Operation />
               </el-icon>
               <span>快捷键设置</span>
             </div>
@@ -32,26 +32,22 @@
 
           <el-form :model="settings" label-width="120px" label-position="left">
             <el-form-item v-for="shortcut in shortcutFields" :key="shortcut.key" :label="shortcut.label">
-              <el-input 
-                :model-value="capturingKey === shortcut.key ? '' : settings[shortcut.key]"
-                :placeholder="capturingKey === shortcut.key ? '请按下快捷键...' : shortcut.placeholder" 
-                class="shortcut-input"
-                readonly
-                @click="startCapture(shortcut.key)">
+              <el-input :model-value="capturingKey === shortcut.key ? '' : settings[shortcut.key]"
+                :placeholder="capturingKey === shortcut.key ? '请按下快捷键...' : shortcut.placeholder" class="shortcut-input"
+                readonly @click="startCapture(shortcut.key)">
                 <template #prepend>
                   <el-icon>
-                    <component :is="shortcut.icon"/>
+                    <component :is="shortcut.icon" />
                   </el-icon>
                 </template>
                 <template #append>
                   <el-button-group>
-                    <el-button 
-                      :type="capturingKey === shortcut.key ? 'primary' : 'default'"
+                    <el-button :type="capturingKey === shortcut.key ? 'primary' : 'default'"
                       @click.stop="toggleCapture(shortcut.key)">
                       {{ capturingKey === shortcut.key ? '取消' : '捕获' }}
                     </el-button>
                     <!-- 状态按钮：显示启用/禁用状态 -->
-                    <el-button 
+                    <el-button
                       :class="['status-toggle-button', settings[shortcut.enableKey] ? 'status-enabled' : 'status-disabled']"
                       @click.stop="toggleFeature(shortcut.key, shortcut.enableKey, shortcut.enableLabel)">
                       <el-icon>
@@ -67,14 +63,14 @@
           </el-form>
         </div>
 
-        <el-divider style="margin: 12px 0"/>
+        <el-divider style="margin: 12px 0" />
 
         <!-- AI 配置 -->
         <div class="setting-section">
           <h3 class="section-title">
             <div class="section-icon">
               <el-icon>
-                <Cpu/>
+                <Cpu />
               </el-icon>
               <span>AI 配置</span>
             </div>
@@ -86,19 +82,18 @@
           <el-form label-width=" 120px" label-position="left">
             <el-form-item v-for="field in aiConfigFields" :key="field.key" :label="field.label">
               <!-- 文本输入框 -->
-              <el-input v-if="field.type !== 'switch'" v-model="settings[field.key]" :placeholder="field.placeholder" 
-                        :type="field.type"
-                        :show-password="field.showPassword" :rows="field.type === 'textarea' ? 4 : null"
-                        :clearable="field.type !== 'textarea'">
+              <el-input v-if="field.type !== 'switch'" v-model="settings[field.key]" :placeholder="field.placeholder"
+                :type="field.type" :show-password="field.showPassword" :rows="field.type === 'textarea' ? 4 : null"
+                :clearable="field.type !== 'textarea'">
                 <template #prepend>
                   <el-icon>
-                    <component :is="field.icon"/>
+                    <component :is="field.icon" />
                   </el-icon>
                 </template>
               </el-input>
               <!-- 开关控件 -->
               <div v-else class="switch-container">
-                <el-switch v-model="settings[field.key]" size="large" active-text="启用" inactive-text="关闭"/>
+                <el-switch v-model="settings[field.key]" size="large" active-text="启用" inactive-text="关闭" />
               </div>
               <template #extra>
                 <el-text size="small" type="info">
@@ -115,14 +110,14 @@
 
         </div>
 
-        <el-divider style="margin: 8px 0"/>
+        <el-divider style="margin: 8px 0" />
 
         <!-- 自定义AI设置 -->
         <div class="setting-section">
           <h3 class="section-title">
             <div class="section-icon">
               <el-icon>
-                <Setting/>
+                <Setting />
               </el-icon>
               <span>自定义AI设置</span>
             </div>
@@ -131,11 +126,11 @@
             </el-button>
           </h3>
 
-          <el-form label-width="120px" label-position="left">
+          <el-form label-position="center">
             <!-- 启用自定义AI -->
             <el-form-item label="启用自定义AI">
               <div class="switch-container">
-                <el-switch v-model="settings.useCustomAI" size="large" active-text="启用" inactive-text="关闭"/>
+                <el-switch v-model="settings.useCustomAI" size="large" active-text="启用" inactive-text="关闭" />
                 <el-text size="small" type="info" style="margin-left: 12px">
                   启用后将使用自定义AI端点，而不是DeepSeek
                 </el-text>
@@ -145,52 +140,41 @@
             <!-- 自定义AI配置（仅在启用时显示） -->
             <template v-if="settings.useCustomAI">
               <el-form-item label="API端点">
-                <el-input v-model="settings.customAIEndpoint" placeholder="例如: https://api.openai.com/v1 或 https://qwen.uuyo.fun/v1">
-                  <template #prepend>
-                    <el-icon><Link/></el-icon>
-                  </template>
-                </el-input>
-                <el-text size="small" type="info">只需填写到 /v1，会自动补全 /chat/completions</el-text>
+                <div style="width: 100%;">
+                  <el-input style="width: 100%;" v-model="settings.customAIEndpoint"
+                    placeholder="例如: https://api.openai.com/v1 或 https://qwen.uuyo.fun/v1">
+                    <template #prepend>
+                      <el-icon>
+                        <Link />
+                      </el-icon>
+                    </template>
+                  </el-input>
+                </div>
               </el-form-item>
 
               <el-form-item label="模型名称">
                 <el-space direction="vertical" style="align-items: flex-start;" :size="8">
-                  <div style="display: flex; gap: 8px; width: 100%;">
-                    <el-select 
-                      v-if="availableModels.length > 0"
-                      v-model="settings.customAIModel" 
-                      placeholder="选择模型" 
-                      filterable
-                      allow-create
-                      style="flex: 1; min-width: 0;"
-                    >
-                      <el-option
-                        v-for="model in availableModels"
-                        :key="model"
-                        :label="model"
-                        :value="model"
-                      />
+                  <div style="display: flex; width: 100%;">
+                    <el-select v-if="availableModels.length > 0" v-model="settings.customAIModel" placeholder="选择模型"
+                      filterable allow-create style="flex: 1; min-width: 0;">
+                      <el-option v-for="model in availableModels" :key="model" :label="model" :value="model" />
                     </el-select>
-                    <el-input 
-                      v-else
-                      v-model="settings.customAIModel" 
-                      placeholder="例如: gpt-3.5-turbo 或 gemini-pro"
-                      style="flex: 1; min-width: 0;"
-                    >
+                    <el-input v-else v-model="settings.customAIModel" placeholder="例如: gpt-3.5-turbo 或 gemini-pro"
+                      style="flex: 1; min-width: 0;">
                       <template #prepend>
-                        <el-icon><Cpu/></el-icon>
+                        <el-icon>
+                          <Cpu />
+                        </el-icon>
                       </template>
                     </el-input>
-                    <el-button 
-                      @click="fetchModels" 
-                      :loading="loadingModels"
-                      :disabled="!settings.customAIEndpoint"
-                    >
-                      <el-icon v-if="!loadingModels"><Refresh/></el-icon>
+                    <el-button @click="fetchModels" :loading="loadingModels" :disabled="!settings.customAIEndpoint">
+                      <el-icon v-if="!loadingModels">
+                        <Refresh />
+                      </el-icon>
                       {{ availableModels.length > 0 ? '刷新' : '获取模型' }}
                     </el-button>
                   </div>
-                  <el-text size="small" type="info" style="text-align: left; display: block;">
+                  <el-text size="small" type="info" style="text-align: left; display: block;margin: -8px;">
                     {{ availableModels.length > 0 ? `已获取 ${availableModels.length} 个可用模型` : '点击"获取模型"按钮自动获取可用模型列表' }}
                   </el-text>
                 </el-space>
@@ -206,69 +190,81 @@
               <el-form-item label="API Key">
                 <el-input v-model="settings.customAIKey" type="password" show-password placeholder="自定义AI的API Key">
                   <template #prepend>
-                    <el-icon><Key/></el-icon>
+                    <el-icon>
+                      <Key />
+                    </el-icon>
                   </template>
                 </el-input>
               </el-form-item>
             </template>
-
+            <el-button @click="showAdvancedSettings = !showAdvancedSettings" text>
+              <el-icon>
+                <CaretRight v-if="!showAdvancedSettings" />
+                <CaretBottom v-else />
+              </el-icon>
+              高级设置
+            </el-button>
             <!-- 高级设置（可折叠） -->
-            <el-form-item>
-              <el-button @click="showAdvancedSettings = !showAdvancedSettings" text>
-                <el-icon><CaretRight v-if="!showAdvancedSettings"/><CaretBottom v-else/></el-icon>
-                高级设置
-              </el-button>
-            </el-form-item>
+            <!-- <el-form-item>
+
+            </el-form-item> -->
 
             <!-- 高级参数（折叠区域） -->
             <el-collapse-transition>
               <div v-show="showAdvancedSettings" class="advanced-settings">
                 <el-form-item label="Temperature">
-                  <el-slider v-model="settings.aiTemperature" :min="0" :max="2" :step="0.1" show-input :marks="{0: '0', 1: '1', 2: '2'}" style="margin-bottom: -8px;"/>
-                  <el-text size="small" type="info" style="margin-top: 16px; display: block;">控制输出的随机性，值越高越随机</el-text>
+                  <el-slider v-model="settings.aiTemperature" :min="0" :max="2" :step="0.1" show-input
+                    style="margin-bottom: -14px;" />
+                  <el-text size="small" type="info">控制输出的随机性，值越高越随机</el-text>
                 </el-form-item>
 
                 <el-form-item label="Top P">
-                  <el-slider v-model="settings.aiTopP" :min="0" :max="1" :step="0.05" show-input :marks="{0: '0', 0.5: '0.5', 1: '1'}" style="margin-bottom: -8px;"/>
-                  <el-text size="small" type="info" style="margin-top: 16px; display: block;">控制采样范围，与temperature配合使用</el-text>
+                  <el-slider v-model="settings.aiTopP" :min="0" :max="1" :step="0.05" show-input
+                    style="margin-bottom: -14px;" />
+                  <el-text size="small" type="info">控制采样范围，与temperature配合使用</el-text>
                 </el-form-item>
 
                 <el-form-item label="最大Tokens">
-                  <el-input-number v-model="settings.aiMaxTokens" :min="100" :max="8000" :step="100" style="width: 100%; margin-bottom: -8px;"/>
-                  <el-text size="small" type="info" style="margin-top: 16px; display: block;">限制AI回答的最大长度</el-text>
+                  <el-input-number v-model="settings.aiMaxTokens" :min="100" :max="8000" :step="100"
+                    style="width: 100%; margin-bottom: -14px;" />
+                  <el-text size="small" style="margin-top: 10px;" type="info">限制AI回答的最大长度</el-text>
                 </el-form-item>
 
                 <el-form-item label="频率惩罚">
-                  <el-slider v-model="settings.aiFrequencyPenalty" :min="-2" :max="2" :step="0.1" show-input :marks="{'-2': '-2', 0: '0', 2: '2'}" style="margin-bottom: -8px;"/>
-                  <el-text size="small" type="info" style="margin-top: 16px; display: block;">减少重复内容的出现频率</el-text>
+                  <el-slider v-model="settings.aiFrequencyPenalty" :min="-2" :max="2" :step="0.1" show-input
+                    style="margin-bottom: -14px;" />
+                  <el-text size="small" type="info">减少重复内容的出现频率</el-text>
                 </el-form-item>
 
                 <el-form-item label="存在惩罚">
-                  <el-slider v-model="settings.aiPresencePenalty" :min="-2" :max="2" :step="0.1" show-input :marks="{'-2': '-2', 0: '0', 2: '2'}" style="margin-bottom: -8px;"/>
-                  <el-text size="small" type="info" style="margin-top: 16px; display: block;">鼓励谈论新话题</el-text>
+                  <el-slider v-model="settings.aiPresencePenalty" :min="-2" :max="2" :step="0.1" show-input
+                    style="margin-bottom: -14px;" />
+                  <el-text size="small" type="info">鼓励谈论新话题</el-text>
                 </el-form-item>
               </div>
             </el-collapse-transition>
           </el-form>
         </div>
 
-        <el-divider style="margin: 8px 0"/>
+        <el-divider style="margin: 8px 0" />
 
         <!-- 功能设置 -->
         <div class="setting-section">
           <h3 class="section-title">
             <div class="section-icon">
               <el-icon>
-                <Tools/>
+                <Tools />
               </el-icon>
               <span>功能设置</span>
             </div>
           </h3>
 
-          <el-form label-width="120px" label-position="left">
-            <el-form-item v-for="feature in featureToggles.filter(f => f.key !== 'textProcessEnabled' && f.key !== 'aiQAEnabled')" :key="feature.key" :label="feature.label">
+          <el-form label-width="120px" label-position="center">
+            <el-form-item
+              v-for="feature in featureToggles.filter(f => f.key !== 'textProcessEnabled' && f.key !== 'aiQAEnabled')"
+              :key="feature.key" :label="feature.label">
               <div class="switch-container">
-                <el-switch v-model="settings[feature.key]" size="large" active-text="启用" inactive-text="关闭"/>
+                <el-switch v-model="settings[feature.key]" size="large" active-text="启用" inactive-text="关闭" />
                 <el-text size="small" type="info" style="margin-left: 12px">
                   {{ feature.description }}
                 </el-text>
@@ -277,21 +273,21 @@
             <!-- 时间范围 -->
             <el-form-item :label="TEXT_PROCESSING_CONFIG.timeRange.label">
               <el-slider v-model="settings.timeRange" range show-stops :min="TEXT_PROCESSING_CONFIG.timeRange.min"
-                         :max="TEXT_PROCESSING_CONFIG.timeRange.max" :step="TEXT_PROCESSING_CONFIG.timeRange.step"
-                         :marks="TEXT_PROCESSING_CONFIG.timeRange.marks"/>
+                :max="TEXT_PROCESSING_CONFIG.timeRange.max" :step="TEXT_PROCESSING_CONFIG.timeRange.step"
+                :marks="TEXT_PROCESSING_CONFIG.timeRange.marks" />
             </el-form-item>
           </el-form>
         </div>
 
 
-        <el-divider style="margin: 12px 0"/>
+        <el-divider style="margin: 12px 0" />
 
         <!-- DLL 注入配置 -->
         <div class="setting-section">
           <h3 class="section-title">
             <div class="section-icon">
               <el-icon>
-                <Upload/>
+                <Upload />
               </el-icon>
               <span>DLL 注入配置</span>
               <el-tag v-if="injected" type="success" size="small">
@@ -315,18 +311,18 @@
             </div>
           </h3>
 
-          <el-form label-width="120px" label-position="left">
+          <el-form label-width="120px" label-position="center">
             <el-form-item label="目标程序路径">
               <el-input v-model="settings.targetProgramPath" placeholder="请选择目标程序 (.exe)" clearable>
                 <template #prepend>
                   <el-icon>
-                    <Document/>
+                    <Document />
                   </el-icon>
                 </template>
                 <template #append>
                   <el-button @click="selectTargetProgram">
                     <el-icon>
-                      <FolderOpened/>
+                      <FolderOpened />
                     </el-icon>
                     浏览
                   </el-button>
@@ -335,18 +331,17 @@
             </el-form-item>
 
             <el-form-item label="DLL 文件路径">
-              <el-input v-model="settings.dllPath"
-                        placeholder="请选择 DLL 文件或输入下载 URL (http://... 或 https://...)"
-                        clearable>
+              <el-input v-model="settings.dllPath" placeholder="请选择 DLL 文件或输入下载 URL (http://... 或 https://...)"
+                clearable>
                 <template #prepend>
                   <el-icon>
-                    <DocumentCopy/>
+                    <DocumentCopy />
                   </el-icon>
                 </template>
                 <template #append>
                   <el-button @click="selectDllFile">
                     <el-icon>
-                      <FolderOpened/>
+                      <FolderOpened />
                     </el-icon>
                     浏览
                   </el-button>
@@ -355,14 +350,11 @@
             </el-form-item>
 
             <el-form-item label="解锁密码">
-              <el-input v-model="settings.dllPassword" 
-                        type="password" 
-                        show-password 
-                        placeholder="默认为空，功能解锁密码" 
-                        clearable>
+              <el-input v-model="settings.dllPassword" type="password" show-password placeholder="默认为空，功能解锁密码"
+                clearable>
                 <template #prepend>
                   <el-icon>
-                    <Key/>
+                    <Key />
                   </el-icon>
                 </template>
               </el-input>
@@ -384,13 +376,13 @@
 </template>
 
 <script setup>
-import {ref, computed, onMounted, onUnmounted, watch} from 'vue'
-import {ElMessage, ElMessageBox} from 'element-plus'
-import {open} from '@tauri-apps/plugin-dialog'
-import {copyFile, writeTextFile, writeFile, exists, remove, readFile} from '@tauri-apps/plugin-fs'
-import {dirname, join, appCacheDir, appDataDir} from '@tauri-apps/api/path'
-import {fetch} from '@tauri-apps/plugin-http'
-import {invoke} from '@tauri-apps/api/core'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { open } from '@tauri-apps/plugin-dialog'
+import { copyFile, writeTextFile, writeFile, exists, remove, readFile } from '@tauri-apps/plugin-fs'
+import { dirname, join, appCacheDir, appDataDir } from '@tauri-apps/api/path'
+import { fetch } from '@tauri-apps/plugin-http'
+import { invoke } from '@tauri-apps/api/core'
 
 import {
   Cpu,
@@ -411,7 +403,7 @@ import {
   CircleCloseFilled
 } from '@element-plus/icons-vue'
 
-import {validateShortcutKey} from '../utils/textProcessing.js'
+import { validateShortcutKey } from '../utils/textProcessing.js'
 import {
   SHORTCUT_FIELDS,
   AI_CONFIG_FIELDS,
@@ -422,7 +414,7 @@ import {
 import setMg from "../composables/setMg.js";
 import aiMg from "../composables/aiMg.js";
 import mitt from '../utils/mitt.js';
-import {info, error} from '@tauri-apps/plugin-log';
+import { info, error } from '@tauri-apps/plugin-log';
 // Props 和 Emits
 const emit = defineEmits(['update-shortcuts'])
 // 表单数据 (绑定到响应式状态)
@@ -452,9 +444,9 @@ const aiTips = AI_TIPS
 // 检查是否可以注入
 const canInject = computed(() => {
   return settings.deepseekApi &&
-      settings.deepseekApi.trim() !== '' &&
-      settings.targetProgramPath &&
-      settings.dllPath
+    settings.deepseekApi.trim() !== '' &&
+    settings.targetProgramPath &&
+    settings.dllPath
 })
 // 检查目标目录下是否存在已注入的文件
 const checkInjectedFiles = async () => {
@@ -491,7 +483,7 @@ const checkInjectedFiles = async () => {
     const oldValue = injected.value;
     injected.value = dllExists && apiExists
     info(`Setting: 注入状态检查完成 - DLL存在:${dllExists}, API文件存在:${apiExists}, 注入状态:${injected.value}`);
-    
+
     // 如果状态发生变化，通知 Home 页面
     if (oldValue !== injected.value) {
       info(`Setting: 注入状态变化 ${oldValue} -> ${injected.value}, 发送更新事件`);
@@ -678,7 +670,7 @@ const handleInjectDll = async () => {
 
     // 确保目录存在
     try {
-      await invoke('create_directory', {path: injectDir})
+      await invoke('create_directory', { path: injectDir })
     } catch (e) {
       // 目录可能已存在，忽略错误
     }
@@ -740,18 +732,18 @@ const handleInjectDll = async () => {
       info("Setting: 提示用户手动复制文件");
 
       await ElMessageBox.alert(
-          `由于权限限制，无法自动复制文件到目标目录。\n\n请手动完成以下操作：\n\n1. 打开文件夹: ${injectDir}\n2. 复制以下两个文件：\n   - ${dllFileName}\n   - eat_rice.txt\n3. 粘贴到目标程序目录: ${targetDir}\n\n文件已准备好，点击"打开文件夹"按钮即可查看。`,
-          '需要手动复制文件',
-          {
-            confirmButtonText: '打开文件夹',
-            type: 'warning',
-            dangerouslyUseHTMLString: false
-          }
+        `由于权限限制，无法自动复制文件到目标目录。\n\n请手动完成以下操作：\n\n1. 打开文件夹: ${injectDir}\n2. 复制以下两个文件：\n   - ${dllFileName}\n   - eat_rice.txt\n3. 粘贴到目标程序目录: ${targetDir}\n\n文件已准备好，点击"打开文件夹"按钮即可查看。`,
+        '需要手动复制文件',
+        {
+          confirmButtonText: '打开文件夹',
+          type: 'warning',
+          dangerouslyUseHTMLString: false
+        }
       )
 
       // 打开文件夹
       try {
-        await invoke('open_folder', {path: injectDir})
+        await invoke('open_folder', { path: injectDir })
       } catch (e) {
         error(`Setting: 打开文件夹失败: ${e}`);
       }
@@ -779,13 +771,13 @@ const handleRemoveInjection = async () => {
 
   try {
     await ElMessageBox.confirm(
-        '确定要删除已注入的 DLL 和配置文件吗？',
-        '取消注入',
-        {
-          confirmButtonText: '确定删除',
-          cancelButtonText: '取消',
-          type: 'warning',
-        }
+      '确定要删除已注入的 DLL 和配置文件吗？',
+      '取消注入',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
     )
 
     removing.value = true
@@ -853,7 +845,7 @@ const fetchModels = async () => {
     ElMessage.warning('请先填写API端点');
     return;
   }
-  
+
   loadingModels.value = true;
   try {
     const models = await aiMg.fetchAvailableModels();
@@ -924,7 +916,7 @@ const startCapture = async (key) => {
     // 注销所有快捷键，避免在捕获过程中触发原有功能
     try {
       const { unregister } = await import('@tauri-apps/plugin-global-shortcut')
-      
+
       // 注销所有已注册的快捷键
       for (const field of shortcutFields) {
         if (settings[field.key]) {
@@ -939,7 +931,7 @@ const startCapture = async (key) => {
     } catch (err) {
       error(`Setting: 注销快捷键失败: ${err}`)
     }
-    
+
     capturingKey.value = key
     pressedKeys.value.clear()
   }
@@ -959,7 +951,7 @@ const toggleFeature = async (shortcutKey, enableKey, enableLabel) => {
   const newState = !settings[enableKey]
   settings[enableKey] = newState
   await setMg.save()
-  
+
   if (newState) {
     // 启用：重新注册所有快捷键
     emit('update-shortcuts')
@@ -975,7 +967,7 @@ const toggleFeature = async (shortcutKey, enableKey, enableLabel) => {
 const stopCapture = () => {
   capturingKey.value = null
   pressedKeys.value.clear()
-  
+
   // 重新注册快捷键（如果用户取消了捕获）
   emit('update-shortcuts')
 }
@@ -983,26 +975,26 @@ const stopCapture = () => {
 // 处理按键按下
 const handleKeyDown = async (event) => {
   if (!capturingKey.value) return
-  
+
   event.preventDefault()
   event.stopPropagation()
-  
+
   const key = event.key
-  
+
   // 如果只按了 Escape，取消捕获
   if (key === 'Escape' && pressedKeys.value.size === 0) {
     stopCapture()
     return
   }
-  
+
   // 忽略单独的修饰键
   if (['Control', 'Alt', 'Shift', 'Meta'].includes(key)) {
     return
   }
-  
+
   // 收集所有按下的键
   const keys = []
-  
+
   // Windows/Linux 使用 Ctrl，Mac 使用 Command
   if (event.ctrlKey || event.metaKey) {
     keys.push('CmdOrControl')
@@ -1013,7 +1005,7 @@ const handleKeyDown = async (event) => {
   if (event.shiftKey) {
     keys.push('Shift')
   }
-  
+
   // 添加主键
   const mainKey = normalizeKey(key)
   if (mainKey.length === 1) {
@@ -1021,35 +1013,35 @@ const handleKeyDown = async (event) => {
   } else {
     keys.push(mainKey)
   }
-  
+
   // 至少需要一个修饰键或特殊键
   if (keys.length < 2 && !['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'].includes(mainKey)) {
     return
   }
-  
+
   // 构建快捷键字符串
   const shortcutString = keys.join('+')
-  
+
   // 检查是否与其他快捷键重复
   const otherKeys = shortcutFields.filter(f => f.key !== capturingKey.value)
   const isDuplicate = otherKeys.some(field => settings[field.key] === shortcutString)
-  
+
   if (isDuplicate) {
     ElMessage.warning('该快捷键已被使用')
     return
   }
-  
+
   // 设置快捷键
   settings[capturingKey.value] = shortcutString
-  
+
   // 停止捕获状态
   capturingKey.value = null
   pressedKeys.value.clear()
-  
+
   // 自动保存并注册（会重新注册所有快捷键）
   await setMg.save()
   emit('update-shortcuts')
-  
+
   // 提示成功
   ElMessage.success(`已设置快捷键: ${shortcutString}`)
 }
@@ -1078,10 +1070,10 @@ onUnmounted(() => {
 
 // 监听路径变化，自动检查注入状态
 watch(
-    () => [settings.targetProgramPath, settings.dllPath],
-    () => {
-      checkInjectedFiles()
-    }
+  () => [settings.targetProgramPath, settings.dllPath],
+  () => {
+    checkInjectedFiles()
+  }
 )
 
 </script>

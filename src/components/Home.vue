@@ -27,7 +27,8 @@
           </el-statistic>
           <div class="status-bar">
             <el-tag @click="checkAi" :type="aiStatus.healthy" effect="light" round>{{ aiStatus.message }}</el-tag>
-            <el-tag @click="checkInjection" :type="injectionStatus.type" effect="light" round>{{ injectionStatus.message }}</el-tag>
+            <el-tag @click="checkInjection" :type="injectionStatus.type" effect="light" round>{{ injectionStatus.message
+            }}</el-tag>
           </div>
         </el-col>
       </el-row>
@@ -106,8 +107,13 @@
           <!-- 注意事项1 -->
           <div class="tips-item">
             <div class="tips-desc">
-              在<span class="highlight-err">学习通考试客户端</span>中, <span class="highlight-err">微信输入法中文模式</span>下, 不要使用<span
-                class="highlight-err">模拟输入</span>, 如出现异常请疯狂按<span class="highlight-err">K</span> 终止模拟输入
+              在<span class="highlight-err">部分应用场景</span>中, 在<span class="highlight-err">微信输入法中文模式</span>下, 使用模拟输入会出现
+              <span class="highlight-err">异常</span>,此时请停止模拟输入, 切换到<span class="highlight-err">英文模式</span>后再继续使用
+            </div>
+          </div>
+          <div class="tips-item">
+            <div class="tips-desc">
+              关闭窗口不会退出程序, 请在<span class="highlight-info">系统托盘图标</span>右键菜单中选择退出
             </div>
           </div>
 
@@ -116,11 +122,6 @@
             <div class="tips-desc">
               开启<span class="highlight-info">AI问答模式</span>，需要去<span class="highlight-info">设置页面</span>配置<span
                 class="highlight">DeepSeek API</span> 或者<span class="highlight">用户名</span>
-            </div>
-          </div>
-          <div class="tips-item">
-            <div class="tips-desc">
-              关闭窗口不会退出程序, 请在<span class="highlight-info">系统托盘图标</span>右键菜单中选择退出
             </div>
           </div>
         </div>
@@ -136,7 +137,7 @@
               <h4 class="tips-title">日常使用场景</h4>
             </div>
             <div class="tips-desc">
-              <span class="highlight-require">开启模拟输入</span>，使用模拟输入(Ctrl+K),可绕过禁止粘贴限制, 设置里可调节打字速度
+              <span class="highlight-require">管理员运行</span>，使用模拟输入(Ctrl+K),程序会模拟人进行键盘输入,绕过禁止粘贴限制
             </div>
           </div>
 
@@ -146,42 +147,48 @@
           <!-- 考试场景 -->
           <div class="tips-item">
             <div class="tips-header">
-              <h4 class="tips-title">学习通考试客户端(V4.1.4.25389) - 方案一</h4>
+              <h4 class="tips-title">部分不能切屏的应用的使用场景: 方法一</h4>
             </div>
             <div class="tips-desc">
-              <span class="highlight-require">微信输入法</span> + <span class="highlight-require">开启去除换行</span> +
-              <span class="highlight-require">开启AI问答</span>，把问题复制到剪切板(Ctrl+C)，再使用<span
-                class="highlight">AI问答(Ctrl+J)</span>，按 <code class="code-snippet">v->2->空格</code>
+              <span class="highlight-require">管理员运行</span>，把问题复制到剪切板(Ctrl+C)，再使用<span
+                class="highlight">AI问答(Ctrl+J)</span>,再使用<span class="highlight">模拟输入(Ctrl+K)</span>
               即可调出AI的回答
             </div>
           </div>
           <div class="tips-item">
             <div class="tips-header">
-              <h4 class="tips-title">学习通考试客户端(V4.1.4.25389) - 方案二</h4>
+              <h4 class="tips-title">部分不能切屏的应用的使用场景: 方法二</h4>
             </div>
             <div class="tips-desc">
-              <span class="highlight-require">开启AI问答</span> + <span
-                class="highlight-require">管理员模式运行</span>，把问题复制到剪切板(Ctrl+C)，再使用<span
-                class="highlight">AI问答(Ctrl+J)</span>,再使用<span class="highlight">模拟输入(Ctrl+K)</span>
+              <span class="highlight-require">微信输入法</span> + <span class="highlight-require">开启去除换行</span>
+              把问题复制到剪切板(Ctrl+C)，再使用<span class="highlight">AI问答(Ctrl+J)</span>，按 <code
+                class="code-snippet">v->2->空格</code>
               即可调出AI的回答
             </div>
+
           </div>
         </div>
       </el-alert>
     </div>
     <!-- 停止输入提示 -->
     <el-alert title="⚡ 停止模拟输入" type="warning" :closable="false">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <el-icon :size="24" color="#E6A23C">
-          <VideoPause />
-        </el-icon>
+      <div style="display: flex;flex-direction: column; gap: 12px;">
+        <div>
+          <p style="margin: 0; font-weight: 500;">按下
+            <el-tag type="danger" size="large">Ctrl+K</el-tag>
+            停止模拟输入
+          </p>
+          <el-text size="small" type="info" style="margin-top: 4px; display: block;">
+            停止模拟输入后, 可以再次按下快捷键继续输入
+          </el-text>
+        </div>
         <div>
           <p style="margin: 0; font-weight: 500;">按下
             <el-tag type="danger" size="large">K</el-tag>
-            键可立即停止模拟输入
+            重新开始模拟输入
           </p>
           <el-text size="small" type="info" style="margin-top: 4px; display: block;">
-            在模拟输入过程中按 K 键,可以立即中断模拟输入操作
+            会清除之前的输入记录, 从头开始输入
           </el-text>
         </div>
       </div>
@@ -532,6 +539,7 @@ defineExpose({
   color: #1989fa;
   font-weight: 500;
   padding: 2px 4px;
+  margin: 2px 4px;
   border-radius: 4px;
   background-color: #e8f4f8;
 }
@@ -541,6 +549,7 @@ defineExpose({
   /* 主色：青绿色（代表高效、可靠，贴合工具属性） */
   font-weight: 500;
   padding: 2px 4px;
+  margin: 2px 4px;
   border-radius: 4px;
   background-color: #f0fdfa;
   /* 背景色：主色的浅淡版，柔和不刺眼 */
@@ -563,6 +572,7 @@ defineExpose({
   color: #dc2626;
   font-weight: 500;
   padding: 2px 4px;
+  margin: 2px 4px;
   border-radius: 4px;
   background-color: #fee2e2 !important;
 }
