@@ -259,7 +259,7 @@
             </div>
           </h3>
 
-          <el-form label-width="120px">
+          <el-form label-width="120px" label-position>
             <el-form-item
               v-for="feature in featureToggles.filter(f => f.key !== 'textProcessEnabled' && f.key !== 'aiQAEnabled')"
               :key="feature.key" :label="feature.label">
@@ -311,7 +311,7 @@
             </div>
           </h3>
 
-          <el-form label-width="120px">
+          <el-form label-width="120px" label-position>
             <el-form-item label="目标程序路径">
               <el-input v-model="settings.targetProgramPath" placeholder="请选择目标程序 (.exe)" clearable>
                 <template #prepend>

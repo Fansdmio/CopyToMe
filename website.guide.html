@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CopyToMeAndTauri - 温馨指南</title>
+    <!-- 引入 Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- 引入 Marked 解析 Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 引入类似像素风的字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #fdf6e3;
+            --card-bg: #fffbf0;
+            --text-color: #5d4037;
+            --accent-color: #e6a23c;
+            --secondary-color: #8cb6a2;
+            --shadow-color: #d7ccc8;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            font-size: 20px;
+            background-image:
+                radial-gradient(var(--shadow-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        #app {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* 标题样式 */
+        h1,
+        h2,
+        h3 {
+            font-weight: normal;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 3em;
+            text-shadow: 4px 4px 0px var(--shadow-color);
+            margin-bottom: 40px;
+            color: var(--accent-color);
+        }
+
+        /* 卡片通用样式 - 圆角 + 像素阴影感 */
+        .pixel-card {
+            background: var(--card-bg);
+            border: 4px solid var(--text-color);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 8px 8px 0px var(--shadow-color);
+            position: relative;
+        }
+
+        /* 架构图容器 */
+        .img-container {
+            text-align: center;
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed var(--text-color);
+        }
+
+        .img-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            /* 给图片一点复古滤镜 */
+            filter: sepia(20%);
+            cursor: zoom-in;
+            transition: transform 0.2s;
+        }
+
+        .img-container img:hover {
+            transform: scale(1.02);
+        }
+
+        /* QA 列表样式 */
+        .qa-item {
+            border-bottom: 2px dashed var(--shadow-color);
+            /* 预留好 padding,防止 hover 时抖动 */
+            padding: 20px 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 15px;
+        }
+
+        .qa-item:last-child {
+            border-bottom: none;
+        }
+
+        .qa-question {
+            font-size: 1.4em;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+        }
+
+        .qa-question::before {
+            content: "Q:";
+            font-weight: bold;
+            margin-right: 10px;
+            background: var(--text-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 0.8em;
+        }
+
+        .qa-answer {
+            margin-top: 15px;
+            line-height: 1.6;
+            color: #4a4a4a;
+            padding-left: 45px;
+            display: none;
+        }
+
+        .qa-item.active .qa-answer {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        .qa-item:hover {
+            background-color: rgba(230, 162, 60, 0.1);
+            /* 不再修改 padding */
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Markdown 内容样式覆盖 */
+        .markdown-body pre {
+            background: #2d2d2d;
+            color: #eee;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+            border: 2px solid var(--text-color);
+        }
+
+        .markdown-body code {
+            background: #eaeaea;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        /* 图片放大遮罩层 */
+        .image-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            cursor: zoom-out;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .image-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            transition: transform 0.1s ease-out;
+            /* 平滑缩放 */
+            cursor: grab;
+        }
+
+        .image-modal img:active {
+            cursor: grabbing;
+        }
+
+        .modal-instruction {
+            position: absolute;
+            bottom: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <!-- 头部 -->
+        <h1>CopyToMe & Tauri Guide</h1>
+
+        <!-- 架构图展示 -->
+        <div class="pixel-card">
+            <h2>架构概览</h2>
+            <div class="img-container">
+                <img src="./CopyToMeJG.png" @click="openImageModal"
+                    onerror="this.src='https://placehold.co/600x400/e6a23c/FFF?text=Architecture+Image+Missing';this.onerror=null;">
+            </div>
+        </div>
+
+        <!-- 介绍部分 -->
+        <div class="pixel-card">
+            <h2>使用说明</h2>
+            <div class="markdown-body" v-html="renderMarkdown(introText)"></div>
+        </div>
+
+        <!-- QA 问答区域 -->
+        <div class="pixel-card">
+            <h2>常见问题 (Q&A)</h2>
+            <div class="qa-list">
+                <div v-for="(qa, index) in qaList" :key="index" class="qa-item" :class="{ active: qa.isOpen }"
+                    @click="toggleQA(index)">
+                    <div class="qa-question">{{ qa.question }}</div>
+                    <div class="qa-answer markdown-body" v-html="renderMarkdown(qa.answer)"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图片放大遮罩层 -->
+        <div class="image-modal" :class="{ active: showModal }" @click.self="closeImageModal"
+            @wheel.prevent="handleWheel">
+            <img :src="currentImageSrc" :style="{ transform: `scale(${imageScale})` }" @click.stop alt="Zoomed Image">
+            <div class="modal-instruction">🖱️ 滚轮缩放 / 点击空白处关闭</div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+
+        createApp({
+            setup() {
+                // 使用说明 (Markdown)
+                const introText = ref(`
+### 关于模拟输入的使用
+1. 先把你想要输入的文字放入到剪切板中
+2. 然后进入 ***模拟输入模式(默认是Ctrl+K)***, 此时程序会读入剪切板的内容,把剪切板的内容放入暂存区
+3. 现在你增加了三个操作键位,分别是 \`J\`, \`K\`, \`L\`
+- J 是 ***自动打字模式***,按下 \`J\` 后,程序会把暂存区的内容以模拟真人打字的方式打出来(在设置里可以调节速度),你可以再次按下 \`J\` 来暂停打字。当你暂停之后,再次按下 \`J\` 会接着上次没有打完的继续打
+
+- K 是 ***清空暂存区***。例如你使用 \`J\` (自动打字模式) 暂停了, 此时你按下 \`K\` 来清空暂存区, 接着按下 \`J\` 键不会接着上次继续打,而是从头开始打,因为暂存区被清空重置了 
+
+- L 是 ***手动打字模式***,你按一次 \`L\` 就会打出一个字,长按就会连续打字,松手停止,这种模式可控性高,适合在考试的时候使用。
+
+4. 再次使用 \`Ctrl+K\` 退出模拟输入模式
+5. 退出模拟输入模式后,上次模式输入的内容会被保留,下次进入模拟输入模式还可以继续使用.例如使用 \`J\` 模式打了一半暂停了,退出模拟输入模式,下次进入之后再次使用 \`J\` 还可以继续打完剩下的内容
+### 关于 AI 问答的使用
+1. 先把你想要问的问题放入到剪切板中
+2. 然后按下 ***AI 问答快捷键(默认是 Ctrl+J)***, 程序会把剪切板的内容作为问题发送给 AI,稍等片刻,AI 的回答会被自动放入剪切板中
+3. 然后处于剪切板的答案可以使用程序自带模拟输入方式来输入答案.
+4. AI 问答功能适合用于不能切屏的场景中
+                `);
+
+                // QA 数据列表
+                const qaList = ref([
+                    {
+                        question: "这个软件的主要功能是什么？",
+                        answer: "1. **模拟输入**: 针对禁止粘贴的场景,就像真人打字一样把剪贴板内容敲进去。\n2. **AI 问答**: 选中文字或者复制文字,直接问 AI,答案自动回写到剪贴板。",
+                        isOpen: true
+                    },
+                    {
+                        question: "如何使用模拟输入功能？",
+                        answer: "默认快捷键是 `Ctrl + K` (或 Mac 上的 `Command + K`)。\n复制一段文字,将光标聚焦在目标输入框,按下快捷键即可开始模拟打字。",
+                        isOpen: false
+                    },
+                    {
+                        question: "如何使用 AI 问答功能？",
+                        answer: "默认快捷键是 `Ctrl + J`。\n复制你的问题,按下快捷键,稍等片刻,AI 的回答就会出现在你的剪贴板中,你可以直接粘贴。",
+                        isOpen: false
+                    },
+                    {
+                        question: "支持哪些 AI 模型？",
+                        answer: "目前主要支持 **DeepSeek** (默认) 和自定义的 OpenAI/Gemini 兼容接口。",
+                        isOpen: false
+                    },
+                    {
+                        question: "我的 API Key 安全吗？",
+                        answer: "DeepSeek Key 如果为空,会尝试从服务器获取加密 Key 并在本地解密（仅限特定版本）。你可以设置自己的 Key,它会保存在本地的配置文件中。",
+                        isOpen: false
+                    }
+                ]);
+
+                // 图片模态框状态
+                const showModal = ref(false);
+                const imageScale = ref(1);
+                const currentImageSrc = ref('./CopyToMeJG.png');
+
+                // Markdown 渲染函数
+                const renderMarkdown = (text) => {
+                    return marked.parse(text || '');
+                };
+
+                // 切换 QA 展开/折叠
+                const toggleQA = (index) => {
+                    qaList.value[index].isOpen = !qaList.value[index].isOpen;
+                };
+
+                // 打开图片模态框
+                const openImageModal = (e) => {
+                    currentImageSrc.value = e.target.src;
+                    imageScale.value = 1; // 重置缩放
+                    showModal.value = true;
+                };
+
+                // 关闭图片模态框
+                const closeImageModal = () => {
+                    showModal.value = false;
+                };
+
+                // 处理滚轮缩放
+                const handleWheel = (e) => {
+                    // 缩放系数
+                    const zoomFactor = 0.1;
+                    if (e.deltaY < 0) {
+                        // 向上滚动,放大
+                        imageScale.value = Math.min(imageScale.value + zoomFactor, 5); // 最大放大 5 倍
+                    } else {
+                        // 向下滚动,缩小
+                        imageScale.value = Math.max(imageScale.value - zoomFactor, 0.2); // 最小缩放 0.2 倍
+                    }
+                };
+
+                return {
+                    introText,
+                    qaList,
+                    renderMarkdown,
+                    toggleQA,
+                    showModal,
+                    imageScale,
+                    currentImageSrc,
+                    openImageModal,
+                    closeImageModal,
+                    handleWheel
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

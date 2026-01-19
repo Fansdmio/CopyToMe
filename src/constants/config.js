@@ -97,6 +97,11 @@ export const FEATURE_TOGGLES = [
     description: '启用后可使用快捷键进行 AI 问答'
   },
   {
+    key: 'quickInput',
+    label: '快速输入模式',
+    description: '启用后进入模拟输入模式时自动开始输入'
+  },
+  {
     key: 'wxInputMode',
     label: '去除换行',
     description: '使用AI问答后，去除回答文本中的所有换行符'
@@ -107,14 +112,14 @@ export const FEATURE_TOGGLES = [
     description: '打开程序时自动隐藏窗口'
   },
   {
-    key: 'autoStart',
-    label: '开机自启动',
-    description: '开机自启动'
-  },
-  {
     key: 'autoHideTray',
     label: '自动隐藏托盘',
     description: '打开程序时自动隐藏系统托盘图标'
+  },
+  {
+    key: 'autoStart',
+    label: '开机自启动',
+    description: '开机自启动'
   }
 ]
 

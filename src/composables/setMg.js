@@ -3,7 +3,7 @@ import { reactive, ref } from 'vue';
 import { info, error } from '@tauri-apps/plugin-log';
 
 const STORAGE_KEY = 'copytome_settings'
-const VERSION = '200260119v0@0.3.0'
+const VERSION = '200260119v1@0.3.1'
 
 // 默认配置
 const DEFAULT_SETTINGS = {
@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS = {
     hideWindow: false,
     autoStart: false,
     autoHideTray: false,  // 自动隐藏托盘图标
+    quickInput: true,  // 快速输入模式
     timeRange: [1, 5],  // 时间范围 [最小值, 最大值] (毫秒),
     deepseekApi: '',
     userName: '',

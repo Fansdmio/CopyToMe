@@ -49,15 +49,19 @@ const deploy_app = () => {
 const deploy_web = () => {
     const deploy_cmd = `scp ./website.html root@uuio:/usr/local/nginx/html/CopyToMeWeb/and_tauri/index.html`;
     execSync(deploy_cmd, { stdio: 'inherit' });
-    console.log("网站页面已更新");
+    console.log("CopyToMeAndTauri网站页面已更新");
 }
 
 const deploy_dumpweb = () => {
     const deploy_cmd = `scp ./website.dump.html root@uuio:/usr/local/nginx/html/CopyToMeWeb/index.html`;
     execSync(deploy_cmd, { stdio: 'inherit' });
-    console.log("网站页面已更新");
+    console.log("CopyToMeAndRust网站页面已更新");
 }
-
+const deploy_guideweb = () => {
+    const deploy_cmd = `scp ./website.guide.html root@uuio:/usr/local/nginx/html/CopyToMeWeb/guide/index.html`;
+    execSync(deploy_cmd, { stdio: 'inherit' });
+    console.log("指导网站页面已更新");
+}
 switch (deploy_mode) {
     case 'app':
         deploy_app();
@@ -68,12 +72,15 @@ switch (deploy_mode) {
     case 'dumpweb':
         deploy_dumpweb();
         break;
+    case "guide":
+        deploy_guideweb();
+        break;
     case 'md':
         update_latest();
         break;
     case 'all':
-        deploy_web();
         deploy_app();
+        deploy_web();
         break;
     default:
         console.log(`未知的部署模式: ${deploy_mode}`);

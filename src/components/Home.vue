@@ -116,8 +116,7 @@
               <h4 class="tips-title">日常使用场景</h4>
             </div>
             <div class="tips-desc">
-              <span class="highlight-require">管理员运行</span>, 使用<span class="highlight">Ctrl+K (模拟输入)</span> 之后按下<span
-                class="highlight">J (自动输入)</span>,绕过禁止粘贴限制。结束可以按下<span class="highlight">Ctrl+K (退出)</span>
+              <span class="highlight-require">管理员运行</span>, 使用<span class="highlight">Ctrl+K (模拟输入)</span> ,绕过禁止粘贴限制。可以按下<span class="highlight">Ctrl+K (退出)</span>
             </div>
           </div>
 
@@ -130,7 +129,7 @@
               <h4 class="tips-title">部分不能切屏的应用的使用场景: 方法一</h4>
             </div>
             <div class="tips-desc">
-              <span class="highlight-require">管理员运行</span>,先使用<span class="highlight">Ctrl+C</span>把问题复制一下,再使用<span
+              <span class="highlight-require">管理员运行</span> + <span class="highlight-err">关闭快速输入模式</span>,先使用<span class="highlight">Ctrl+C</span>把问题复制一下,再使用<span
                 class="highlight">Ctrl+J (AI问答)</span>,等待鼠标样式出现短暂的变化,再使用<span class="highlight">Ctrl+K
                 (进入模拟输入模式)</span>,之后按一次<span class="highlight">L</span>会输出一个字。结束可以按下<span class="highlight">Ctrl+K
                 (退出)</span>
@@ -185,15 +184,6 @@
             <el-tag type="danger" size="large">Ctrl+K</el-tag>
             退出模拟输入模式
           </p>
-        </div>
-        <div>
-          <p style="margin: 0; font-weight: 500;">按下
-            <el-tag type="danger" size="large">K</el-tag>
-            重新开始模拟输入
-          </p>
-          <el-text size="small" type="info" style="margin-top: 4px; display: block;">
-            会清除之前的输入记录, 从头开始输入
-          </el-text>
         </div>
       </div>
     </el-alert>
