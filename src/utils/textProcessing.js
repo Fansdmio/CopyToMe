@@ -25,29 +25,6 @@ export function removeThinkingTags(text) {
   return text.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, '').trim()
 }
 
-/**
- * 创建防抖函数
- * @param {Function} fn - 要防抖的函数
- * @param {number} delay - 延迟时间(毫秒)
- * @returns {Function} 防抖后的函数
- */
-export function debounce(fn, delay = 1000) {
-  let timer = null
-  let pending = false
-
-  return async function (...args) {
-    if (pending) return
-    
-    pending = true
-    try {
-      await fn.apply(this, args)
-    } finally {
-      timer = setTimeout(() => {
-        pending = false
-      }, delay)
-    }
-  }
-}
 
 /**
  * 验证快捷键格式

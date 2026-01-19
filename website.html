@@ -363,8 +363,8 @@
 
         createApp({
             setup() {
-                const appVersion = ref('v0.2.3');
-                const releaseDate = ref('2026-01-18');
+                const appVersion = ref('v0.3.0');
+                const releaseDate = ref('2026-01-19');
                 const downloadLink = ref(`https://cp.uuyo.fun/download/CopyToMeAndTauri_${appVersion.value.slice(1)}_x64-setup.exe`);
                 const githubLink = ref('https://github.com/leokun0210/CopyToMeAndTauri');
 
@@ -399,11 +399,29 @@
 
                 const changelog = reactive([
                     {
-                        version: 'v0.2.2',
-                        date: '2026-01-03',
+                        version: 'v0.3.0',
+                        date: '2026-01-19',
                         colorClass: 'secondary-soft',
                         items: [
-                            { text: '加入启动关闭快捷键功能', color: 'text-secondary-soft' }
+                            { text: '对模拟输入的方式进行重写', color: 'text-secondary-soft' },
+                            { text: '解决快捷键触发两次的问题', color: 'text-secondary-soft' }
+                        ]
+                    },
+                    {
+                        version: 'v0.2.3',
+                        date: '2026-01-18',
+                        colorClass: 'primary-soft',
+                        items: [
+                            { text: '模拟输入可以接着上次中断的地方继续输入', color: 'text-primary-soft' },
+                            { text: '添加通知功能', color: 'text-primary-soft' }
+                        ]
+                    },
+                    {
+                        version: 'v0.2.2',
+                        date: '2026-01-03',
+                        colorClass: 'primary-soft',
+                        items: [
+                            { text: '加入启动关闭快捷键功能', color: 'text-primary-soft' }
                         ]
                     },
                     {

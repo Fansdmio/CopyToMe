@@ -63,7 +63,6 @@
 
       <el-divider style="margin: 12px 0" />
 
-      <el-divider style="margin: 12px 0" />
 
       <!-- 功能状态 -->
       <div class="status-section">
@@ -84,7 +83,7 @@
       <el-divider style="margin: 12px 0" />
 
       <!-- 使用指南 -->
-      <div class="guide-section">
+      <!-- <div class="guide-section">
         <h3>
           <el-icon>
             <Reading />
@@ -100,34 +99,14 @@
             </div>
           </el-timeline-item>
         </el-timeline>
-      </div>
-      <!-- 提示信息 -->
-      <el-alert title="💡 注意事项" type="error" :closable="false" class="custom-alert error-alert">
-        <div class="tips-container">
-          <!-- 注意事项1 -->
-          <div class="tips-item">
-            <div class="tips-desc">
-              在<span class="highlight-err">部分应用场景</span>中, 在<span class="highlight-err">微信输入法中文模式</span>下, 使用模拟输入会出现
-              <span class="highlight-err">异常</span>,此时请停止模拟输入, 切换到<span class="highlight-err">英文模式</span>后再继续使用
-            </div>
-          </div>
-          <div class="tips-item">
-            <div class="tips-desc">
-              关闭窗口不会退出程序, 请在<span class="highlight-info">系统托盘图标</span>右键菜单中选择退出
-            </div>
-          </div>
+      </div> -->
 
-          <!-- 注意事项2 -->
-          <div class="tips-item">
-            <div class="tips-desc">
-              开启<span class="highlight-info">AI问答模式</span>，需要去<span class="highlight-info">设置页面</span>配置<span
-                class="highlight">DeepSeek API</span> 或者<span class="highlight">用户名</span>
-            </div>
-          </div>
-        </div>
-      </el-alert>
       <el-alert title="使用建议" type="primary" :closable="false" class="custom-alert">
         <div class="tips-container">
+          <!-- 快捷键键使用说明 -->
+          <div>
+
+          </div>
           <!-- 日常使用场景 -->
           <div class="tips-item">
             <div class="tips-header">
@@ -137,7 +116,8 @@
               <h4 class="tips-title">日常使用场景</h4>
             </div>
             <div class="tips-desc">
-              <span class="highlight-require">管理员运行</span>，使用模拟输入(Ctrl+K),程序会模拟人进行键盘输入,绕过禁止粘贴限制
+              <span class="highlight-require">管理员运行</span>, 使用<span class="highlight">Ctrl+K (模拟输入)</span> 之后按下<span
+                class="highlight">J (自动输入)</span>,绕过禁止粘贴限制。结束可以按下<span class="highlight">Ctrl+K (退出)</span>
             </div>
           </div>
 
@@ -150,9 +130,9 @@
               <h4 class="tips-title">部分不能切屏的应用的使用场景: 方法一</h4>
             </div>
             <div class="tips-desc">
-              <span class="highlight-require">管理员运行</span>，把问题复制到剪切板(Ctrl+C)，再使用<span
-                class="highlight">AI问答(Ctrl+J)</span>,再使用<span class="highlight">模拟输入(Ctrl+K)</span>
-              即可调出AI的回答
+              <span class="highlight-require">管理员运行</span>,先使用<span class="highlight">Ctrl+C</span>把问题复制一下,再使用<span
+                class="highlight">Ctrl+J (AI问答)</span>,再使用<span class="highlight">Ctrl+K (进入模拟输入模式)</span>,之后按一次<span
+                class="highlight">L</span>会输出一个字。结束可以按下<span class="highlight">Ctrl+K (退出)</span>
             </div>
           </div>
           <div class="tips-item">
@@ -161,7 +141,7 @@
             </div>
             <div class="tips-desc">
               <span class="highlight-require">微信输入法</span> + <span class="highlight-require">开启去除换行</span>
-              把问题复制到剪切板(Ctrl+C)，再使用<span class="highlight">AI问答(Ctrl+J)</span>，按 <code
+              先使用<span class="highlight">Ctrl+C</span>把问题复制一下，再使用<span class="highlight">Ctrl+J (AI问答)</span>，按 <code
                 class="code-snippet">v->2->空格</code>
               即可调出AI的回答
             </div>
@@ -170,17 +150,40 @@
         </div>
       </el-alert>
     </div>
+
+    <!-- 提示信息 -->
+    <el-alert title="💡 注意事项" type="error" :closable="false" class="custom-alert error-alert">
+      <div class="tips-container">
+        <!-- 注意事项1 -->
+        <div class="tips-item">
+          <div class="tips-desc">
+            在<span class="highlight-err">部分应用场景</span>中, 在<span class="highlight-err">微信输入法中文模式</span>下, 使用模拟输入会出现
+            <span class="highlight-err">异常</span>,此时请停止模拟输入, 切换到<span class="highlight-err">英文模式</span>后再继续使用
+          </div>
+        </div>
+        <div class="tips-item">
+          <div class="tips-desc">
+            关闭窗口不会退出程序, 请在<span class="highlight-info">系统托盘图标</span>右键菜单中选择退出
+          </div>
+        </div>
+
+        <!-- 注意事项2 -->
+        <div class="tips-item">
+          <div class="tips-desc">
+            使用<span class="highlight-info">AI问答</span>,请前往<span class="highlight-info">设置页面</span>配置<span
+              class="highlight">DeepSeek API</span>
+          </div>
+        </div>
+      </div>
+    </el-alert>
     <!-- 停止输入提示 -->
-    <el-alert title="⚡ 停止模拟输入" type="warning" :closable="false">
+    <el-alert title="⚡ 停止模拟输入" type="warning" :closable="false" style="margin: 8px 0;">
       <div style="display: flex;flex-direction: column; gap: 12px;">
         <div>
           <p style="margin: 0; font-weight: 500;">按下
             <el-tag type="danger" size="large">Ctrl+K</el-tag>
-            停止模拟输入
+            退出模拟输入模式
           </p>
-          <el-text size="small" type="info" style="margin-top: 4px; display: block;">
-            停止模拟输入后, 可以再次按下快捷键继续输入
-          </el-text>
         </div>
         <div>
           <p style="margin: 0; font-weight: 500;">按下
@@ -255,7 +258,7 @@ const shortcuts = computed(() => [
   {
     key: 'text',
     title: '模拟输入',
-    description: '快速处理剪贴板中的文本内容',
+    description: '进入模拟输入模式,JKL进行操控',
     icon: Document,
     color: '#409EFF',
     tagType: 'primary',
@@ -264,7 +267,7 @@ const shortcuts = computed(() => [
   {
     key: 'question',
     title: 'AI 问答',
-    description: '基于 DeepSeek 的智能对话功能',
+    description: '智能对话功能',
     icon: ChatDotRound,
     color: '#67C23A',
     tagType: 'success',
@@ -314,14 +317,14 @@ const steps = [
   },
   {
     title: '按下快捷键',
-    description: '根据需要按下对应的全局快捷键',
+    description: '根据需求按下对应的全局快捷键',
     icon: Key,
     type: 'success',
     size: 'large'
   },
   {
     title: '处理结果',
-    description: '如果使用AI问答，选择自己的方式从剪切板获取答案',
+    description: '如果使用AI问答,选择自己的方式从剪切板获取答案',
     icon: Position,
     type: 'warning',
     size: 'large'

@@ -57,7 +57,7 @@ export const AI_CONFIG_FIELDS = [
   {
     key: 'userName',
     label: '用户名',
-    placeholder: '请输入用户名 (用于获取 API)',
+    placeholder: '请输入用户名 (可不填)',
     type: 'text',
     showPassword: false,
     icon: User,

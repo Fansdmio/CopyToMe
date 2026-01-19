@@ -5,6 +5,7 @@ use std::sync::{atomic::AtomicBool, atomic::Ordering, Arc, LazyLock, Mutex};
 use std::thread::{self, sleep};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
+use tauri_plugin_global_shortcut::{Shortcut, GlobalShortcutExt, ShortcutState};
 static L_TIEM: LazyLock<Mutex<u64>> = LazyLock::new(|| Mutex::new(1));
 static R_TIEM: LazyLock<Mutex<u64>> = LazyLock::new(|| Mutex::new(5));
 static STOP_FLAG: LazyLock<Arc<AtomicBool>> = LazyLock::new(|| Arc::new(AtomicBool::new(false)));
@@ -118,6 +119,52 @@ fn handle_text(app: AppHandle, text: String, start_position: usize) {
     });
 }
 
+#[tauri::command]
+fn type_single_char(_app: AppHandle, text: String, position: usize) -> Result<usize, String> {
+    let chars: Vec<char> = text.chars().collect();
+    
+    if position >= chars.len() {
+        return Err("位置超出文本范围".to_string());
+    }
+    
+    let mut enigo = Enigo::new(&Settings::default()).map_err(|e| e.to_string())?;
+    let c = chars[position];
+    
+    enigo.text(&c.to_string()).map_err(|e| e.to_string())?;
+    
+    Ok(position + 1)
+}
+
+#[tauri::command]
+fn register_shortcut(app: AppHandle, id: String, shortcut: String) -> Result<(), String> {
+    let shortcut_obj: Shortcut = shortcut.parse().map_err(|e| format!("快捷键解析失败: {}", e))?;
+    let id_clone = id.clone();
+    
+    app.global_shortcut()
+        .on_shortcut(shortcut_obj, move |app, _shortcut, event| {
+            // 只在按键按下时触发，避免释放时重复触发
+            if event.state == ShortcutState::Pressed {
+                let _ = app.emit(&format!("shortcut-{}", id_clone), ());
+            }
+        })
+        .map_err(|e| format!("注册快捷键失败: {}", e))?;
+    
+    println!("成功注册快捷键: {} -> {}", id, shortcut);
+    Ok(())
+}
+
+#[tauri::command]
+fn unregister_shortcut(app: AppHandle, shortcut: String) -> Result<(), String> {
+    let shortcut_obj: Shortcut = shortcut.parse().map_err(|e| format!("快捷键解析失败: {}", e))?;
+    
+    app.global_shortcut()
+        .unregister(shortcut_obj)
+        .map_err(|e| format!("注销快捷键失败: {}", e))?;
+    
+    println!("成功注销快捷键: {}", shortcut);
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default()
@@ -134,7 +181,7 @@ pub fn run() {
 
     #[cfg(desktop)]
     {
-        builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = app
                 .get_webview_window("main")
                 .expect("no main window")
@@ -153,7 +200,7 @@ pub fn run() {
                 .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
                 .build(),
         )
-        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {}))
+        .plugin(tauri_plugin_single_instance::init(|_, _, _| {}))
         .plugin(tauri_plugin_autostart::Builder::new().build())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
@@ -164,7 +211,10 @@ pub fn run() {
             update_time_range,
             stop_typing,
             create_directory,
-            open_folder
+            open_folder,
+            type_single_char,
+            register_shortcut,
+            unregister_shortcut
         ]);
     builder
         .run(tauri::generate_context!())

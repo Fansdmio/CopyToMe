@@ -126,7 +126,7 @@
             </el-button>
           </h3>
 
-          <el-form label-position="center">
+          <el-form>
             <!-- 启用自定义AI -->
             <el-form-item label="启用自定义AI">
               <div class="switch-container">
@@ -259,7 +259,7 @@
             </div>
           </h3>
 
-          <el-form label-width="120px" label-position="center">
+          <el-form label-width="120px">
             <el-form-item
               v-for="feature in featureToggles.filter(f => f.key !== 'textProcessEnabled' && f.key !== 'aiQAEnabled')"
               :key="feature.key" :label="feature.label">
@@ -311,7 +311,7 @@
             </div>
           </h3>
 
-          <el-form label-width="120px" label-position="center">
+          <el-form label-width="120px">
             <el-form-item label="目标程序路径">
               <el-input v-model="settings.targetProgramPath" placeholder="请选择目标程序 (.exe)" clearable>
                 <template #prepend>

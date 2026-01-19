@@ -3,7 +3,7 @@ import { reactive, ref } from 'vue';
 import { info, error } from '@tauri-apps/plugin-log';
 
 const STORAGE_KEY = 'copytome_settings'
-const VERSION = '200260118v1@0.2.3'
+const VERSION = '200260119v0@0.3.0'
 
 // 默认配置
 const DEFAULT_SETTINGS = {
@@ -20,7 +20,7 @@ const DEFAULT_SETTINGS = {
     timeRange: [1, 5],  // 时间范围 [最小值, 最大值] (毫秒),
     deepseekApi: '',
     userName: '',
-    systemPrompt: '你是一个说话极简的答题助手,不要使用md语法',  // AI提示词
+    systemPrompt: '你是一个说话极简的答题助手,只给出答案即可,不要使用md语法',  // AI提示词
     deepThinking: false,  // 深度思考模式
     // 自定义AI设置
     useCustomAI: false,  // 是否使用自定义AI
