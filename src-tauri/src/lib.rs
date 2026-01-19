@@ -11,6 +11,9 @@ static R_TIEM: LazyLock<Mutex<u64>> = LazyLock::new(|| Mutex::new(5));
 static STOP_FLAG: LazyLock<Arc<AtomicBool>> = LazyLock::new(|| Arc::new(AtomicBool::new(false)));
 use tauri_plugin_log::{Target, TargetKind};
 
+#[cfg(target_os = "windows")]
+use windows::Win32::UI::WindowsAndMessaging::{LoadCursorW, SetSystemCursor, IDC_CROSS, OCR_NORMAL};
+
 #[tauri::command]
 fn update_time_range(left: u64, right: u64) {
     let mut l_val = L_TIEM.lock().expect("");
@@ -165,6 +168,41 @@ fn unregister_shortcut(app: AppHandle, shortcut: String) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn change_cursor_globally(duration_ms: u64) {
+    #[cfg(target_os = "windows")]
+    {
+        use std::thread;
+        use std::time::Duration;
+        
+        thread::spawn(move || {
+            unsafe {
+                // 加载十字准星光标
+                if let Ok(cross_cursor) = LoadCursorW(None, IDC_CROSS) {
+                    // 设置系统光标为十字准星
+                    let _ = SetSystemCursor(cross_cursor, OCR_NORMAL);
+                    println!("已将系统光标更改为十字准星");
+                    
+                    // 等待指定时间
+                    thread::sleep(Duration::from_millis(duration_ms));
+                    
+                    // 恢复默认光标（重新加载并设置）
+                    if let Ok(normal_cursor) = LoadCursorW(None, IDC_CROSS) {
+                        let _ = SetSystemCursor(normal_cursor, OCR_NORMAL);
+                    }
+                    println!("已恢复默认系统光标");
+                }
+            }
+        });
+    }
+    
+    #[cfg(not(target_os = "windows"))]
+    {
+        // 非Windows系统，静默忽略
+        println!("当前系统不支持全局光标更改功能");
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default()
@@ -214,7 +252,8 @@ pub fn run() {
             open_folder,
             type_single_char,
             register_shortcut,
-            unregister_shortcut
+            unregister_shortcut,
+            change_cursor_globally
         ]);
     builder
         .run(tauri::generate_context!())

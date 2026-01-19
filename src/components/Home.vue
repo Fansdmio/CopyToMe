@@ -131,8 +131,9 @@
             </div>
             <div class="tips-desc">
               <span class="highlight-require">管理员运行</span>,先使用<span class="highlight">Ctrl+C</span>把问题复制一下,再使用<span
-                class="highlight">Ctrl+J (AI问答)</span>,再使用<span class="highlight">Ctrl+K (进入模拟输入模式)</span>,之后按一次<span
-                class="highlight">L</span>会输出一个字。结束可以按下<span class="highlight">Ctrl+K (退出)</span>
+                class="highlight">Ctrl+J (AI问答)</span>,等待鼠标样式出现短暂的变化,再使用<span class="highlight">Ctrl+K
+                (进入模拟输入模式)</span>,之后按一次<span class="highlight">L</span>会输出一个字。结束可以按下<span class="highlight">Ctrl+K
+                (退出)</span>
             </div>
           </div>
           <div class="tips-item">
@@ -141,8 +142,8 @@
             </div>
             <div class="tips-desc">
               <span class="highlight-require">微信输入法</span> + <span class="highlight-require">开启去除换行</span>
-              先使用<span class="highlight">Ctrl+C</span>把问题复制一下，再使用<span class="highlight">Ctrl+J (AI问答)</span>，按 <code
-                class="code-snippet">v->2->空格</code>
+              先使用<span class="highlight">Ctrl+C</span>把问题复制一下，再使用<span class="highlight">Ctrl+J
+                (AI问答)</span>,等待鼠标样式出现短暂的变化,按 <code class="code-snippet">v->2->空格</code>
               即可调出AI的回答
             </div>
 

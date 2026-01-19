@@ -135,7 +135,9 @@ const typingState = ref({
   currentPosition: 0,     // 当前输入位置
   jKeyRegistered: false,  // J键是否已注册
   kKeyRegistered: false,  // K键是否已注册
-  lKeyRegistered: false   // L键是否已注册
+  lKeyRegistered: false,  // L键是否已注册
+  lKeyCooldown: false,    // L键是否在冷却中
+  jKeyCooldown: false     // J键是否在冷却中
 })
 
 // 使用通知管理器
@@ -162,12 +164,12 @@ const handleMenuSelect = (index) => {
 const loadTextToCache = async () => {
   const text = await readText()
   info(`App.vue: 从剪贴板读取文本,长度: ${text?.length || 0}`);
-  
+
   if (!text?.trim()) {
     ElMessage.warning('剪贴板为空')
     return false
   }
-  
+
   typingState.value.cachedText = text
   typingState.value.currentPosition = 0
   info("App.vue: 缓存区已填充");
@@ -177,17 +179,17 @@ const loadTextToCache = async () => {
 // 辅助函数：检查缓存区是否需要重新加载
 const checkAndReloadCache = async () => {
   // 检查是否文本已输入完成
-  if (typingState.value.cachedText && 
-      typingState.value.currentPosition >= typingState.value.cachedText.length) {
+  if (typingState.value.cachedText &&
+    typingState.value.currentPosition >= typingState.value.cachedText.length) {
     info("App.vue: 检测到文本已输入完成，重新从剪贴板加载");
     return await loadTextToCache()
   }
-  
+
   // 如果缓存区为空
   if (!typingState.value.cachedText) {
     return await loadTextToCache()
   }
-  
+
   return true
 }
 
@@ -254,7 +256,7 @@ const exitInputMode = async () => {
 // J键: 开始/停止模拟输入
 const handleJKey = async () => {
   info("App.vue: 触发 J 键 - 开始/停止模拟输入");
-  
+
   if (!typingState.value.inputMode) {
     info("App.vue: 不在模拟输入模式，忽略 J 键");
     return
@@ -264,7 +266,21 @@ const handleJKey = async () => {
   if (typingState.value.isTyping) {
     info("App.vue: 停止模拟输入");
     await invoke('stop_typing')
+    typingState.value.isTyping = false
     ElMessage.info('已停止输入')
+
+    // 进入0.5秒冷却期
+    typingState.value.jKeyCooldown = true
+    info("App.vue: J键进入0.5秒冷却期");
+    setTimeout(() => {
+      typingState.value.jKeyCooldown = false
+      info("App.vue: J键冷却期结束");
+    }, 500)
+    return
+  }
+
+  // 如果在冷却期，无法启动
+  if (typingState.value.jKeyCooldown && !typingState.value.isTyping) {
     return
   }
 
@@ -311,9 +327,15 @@ const handleKKey = async () => {
 // L键: 逐字输出
 const handleLKey = async () => {
   info("App.vue: 触发 L 键 - 逐字输出");
-  
+
   if (!typingState.value.inputMode) {
     info("App.vue: 不在模拟输入模式，忽略 L 键");
+    return
+  }
+
+  // 如果在冷却期，直接返回
+  if (typingState.value.lKeyCooldown) {
+    info("App.vue: L键在冷却期，忽略本次按键");
     return
   }
 
@@ -335,7 +357,17 @@ const handleLKey = async () => {
       position: typingState.value.currentPosition
     })
     typingState.value.currentPosition = newPosition
-    info(`App.vue: 输出单个字符，新位置: ${newPosition}`);
+    // info(`App.vue: 输出单个字符，新位置: ${newPosition}`);
+
+    // 检查是否输出完成
+    if (newPosition >= typingState.value.cachedText.length) {
+      info("App.vue: 逐字输出完成,进入1.5秒冷却期");
+      typingState.value.lKeyCooldown = true
+      setTimeout(() => {
+        typingState.value.lKeyCooldown = false
+        info("App.vue: L键冷却期结束");
+      }, 1500)
+    }
   } catch (e) {
     error(`App.vue: 单字符输出失败: ${e}`);
     ElMessage.error('字符输出失败')
@@ -381,6 +413,14 @@ const handleQuestion = debounce(async () => {
 
   await writeText(clipboardAnswer)
   info("App.vue: AI回答已写入剪贴板");
+  
+  // 调用后端全局改变鼠标样式（仅Windows）
+  try {
+    await invoke('change_cursor_globally', { durationMs: 500 })
+  } catch (e) {
+    error(`App.vue: 全局光标更改失败: ${e}`);
+  }
+    
   ElMessage.success('AI 回答已复制到剪贴板')
 })
 
@@ -542,7 +582,7 @@ onMounted(async () => {
   watch(() => settings.autoHideTray, async (val) => {
     info(`App.vue: 自动隐藏托盘图标设置变更: ${val}`);
     await setMg.save()
-    
+
     if (val) {
       await hideTrayIcon()
       ElMessage.success('托盘图标已隐藏，可通过快捷键恢复显示')
