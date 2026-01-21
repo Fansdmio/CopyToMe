@@ -1,11 +1,11 @@
 {
-  "version": "0.3.0",
-  "notes": "# 少女少年请留步 ⬇\r\n如果你仍然处于 0.1.x 版本,建议***更新到此版本***\r\n此次更新的版本为: `0.3.0`\r\n\r\n# 少年少女请留步 ⬆\r\n\r\n# 0.3.0 更新内容\r\n## 核心更新\r\n- 模拟输入方法进行重新改造,请学习新版的使用方法\r\n- 问答完成之后鼠标出现短暂变化,用来提示\r\n## 其他更新\r\n- 优化快捷键逻辑\r\n\r\n# 0.2.3 更新内容\r\n## 核心更新\r\n- 模拟输入可以接着上次中断的地方继续输入\r\n- 添加通知功能\r\n## 其他更新\r\n- 修复设置界面变化问题,增加美观\r\n- 更新使用文档\r\n\r\n\r\n# 0.2.2 更新内容\r\n## 核心更新\r\n- 优化了快捷键注册逻辑\r\n\r\n# 0.2.1 更新内容\r\n## 核心更新\r\n- 增加隐藏托盘图标快捷方式,增加隐蔽性\r\n## 其他更新\r\n- 增加自定义ai功能,支持openai,google格式,可进行各种参数调节\r\n- 历史记录添加删除功能\r\n- 更换了下载时的进度条样式\r\n- 提高历史记录上限为2000\r\n- 优化了图标\r\n## 修复\r\n- 修复了ai健康检查会污染历史记录",
-  "pub_date": "2026-01-19T08:38:48.786Z",
+  "version": "0.3.2",
+  "notes": "### 少女少年请留步 ⬇\r\n如果你仍然处于 0.1.x 版本,建议***更新到此版本***\r\n此次更新的版本为: `0.3.2`\r\n\r\n### 少年少女请留步 ⬆\r\n\r\n# 0.3.2 更新内容\r\n## 核心更新\r\n- 更新了一些东西\r\n\r\n# 0.3.1 更新内容\r\n## 核心更新\r\n- 更新了一些东西\r\n\r\n# 0.3.0 更新内容\r\n## 核心更新\r\n- 模拟输入方法进行重新改造,请学习新版的使用方法\r\n- 问答完成之后鼠标出现短暂变化,用来提示\r\n## 其他更新\r\n- 优化快捷键逻辑\r\n\r\n# 0.2.3 更新内容\r\n## 核心更新\r\n- 模拟输入可以接着上次中断的地方继续输入\r\n- 添加通知功能\r\n## 其他更新\r\n- 修复设置界面变化问题,增加美观\r\n- 更新使用文档\r\n\r\n\r\n# 0.2.2 更新内容\r\n## 核心更新\r\n- 优化了快捷键注册逻辑\r\n\r\n# 0.2.1 更新内容\r\n## 核心更新\r\n- 增加隐藏托盘图标快捷方式,增加隐蔽性\r\n## 其他更新\r\n- 增加自定义ai功能,支持openai,google格式,可进行各种参数调节\r\n- 历史记录添加删除功能\r\n- 更换了下载时的进度条样式\r\n- 提高历史记录上限为2000\r\n- 优化了图标\r\n## 修复\r\n- 修复了ai健康检查会污染历史记录",
+  "pub_date": "2026-01-20T03:19:12.414Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVScDYwTk1iY0lvQ2MwczNwR0tOekMyUldVeFY4YTZFWklYVnlRaURLRHBzbWRIWEh3aCtaM3d3Q3NINURTbzFtVEpkMVdBaEYwN204NVJ0UEFHQXVEWEgyR1krS2lFRGdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY4ODExOTI0CWZpbGU6Q29weVRvTWVBbmRUYXVyaV8wLjMuMF94NjQtc2V0dXAuZXhlCkFNYmtHUGVpeUJDVi9GRGxNRFVUSVdnZVBFZlNaV0Z2SjlKRHZjaUxaWVJlZUZFZkZrRUh6Q1hVSmFTVVRYaFUzQzdZKy9leHVhRHBYSjE3WE1MeEJ3PT0K",
-      "url": "https://cp.wojwo.xyz/download/CopyToMeAndTauri_0.3.0_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVScDYwTk1iY0lvQ2V5VnNMWm9RdldEd1dvTmNlelRkWWd1ZDBYUGFudnBEdlk3L2ZDdjRuN1hsc09uQTA3dUVPd203d1FEc2JBR2R6S0hmbHBpb2tDajEwYWtIdmFlRkFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY4ODc5MTQ5CWZpbGU6Q29weVRvTWVBbmRUYXVyaV8wLjMuMl94NjQtc2V0dXAuZXhlCktaYjh4MXN5RTRYVGo0VkZIckx2Qno1UzJEK3dvLzV0aCs5QlBiYUJMeC80Qm1jSUlnS0hCNFhwTEd3d2dCMUFsLzV1bXBuMUV5OW55TmZxQ0ZEL0RBPT0K",
+      "url": "https://cp.wojwo.xyz/download/CopyToMeAndTauri_0.3.2_x64-setup.exe"
     }
   }
 }

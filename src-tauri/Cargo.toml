@@ -1,6 +1,6 @@
 [package]
 name = "copytomeandtauri"
-version = "0.3.1"
+version = "0.3.2"
 description = "绕过禁止粘贴限制的剪贴板工具"
 authors = ["uuyo"]
 edition = "2021"

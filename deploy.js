@@ -17,7 +17,7 @@ const update_latest = () => {
     const signature = fs.readFileSync(`./src-tauri/target/release/bundle/nsis/CopyToMeAndTauri_${version}_x64-setup.exe.sig`, 'utf-8');
     latest.platforms["windows-x86_64"].signature = signature;
     //更新说明
-    const update_md = fs.readFileSync(`./UPDATE_${version}.md`, 'utf-8');
+    const update_md = fs.readFileSync(`./md/UPDATE_LATEST.md`, 'utf-8');
     latest.notes = update_md;
 
     // 写入 latest.json 文件
@@ -47,18 +47,18 @@ const deploy_app = () => {
 }
 
 const deploy_web = () => {
-    const deploy_cmd = `scp ./website.html root@uuio:/usr/local/nginx/html/CopyToMeWeb/and_tauri/index.html`;
+    const deploy_cmd = `scp ./website/website.html root@uuio:/usr/local/nginx/html/CopyToMeWeb/and_tauri/index.html`;
     execSync(deploy_cmd, { stdio: 'inherit' });
     console.log("CopyToMeAndTauri网站页面已更新");
 }
 
 const deploy_dumpweb = () => {
-    const deploy_cmd = `scp ./website.dump.html root@uuio:/usr/local/nginx/html/CopyToMeWeb/index.html`;
+    const deploy_cmd = `scp ./website/website.dump.html root@uuio:/usr/local/nginx/html/CopyToMeWeb/index.html`;
     execSync(deploy_cmd, { stdio: 'inherit' });
     console.log("CopyToMeAndRust网站页面已更新");
 }
 const deploy_guideweb = () => {
-    const deploy_cmd = `scp ./website.guide.html root@uuio:/usr/local/nginx/html/CopyToMeWeb/guide/index.html`;
+    const deploy_cmd = `scp ./website/website.guide.html root@uuio:/usr/local/nginx/html/CopyToMeWeb/and_tauri/guide/index.html`;
     execSync(deploy_cmd, { stdio: 'inherit' });
     console.log("指导网站页面已更新");
 }
@@ -81,6 +81,8 @@ switch (deploy_mode) {
     case 'all':
         deploy_app();
         deploy_web();
+        deploy_guideweb();
+        deploy_dumpweb();
         break;
     default:
         console.log(`未知的部署模式: ${deploy_mode}`);

@@ -3,7 +3,7 @@ import { reactive, ref } from 'vue';
 import { info, error } from '@tauri-apps/plugin-log';
 
 const STORAGE_KEY = 'copytome_settings'
-const VERSION = '200260119v1@0.3.1'
+const VERSION = '200260120v0@0.3.2'
 
 // 默认配置
 const DEFAULT_SETTINGS = {

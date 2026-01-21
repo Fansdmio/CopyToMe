@@ -160,6 +160,16 @@ const handleMenuSelect = (index) => {
   activeMenu.value = index
 }
 
+const clearTextCache = () => {
+  typingState.value.cachedText = ''
+  typingState.value.currentPosition = 0
+}
+
+const exitInputAndClearCache = async () => {
+  await exitInputMode()
+  clearTextCache()
+}
+
 // 辅助函数：检查并加载剪贴板文本到缓存区
 const loadTextToCache = async () => {
   const text = await readText()
@@ -176,18 +186,17 @@ const loadTextToCache = async () => {
   return true
 }
 
-// 辅助函数：检查缓存区是否需要重新加载
-const checkAndReloadCache = async () => {
-  // 如果缓存区为空
-  if (!typingState.value.cachedText) {
-    return await loadTextToCache()
+const checkAndLoadCache = async () => {
+  // 如果缓存区已有内容, 则不重复加载
+  if (typingState.value.cachedText.trim()) {
+    return true
   }
-  return true
+  return await loadTextToCache()
 }
 
 listen('text_handled', async () => {
   info("App.vue: 模拟输入完成");
-  await exitInputMode()
+  await exitInputAndClearCache()
 })
 
 listen('text_paused', (event) => {
@@ -207,13 +216,13 @@ const handleText = async () => {
   if (typingState.value.inputMode) {
     info("App.vue: 退出模拟输入模式");
     await exitInputMode()
-    // ElMessage.info('已退出模拟输入模式')
     return
   }
 
   // 进入模拟输入模式
   info("App.vue: 进入模拟输入模式");
   typingState.value.inputMode = true
+  await checkAndLoadCache()
 
   // 注册 J、K、L 键
   await registerJKey(handleJKey)
@@ -225,8 +234,13 @@ const handleText = async () => {
     handleJKey()
   }
 
-  // ElMessage.success('已进入模拟输入模式 | J:开始/停止 | K:清空缓存 | L:逐字输出')
 }
+// 监听缓存区变化, 如果缓存区为空则注销 K 键
+watch(() => typingState.value.cachedText, (newVal) => {
+  if (!newVal) {
+    unregisterKKey()
+  }
+})
 
 // 退出模拟输入模式
 const exitInputMode = async () => {
@@ -240,13 +254,9 @@ const exitInputMode = async () => {
   // 改变模式状态和停止输入状态
   typingState.value.inputMode = false
   typingState.value.isTyping = false
-  //清空缓存区
-  typingState.value.cachedText = ''
-  typingState.value.currentPosition = 0
 
-  // 注销 J、K、L 键
+  // 注销 J、L 键
   await unregisterJKey()
-  await unregisterKKey()
   await unregisterLKey()
 }
 
@@ -261,17 +271,13 @@ const handleJKey = async () => {
 
   // 如果正在输入, 则停止
   if (typingState.value.isTyping) {
-    info("App.vue: 停止模拟输入");
+    //停止模拟输入
     await invoke('stop_typing')
     typingState.value.isTyping = false
-    // ElMessage.info('已停止输入')
-
     // 进入0.5秒冷却期
     typingState.value.jKeyCooldown = true
-    info("App.vue: J键进入0.5秒冷却期");
     setTimeout(() => {
       typingState.value.jKeyCooldown = false
-      info("App.vue: J键冷却期结束");
     }, 500)
     return
   }
@@ -281,10 +287,6 @@ const handleJKey = async () => {
     return
   }
 
-  // 检查并加载缓存区
-  if (!await checkAndReloadCache()) {
-    return
-  }
 
   // 开始模拟输入
   info(`App.vue: 开始模拟输入, 从位置 ${typingState.value.currentPosition} 开始`);
@@ -297,28 +299,12 @@ const handleJKey = async () => {
   })
 }
 
-// K键: 暂停并清空缓存区
+// K键: 退出并清空缓存区
 const handleKKey = async () => {
-  info("App.vue: 触发 K 键 - 暂停并清空缓存");
-
-  if (!typingState.value.inputMode) {
-    info("App.vue: 不在模拟输入模式, 忽略 K 键");
-    return
+  await exitInputAndClearCache()
+  if (!typingState.value.cachedText.trim()) {
+    unregisterKKey()
   }
-
-  // 如果正在输入, 发送停止信号
-  if (typingState.value.isTyping) {
-    await invoke('stop_typing')
-    info("App.vue: 已发送停止信号");
-  }
-
-  // 清空缓存区
-  typingState.value.cachedText = ''
-  typingState.value.currentPosition = 0
-  typingState.value.isTyping = false
-
-  // ElMessage.warning('已清空缓存区')
-  info('App.vue: 缓存区已清空')
 }
 
 // L键: 逐字输出
@@ -341,12 +327,6 @@ const handleLKey = async () => {
     info("App.vue: 正在进行模拟输入, 忽略 L 键");
     return
   }
-
-  // 检查并加载缓存区
-  if (!await checkAndReloadCache()) {
-    return
-  }
-
   // 输出单个字符
   try {
     const newPosition = await invoke('type_single_char', {
@@ -354,16 +334,13 @@ const handleLKey = async () => {
       position: typingState.value.currentPosition
     })
     typingState.value.currentPosition = newPosition
-    // info(`App.vue: 输出单个字符, 新位置: ${newPosition}`);
 
     // 检查是否输出完成
     if (newPosition >= typingState.value.cachedText.length) {
-      info("App.vue: 逐字输出完成,进入1.5秒冷却期");
       typingState.value.lKeyCooldown = true
       setTimeout(async () => {
         typingState.value.lKeyCooldown = false
-        await exitInputMode()
-        info("App.vue: L键冷却期结束");
+        await exitInputAndClearCache()
       }, 1500)
     }
   } catch (e) {

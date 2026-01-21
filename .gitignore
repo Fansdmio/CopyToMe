@@ -27,6 +27,5 @@ dist-ssr
 # website.html
 CLAUDE.md
 AGENTS.md
-UPDATE*.md
-*FIX.md
 CopyToMeJG.png
+md/
