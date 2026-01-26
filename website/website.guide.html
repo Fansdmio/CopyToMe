@@ -11,7 +11,6 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- 引入类似像素风的字体 -->
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-
     <style>
         :root {
             --bg-color: #fdf6e3;
@@ -27,11 +26,24 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 20px;
+            padding: 0;
             font-size: 20px;
             background-image:
                 radial-gradient(var(--shadow-color) 1px, transparent 1px);
             background-size: 20px 20px;
+            display: flex;
+            overflow-x: hidden;
+        }
+
+        .main-container {
+            flex: 1;
+            padding: 20px;
+            transition: margin-right 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        .main-container.shifted {
+            margin-right: 400px;
         }
 
         #app {
@@ -215,10 +227,519 @@
             border-radius: 20px;
             pointer-events: none;
         }
+
+        /* 评论区样式 */
+        #comment-app {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 400px;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .comment-panel {
+            width: 100%;
+            height: 100vh;
+            background: var(--card-bg);
+            border-left: 4px solid var(--text-color);
+            box-shadow: -8px 0 0px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            pointer-events: auto;
+        }
+
+        .comment-panel.open {
+            transform: translateX(0);
+        }
+
+        .comment-toggle {
+            position: fixed;
+            right: 10px;
+            top: 20px;
+            width: 60px;
+            height: 60px;
+            background: var(--accent-color);
+            border: 4px solid var(--text-color);
+            border-radius: 50%;
+            box-shadow: 4px 4px 0px var(--shadow-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .comment-toggle:hover {
+            transform: scale(1.1);
+            background: var(--secondary-color);
+        }
+
+        .comment-toggle.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .comment-header {
+            padding: 12px 15px;
+            border-bottom: 3px solid var(--text-color);
+            background: var(--accent-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .comment-header h3 {
+            margin: 0;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .close-btn {
+            background: var(--text-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+            font-size: 1em;
+        }
+
+        .close-btn:hover {
+            background: #3e2723;
+        }
+
+        .user-info {
+            padding: 8px 15px;
+            background: rgba(230, 162, 60, 0.1);
+            border-bottom: 2px dashed var(--shadow-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .username-display {
+            font-size: 1.1em;
+            color: var(--text-color);
+        }
+
+        .edit-username-btn {
+            background: var(--secondary-color);
+            color: white;
+            border: 2px solid var(--text-color);
+            border-radius: 8px;
+            padding: 3px 8px;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+            font-size: 0.9em;
+        }
+
+        .edit-username-btn:hover {
+            background: #7aa592;
+        }
+
+        .comments-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 15px;
+        }
+
+        .comment-item {
+            background: white;
+            border: 2px solid var(--text-color);
+            border-radius: 12px;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            box-shadow: 3px 3px 0px var(--shadow-color);
+        }
+
+        .comment-header-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+            flex-wrap: wrap;
+        }
+
+        .comment-author {
+            color: var(--accent-color);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .comment-time {
+            color: #999;
+            font-size: 0.85em;
+            margin-left: auto;
+        }
+
+        .comment-content {
+            line-height: 1.4;
+            word-wrap: break-word;
+            font-size: 0.95em;
+            margin-bottom: 6px;
+        }
+
+        .comment-reply {
+            margin-left: 15px;
+            margin-top: 8px;
+            border-left: 2px solid var(--secondary-color);
+            padding-left: 8px;
+        }
+
+        .reply-btn {
+            background: transparent;
+            color: var(--secondary-color);
+            border: none;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+            font-size: 0.85em;
+            padding: 0;
+        }
+
+        .reply-btn:hover {
+            text-decoration: underline;
+        }
+
+        .expand-replies-btn {
+            background: transparent;
+            color: var(--accent-color);
+            border: none;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+            font-size: 0.85em;
+            padding: 0;
+        }
+
+        .expand-replies-btn:hover {
+            text-decoration: underline;
+        }
+
+        .flat-reply {
+            background: #f9f9f9;
+            border: 2px solid var(--shadow-color);
+            border-radius: 10px;
+            padding: 6px 8px;
+            margin-top: 6px;
+        }
+
+        .reply-target {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        /* 自定义滚动条样式 */
+        .comments-list::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .comments-list::-webkit-scrollbar-track {
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .comments-list::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 10px;
+            border: 2px solid #f5f5f5;
+        }
+
+        .comments-list::-webkit-scrollbar-thumb:hover {
+            background: #d4941f;
+        }
+
+        /* 页面主滚动条样式 */
+        body::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        body::-webkit-scrollbar-track {
+            background: var(--bg-color);
+            border-left: 2px solid var(--shadow-color);
+        }
+
+        body::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 6px;
+            border: 2px solid var(--bg-color);
+        }
+
+        body::-webkit-scrollbar-thumb:hover {
+            background: #d4941f;
+        }
+
+        .pagination {
+            padding: 10px 15px;
+            border-top: 2px dashed var(--shadow-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .page-btn {
+            background: var(--accent-color);
+            color: white;
+            border: 2px solid var(--text-color);
+            border-radius: 8px;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+            font-size: 0.9em;
+        }
+
+        .page-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .page-btn:not(:disabled):hover {
+            background: #d4941f;
+        }
+
+        .page-info {
+            color: var(--text-color);
+        }
+
+        .comment-input-area {
+            border-top: 3px solid var(--text-color);
+            padding: 8px 12px;
+            background: var(--bg-color);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .comment-textarea {
+            flex: 1;
+            min-height: 38px;
+            max-height: 100px;
+            border: 2px solid var(--text-color);
+            border-radius: 10px;
+            padding: 6px 8px;
+            font-family: 'VT323', monospace;
+            font-size: 0.95em;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .comment-textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .send-btn {
+            min-width: 70px;
+            background: var(--accent-color);
+            color: white;
+            border: 2px solid var(--text-color);
+            border-radius: 10px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+            font-size: 1em;
+            box-shadow: 2px 2px 0px var(--shadow-color);
+            transition: all 0.2s;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px var(--shadow-color);
+        }
+
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .verify-container {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .verify-btn {
+            background: var(--accent-color);
+            color: white;
+            border: 3px solid var(--text-color);
+            border-radius: 15px;
+            padding: 15px 30px;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+            font-size: 1.5em;
+            box-shadow: 4px 4px 0px var(--shadow-color);
+        }
+
+        .verify-btn:hover {
+            background: #d4941f;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--accent-color);
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            border: 2px solid #c62828;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 2px solid #2e7d32;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        /* 用户名编辑模态框 */
+        .username-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            pointer-events: auto;
+        }
+
+        .username-modal-content {
+            background: var(--card-bg);
+            border: 4px solid var(--text-color);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 8px 8px 0px var(--shadow-color);
+            min-width: 300px;
+            pointer-events: auto;
+        }
+
+        .username-modal h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+        }
+
+        .username-input {
+            width: 100%;
+            border: 3px solid var(--text-color);
+            border-radius: 10px;
+            padding: 10px;
+            font-family: 'VT323', monospace;
+            font-size: 1.2em;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            border: 2px solid var(--text-color);
+            border-radius: 10px;
+            padding: 10px;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+            font-size: 1.1em;
+        }
+
+        .modal-btn.confirm {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .modal-btn.cancel {
+            background: #ddd;
+            color: var(--text-color);
+        }
+        
+        /* 开发者标识样式 */
+        .developer-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #e6a23c 0%, #d4941f 100%);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            border: 2px solid #c58520;
+            box-shadow: 0 2px 3px rgba(197, 133, 32, 0.3);
+            font-weight: bold;
+        }
+        
+        .developer-comment {
+            /* 移除特殊边框，保持一致 */
+        }
+        
+        /* 私密评论标识 */
+        .private-badge {
+            display: inline-block;
+            background: #ff9a76;
+            color: white;
+            padding: 1px 6px;
+            border-radius: 6px;
+            font-size: 0.7em;
+            margin-left: 4px;
+            border: 2px solid #ff8159;
+            font-weight: bold;
+            vertical-align: middle;
+        }
+        
+        /* 删除按钮 */
+        .delete-btn {
+            background: transparent;
+            color: #ff6b6b;
+            border: none;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+            font-size: 0.85em;
+            padding: 0;
+            margin-left: auto;
+        }
+        
+        .delete-btn:hover {
+            text-decoration: underline;
+            color: #ee5a52;
+        }
+        
+        .privacy-checkbox {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .comment-panel {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 
 <body>
+    <div class="main-container" id="main-container">
     <div id="app">
         <!-- 头部 -->
         <h1>CopyToMe & Tauri Guide</h1>
@@ -238,6 +759,7 @@
             <div class="markdown-body" v-html="renderMarkdown(introText)"></div>
         </div>
 
+        <!-- Cloudflare Turnstile 验证 -->
         <!-- QA 问答区域 -->
         <div class="pixel-card">
             <h2>常见问题 (Q&A)</h2>
@@ -257,10 +779,195 @@
             <div class="modal-instruction">🖱️ 滚轮缩放 / 点击空白处关闭</div>
         </div>
     </div>
+    </div>
 
+    <!-- 评论区切换按钮 -->
+    <div class="comment-toggle" id="comment-toggle">
+        💬
+    </div>
+
+    <!-- 评论区 -->
+    <div id="comment-app">
+        <!-- 评论区面板 -->
+        <div class="comment-panel" :class="{ open: isPanelOpen }">
+            <!-- 评论区头部 -->
+            <div class="comment-header">
+                <h3>反馈区</h3>
+                <button class="close-btn" @click="toggleCommentPanel">关闭</button>
+            </div>
+
+            <!-- 未验证状态 -->
+            <div class="verify-container" v-if="!isVerified && !isLoading">
+                <p>请先完成人机验证</p>
+                <div id="comment-turnstile"></div>
+                <p style="color: #999; font-size: 0.9em; margin-top: 10px;">验证后即可发表评论</p>
+            </div>
+
+            <!-- 加载中 -->
+            <div class="loading" v-if="isLoading">
+                <p>加载中...</p>
+            </div>
+
+            <!-- 评论列表 -->
+            <div class="comments-list" v-if="isVerified">
+                <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+                <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
+                
+                <div v-if="paginatedComments.length === 0" style="text-align: center; color: #999; padding: 40px 0;">
+                    还没有反馈，快来抢沙发吧！
+                </div>
+
+                <div v-for="comment in paginatedComments" :key="comment.id" class="comment-item">
+                    <div class="comment-header-info">
+                        <span class="comment-author" :class="{ 'developer-badge': isDeveloper(comment.username) }">
+                            {{ comment.username }}
+                        </span>
+                        <span v-if="comment.is_private" class="private-badge">私密</span>
+                        <span class="comment-time">{{ formatTime(comment.created_at) }}</span>
+                    </div>
+                    <div class="comment-content">{{ comment.content }}</div>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <button class="reply-btn" @click="replyTo(comment)">💬 回复</button>
+                        <button 
+                            v-if="comment.user_id === userId"
+                            class="delete-btn"
+                            @click="deleteComment(comment.id)"
+                        >删除</button>
+                        <button 
+                            v-if="comment.replies && comment.replies.length > 0" 
+                            class="expand-replies-btn"
+                            @click="toggleReplies(comment.id)"
+                        >
+                            {{ expandedComments[comment.id] ? '收起' : `展开${getTotalRepliesCount(comment.replies)}条回复` }}
+                        </button>
+                    </div>
+
+                    <!-- 平铺显示所有回复 -->
+                    <div v-if="expandedComments[comment.id] && comment.replies && comment.replies.length > 0" style="margin-top: 8px;">
+                        <div v-for="reply in flattenReplies(comment.replies)" :key="reply.id" class="flat-reply">
+                            <div class="comment-header-info">
+                                <span class="comment-author" :class="{ 'developer-badge': isDeveloper(reply.username) }">
+                                    {{ reply.username }}
+                                </span>
+                                <span v-if="reply.is_private" class="private-badge">私密</span>
+                                <span v-if="reply.replyTo" style="font-size: 0.8em; color: #666;">
+                                    回复 <span class="reply-target">@{{ reply.replyTo }}</span>
+                                </span>
+                                <span class="comment-time">{{ formatTime(reply.created_at) }}</span>
+                            </div>
+                            <div class="comment-content">{{ reply.content }}</div>
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                <button class="reply-btn" @click="replyTo(reply, comment)">💬 回复</button>
+                                <button 
+                                    v-if="reply.user_id === userId"
+                                    class="delete-btn"
+                                    @click="deleteComment(reply.id)"
+                                >删除</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 分页 -->
+            <div class="pagination" v-if="isVerified && totalPages > 1">
+                <button class="page-btn" @click="prevPage" :disabled="currentPage === 1">上一页</button>
+                <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+                <button class="page-btn" @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
+            </div>
+
+            <!-- 评论输入区 -->
+            <div class="comment-input-area" v-if="isVerified">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding: 4px 0;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="username-display" style="font-size: 0.9em;">👤 {{ username }}</span>
+                        <button class="edit-username-btn" style="padding: 2px 6px; font-size: 0.85em;" @click="showUsernameModal = true">改名</button>
+                    </div>
+                    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 0.8em;">
+                        <input type="checkbox" class="privacy-checkbox" v-model="isPrivateComment" id="private-toggle">
+                        <span>私密(仅你与开发者可见)</span>
+                    </label>
+                </div>
+                <div v-if="replyingTo" style="padding: 3px 6px; background: rgba(140, 182, 162, 0.15); border-radius: 6px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.8em;">回复 @{{ replyingTo.username }}</span>
+                    <button @click="cancelReply" style="background: none; border: none; cursor: pointer; font-size: 0.9em; padding: 0 2px;">✖</button>
+                </div>
+                <div class="input-row">
+                    <textarea 
+                        class="comment-textarea" 
+                        v-model="commentContent" 
+                        :placeholder="replyingTo ? '输入你的回复...' : '发送你的反馈或想法...'"
+                        @keydown.ctrl.enter="sendComment"
+                    ></textarea>
+                    <button class="send-btn" @click="sendComment" :disabled="!commentContent.trim() || isSending">
+                        {{ isSending ? '发送中...' : '发送' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 用户名编辑模态框 -->
+        <div class="username-modal" v-if="showUsernameModal" @click.self="showUsernameModal = false">
+            <div class="username-modal-content">
+                <h3>修改用户名</h3>
+                <input 
+                    type="text" 
+                    class="username-input" 
+                    v-model="newUsername" 
+                    :placeholder="username"
+                    maxlength="20"
+                >
+                <div v-if="usernameError" class="error-message">{{ usernameError }}</div>
+                <div class="modal-buttons">
+                    <button class="modal-btn cancel" @click="showUsernameModal = false">取消</button>
+                    <button class="modal-btn confirm" @click="updateUsername">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback" async
+        defer></script>
     <script>
-        const { createApp, ref } = Vue;
+        const { createApp, ref, computed } = Vue;
+        
+        // 提前定义占位函数
+        window.toggleComment = function() {
+            console.log('Comment panel not ready yet');
+        };
+        
+        // 为切换按钮添加点击事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('comment-toggle');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    if (window.commentAppInstance) {
+                        window.commentAppInstance.toggleCommentPanel();
+                    }
+                });
+            }
+        });
+        
+        // Turnstile 回调
+        let commentTurnstileWidget = null;
+        window.onloadTurnstileCallback = function () {
 
+            // 评论区的 Turnstile
+            if (document.getElementById('comment-turnstile')) {
+                commentTurnstileWidget = turnstile.render("#comment-turnstile", {
+                    sitekey: "0x4AAAAAACOHcQYSbaenxD-H",
+                    callback: function (token) {
+                        // 触发评论区的验证
+                        if (window.commentAppInstance) {
+                            window.commentAppInstance.verifyUser(token);
+                        }
+                    },
+                });
+            }
+        };
+
+        // 主应用
         createApp({
             setup() {
                 // 使用说明 (Markdown)
@@ -322,7 +1029,7 @@
                         isOpen: false
                     },
                     {
-                        question: "那我请问我的托盘图标呢?",
+                        question: "托盘图标没了怎么办？",
                         answer: "默认 Ctrl+Shift+Y 显示/隐藏托盘图标",
                         isOpen: false
                     },
@@ -387,6 +1094,415 @@
                 };
             }
         }).mount('#app');
+
+        // 评论区应用
+        const commentApp = createApp({
+            setup() {
+                const API_BASE = 'https://cp.uuyo.fun/api';
+                // 从localStorage读取展开状态，默认展开
+                const savedState = localStorage.getItem('comment_panel_open');
+                const isPanelOpen = ref(savedState === null ? true : savedState === 'true');
+                const isVerified = ref(false);
+                const isLoading = ref(false);
+                const userId = ref('');
+                const username = ref('');
+                const comments = ref([]);
+                const commentContent = ref('');
+                const isSending = ref(false);
+                const errorMessage = ref('');
+                const successMessage = ref('');
+                const replyingTo = ref(null);
+                const expandedComments = ref({}); // 记录哪些评论的回复被展开
+                
+                // 分页
+                const currentPage = ref(1);
+                const commentsPerPage = 5;
+
+                // 用户名编辑
+                const showUsernameModal = ref(false);
+                const newUsername = ref('');
+                const usernameError = ref('');
+                
+                // 私密评论（仅管理员和开发者可用）
+                const isPrivateComment = ref(false);
+                
+                // 通过用户名判断是否可以使用管理功能
+                const canUseAdminFeatures = computed(() => {
+                    return isDeveloper(username.value);
+                });
+
+                // 生成32位用户ID
+                const generateUserId = () => {
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                    let result = '';
+                    for (let i = 0; i < 32; i++) {
+                        result += chars.charAt(Math.floor(Math.random() * chars.length));
+                    }
+                    return result;
+                };
+
+                // 获取或创建用户ID
+                const getUserId = () => {
+                    let id = localStorage.getItem('comment_user_id');
+                    if (!id || id.length !== 32) {
+                        id = generateUserId();
+                        localStorage.setItem('comment_user_id', id);
+                    }
+                    return id;
+                };
+
+                // 初始化
+                const init = async () => {
+                    userId.value = getUserId();
+                    
+                    // 应用初始展开状态
+                    const mainContainer = document.getElementById('main-container');
+                    const toggleBtn = document.getElementById('comment-toggle');
+                    if (isPanelOpen.value) {
+                        mainContainer?.classList.add('shifted');
+                        toggleBtn?.classList.add('hidden');
+                    }
+                    
+                    // 总是加载评论（公开的）
+                    await loadComments();
+                    
+                    // 不自动验证，需要通过 Turnstile
+                };
+
+                // 验证用户
+                const verifyUser = async (token) => {
+                    isLoading.value = true;
+                    try {
+                        const response = await fetch(`${API_BASE}/verify`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                user_id: userId.value,
+                                token: token
+                            })
+                        });
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            isVerified.value = true;
+                            username.value = data.username;
+                            showMessage('验证成功！', 'success');
+                            await loadComments();
+                        } else {
+                            showMessage(data.message || '验证失败', 'error');
+                        }
+                    } catch (error) {
+                        console.error('验证失败:', error);
+                        showMessage('验证请求失败', 'error');
+                    } finally {
+                        isLoading.value = false;
+                    }
+                };
+
+                // 加载评论
+                const loadComments = async () => {
+                    try {
+                        const response = await fetch(`${API_BASE}/comments?user_id=${userId.value}`);
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            comments.value = data.comments;
+                        }
+                    } catch (error) {
+                        console.error('加载评论失败:', error);
+                    }
+                };
+
+                // 发送评论
+                const sendComment = async () => {
+                    if (!commentContent.value.trim()) return;
+                    
+                    isSending.value = true;
+                    errorMessage.value = '';
+                    
+                    try {
+                        const response = await fetch(`${API_BASE}/comment`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                user_id: userId.value,
+                                content: commentContent.value.trim(),
+                                parent_id: replyingTo.value ? replyingTo.value.id : null,
+                                is_private: isPrivateComment.value
+                            })
+                        });
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            commentContent.value = '';
+                            replyingTo.value = null;
+                            isPrivateComment.value = false;
+                            showMessage('发送成功！', 'success');
+                            await loadComments();
+                            currentPage.value = 1; // 回到第一页
+                        } else {
+                            showMessage(data.message || '发送失败', 'error');
+                        }
+                    } catch (error) {
+                        console.error('发送评论失败:', error);
+                        showMessage('发送请求失败', 'error');
+                    } finally {
+                        isSending.value = false;
+                    }
+                };
+                
+                // 删除评论
+                const deleteComment = async (commentId) => {
+                    if (!confirm('确定要删除这条评论吗？')) return;
+                    
+                    try {
+                        const response = await fetch(`${API_BASE}/comment/${commentId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                user_id: userId.value
+                            })
+                        });
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            showMessage('删除成功！', 'success');
+                            await loadComments();
+                        } else {
+                            showMessage(data.message || '删除失败', 'error');
+                        }
+                    } catch (error) {
+                        console.error('删除评论失败:', error);
+                        showMessage('删除请求失败', 'error');
+                    }
+                };
+                
+                // 判断是否为开发者
+                const isDeveloper = (username) => {
+                    return username === '开发者'
+                };
+
+                // 回复评论
+                const replyTo = (reply, topComment) => {
+                    replyingTo.value = {
+                        ...reply,
+                        topCommentId: topComment ? topComment.id : reply.id // 记录顶层评论 ID
+                    };
+                    commentContent.value = '';
+                };
+
+                // 切换回复展开/收起
+                const toggleReplies = (commentId) => {
+                    expandedComments.value[commentId] = !expandedComments.value[commentId];
+                };
+
+                // 递归将所有回复平铺为一级数组
+                const flattenReplies = (replies, parentUsername = null) => {
+                    const result = [];
+                    for (const reply of replies) {
+                        result.push({
+                            ...reply,
+                            replyTo: parentUsername
+                        });
+                        if (reply.replies && reply.replies.length > 0) {
+                            result.push(...flattenReplies(reply.replies, reply.username));
+                        }
+                    }
+                    return result;
+                };
+
+                // 计算总回复数
+                const getTotalRepliesCount = (replies) => {
+                    let count = replies.length;
+                    for (const reply of replies) {
+                        if (reply.replies && reply.replies.length > 0) {
+                            count += getTotalRepliesCount(reply.replies);
+                        }
+                    }
+                    return count;
+                };
+
+                // 取消回复
+                const cancelReply = () => {
+                    replyingTo.value = null;
+                };
+
+                // 修改用户名
+                const updateUsername = async () => {
+                    if (!newUsername.value.trim()) {
+                        usernameError.value = '用户名不能为空';
+                        return;
+                    }
+
+                    usernameError.value = '';
+                    
+                    try {
+                        const response = await fetch(`${API_BASE}/username`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                user_id: userId.value,
+                                new_username: newUsername.value.trim()
+                            })
+                        });
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            username.value = newUsername.value.trim();
+                            newUsername.value = '';
+                            showUsernameModal.value = false;
+                            showMessage('用户名修改成功！', 'success');
+                            await loadComments(); // 刷新评论以显示新用户名
+                        } else {
+                            usernameError.value = data.message || '修改失败';
+                        }
+                    } catch (error) {
+                        console.error('修改用户名失败:', error);
+                        usernameError.value = '请求失败';
+                    }
+                };
+
+                // 显示消息
+                const showMessage = (message, type) => {
+                    if (type === 'success') {
+                        successMessage.value = message;
+                        setTimeout(() => {
+                            successMessage.value = '';
+                        }, 3000);
+                    } else {
+                        errorMessage.value = message;
+                        setTimeout(() => {
+                            errorMessage.value = '';
+                        }, 3000);
+                    }
+                };
+
+                // 格式化时间
+                const formatTime = (timeStr) => {
+                    // 服务器返回的时间格式是 "2026-01-22 14:35:16" (UTC+0时间)
+                    // 需要将其转换为UTC时间，然后转换为本地时间
+                    const utcDateStr = timeStr.replace(' ', 'T') + 'Z'; // 添加Z表示UTC时间
+                    const date = new Date(utcDateStr);
+                    
+                    const now = new Date();
+                    const diff = Math.floor((now - date) / 1000);
+                    
+                    if (diff < 0) {
+                        // 如果为负数，说明时间在未来，直接显示刚刚
+                        return '刚刚';
+                    }
+                    
+                    if (diff < 60) return '刚刚';
+                    if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`;
+                    if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`;
+                    if (diff < 604800) return `${Math.floor(diff / 86400)}天前`;
+                    
+                    return timeStr;
+                };
+
+                // 切换面板
+                const toggleCommentPanel = () => {
+                    isPanelOpen.value = !isPanelOpen.value;
+                    // 保存状态到localStorage
+                    localStorage.setItem('comment_panel_open', isPanelOpen.value);
+                    const mainContainer = document.getElementById('main-container');
+                    const toggleBtn = document.getElementById('comment-toggle');
+                    if (isPanelOpen.value) {
+                        mainContainer.classList.add('shifted');
+                        toggleBtn.classList.add('hidden');
+                    } else {
+                        mainContainer.classList.remove('shifted');
+                        toggleBtn.classList.remove('hidden');
+                    }
+                };
+
+                // 分页计算
+                const paginatedComments = computed(() => {
+                    const start = (currentPage.value - 1) * commentsPerPage;
+                    const end = start + commentsPerPage;
+                    return comments.value.slice(start, end);
+                });
+
+                const totalPages = computed(() => {
+                    return Math.ceil(comments.value.length / commentsPerPage);
+                });
+
+                const nextPage = () => {
+                    if (currentPage.value < totalPages.value) {
+                        currentPage.value++;
+                    }
+                };
+
+                const prevPage = () => {
+                    if (currentPage.value > 1) {
+                        currentPage.value--;
+                    }
+                };
+
+                // 初始化
+                init();
+
+                return {
+                    isPanelOpen,
+                    isVerified,
+                    isLoading,
+                    username,
+                    userId,
+                    comments,
+                    commentContent,
+                    isSending,
+                    errorMessage,
+                    successMessage,
+                    replyingTo,
+                    currentPage,
+                    commentsPerPage,
+                    paginatedComments,
+                    totalPages,
+                    showUsernameModal,
+                    newUsername,
+                    usernameError,
+                    expandedComments,
+                    canUseAdminFeatures,
+                    isPrivateComment,
+                    toggleCommentPanel,
+                    verifyUser,
+                    sendComment,
+                    deleteComment,
+                    replyTo,
+                    cancelReply,
+                    updateUsername,
+                    formatTime,
+                    nextPage,
+                    prevPage,
+                    toggleReplies,
+                    flattenReplies,
+                    getTotalRepliesCount,
+                    isDeveloper
+                };
+            }
+        });
+
+        const commentAppInstance = commentApp.mount('#comment-app');
+        window.commentAppInstance = commentAppInstance;
+
+        // 全局切换函数
+        window.toggleComment = function() {
+            if (window.commentAppInstance) {
+                window.commentAppInstance.toggleCommentPanel();
+            }
+        };
     </script>
 </body>
 

@@ -222,5 +222,4 @@ export const AI_TIPS = [
 export const USAGE_TIPS = [
   '使用模拟输入时,微信输入法不要在中文模式下',
   '开启AI问答模式,需要去设置页面配值DeepSeek API 或者用户名',
-  '模拟输入可以绕过禁止粘贴限制(不受输入法限制),但是学习通考试会吞部分英文'
 ]
