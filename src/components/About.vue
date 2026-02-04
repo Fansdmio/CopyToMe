@@ -23,7 +23,7 @@
         <el-text type="info">版本 {{ version }}</el-text>
         <div style="display: flex;flex-direction: column;gap: 4px;margin-top: 10px;">
           <span>免费软件，请勿上当受骗</span>
-          <el-link target="_blank" href="https://cp.uuyo.fun" underline="never" type="primary">官网链接</el-link>
+          <el-link target="_blank" :href="`${setMg.baseUrl}`" underline="never" type="primary">官网链接</el-link>
         </div>
       </div>
 
@@ -38,8 +38,8 @@
           </div>
         </div>
         <div v-else class="image-container">
-          <el-image src="https://cp.uuyo.fun/zsm.jpg" fit="contain" class="about-image"
-            :preview-src-list="['https://cp.uuyo.fun/zsm.jpg']">
+          <el-image :src="`${setMg.baseUrl}/zsm.jpg`" fit="contain" class="about-image"
+            :preview-src-list="[`${setMg.baseUrl}/zsm.jpg`]">
             <template #error>
               <div class="image-placeholder">
                 <el-icon :size="40" color="#f56c6c">

@@ -3,7 +3,8 @@ import { reactive, ref } from 'vue';
 import { info, error } from '@tauri-apps/plugin-log';
 
 const STORAGE_KEY = 'copytome_settings'
-const VERSION = '200260120v0@0.3.2'
+const VERSION = '200260204v0@0.3.3'
+const BASE_URL = "https://cp.uuyo.pw"
 
 // 默认配置
 const DEFAULT_SETTINGS = {
@@ -46,6 +47,7 @@ const setMg = {
     defaultSetting: {
         ...DEFAULT_SETTINGS
     },
+    baseUrl: BASE_URL,
     settings: reactive({
         ...DEFAULT_SETTINGS,
     }),

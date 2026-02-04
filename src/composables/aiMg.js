@@ -52,7 +52,7 @@ const aiMg = {
         info(`aiMg: 从服务器获取 API Key, 用户名: ${userName}`);
         try {
             const response = await fetch(
-                `https://cp.uuyo.fun/get_api_key?user_name=${encodeURIComponent(userName)}`,
+                `${setMg.baseUrl}/get_api_key?user_name=${encodeURIComponent(userName)}`,
             )
             const data = await response.json()
 
