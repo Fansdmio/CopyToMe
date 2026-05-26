@@ -1,52 +1,90 @@
 <template>
   <section class="home-page">
     <header class="status-panel">
-      <div :class="['status-card', `status-card--${aiStatus.healthy}`]" @click="checkAi">
+      <div :class="['status-card', `status-card--${aiStatus.healthy}`]" @click="handleStatusClick">
         <span class="status-dot"></span>
         <div>
           <span class="status-label">AI 状态</span>
           <strong>{{ aiStatus.message }}</strong>
-          <small>点击重新检查</small>
+          <small>{{ statusHint }}</small>
+        </div>
+        <div class="status-meta">
+          <span>调用 {{ qaCount }} 次</span>
+          <span v-if="balanceText">{{ balanceText }}</span>
         </div>
       </div>
     </header>
 
-    <div class="overview-grid">
-      <article class="metric-panel">
-        <span>累计问答</span>
-        <strong>{{ qaCount }}</strong>
-        <small>次 AI 处理</small>
-      </article>
-      <article class="metric-panel">
-        <span>模拟输入</span>
-        <strong>Ctrl+K</strong>
-        <small>进入或退出输入模式</small>
-      </article>
-      <article class="metric-panel">
-        <span>AI 问答</span>
-        <strong>Ctrl+J</strong>
-        <small>回答会写回剪贴板</small>
-      </article>
-    </div>
+    <section class="guide-panel">
+      <div class="guide-heading">
+        <span>使用教程</span>
+      </div>
+      <ol class="guide-list">
+        <li>
+          <span>1</span>
+          <p>想问的问题后面加上问号（中英文都可以）复制到剪切板中即可调用 AI。例如：我美吗？</p>
+        </li>
+        <li>
+          <span>2</span>
+          <p>等待 AI 回答（鼠标光标变化，代表回答完成）</p>
+        </li>
+        <li>
+          <span>3</span>
+          <p>{{ answerGuideText }}</p>
+        </li>
+      </ol>
+
+      <div v-if="hasWeType" class="wetype-card">
+        <div>
+          <strong>本机有微信输入法</strong>
+          <small>是否启用兼容微信输入法模式方法</small>
+        </div>
+        <el-switch v-model="settings.wxInputMode" @change="syncWeTypeMode" />
+      </div>
+    </section>
   </section>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
 
 import aiMg from "../composables/aiMg.js";
 import setMg from "../composables/setMg.js";
 import mitt from '../utils/mitt.js';
 import { info, error } from '@tauri-apps/plugin-log';
+import { formatShortcutForDisplay } from '../utils/shortcutFormat.js';
 
+const emit = defineEmits(['open-api-key-settings'])
+const settings = setMg.settings
 
 const aiStatus = ref({
   healthy: "info",
   message: '检查AI服务中...'
 })
+const needApiKey = ref(false)
 
 // 问答次数统计
 const qaCount = ref(0)
+const hasWeType = ref(false)
+const deepSeekBalance = ref(null)
+
+const statusHint = computed(() => needApiKey.value ? '点击前往设置 API Key' : '点击重新检查')
+
+const balanceText = computed(() => {
+  if (!deepSeekBalance.value) return ''
+
+  const amount = deepSeekBalance.value.totalBalance.toFixed(2)
+  return `余额 ${amount} ${deepSeekBalance.value.currency}`
+})
+
+const answerGuideText = computed(() => {
+  if (hasWeType.value && settings.wxInputMode) {
+    return '使用中文状态下依次点 v -> 2 -> 空格 查看答案'
+  }
+
+  return `使用 ${formatShortcutForDisplay(settings.textKey)} 查看答案`
+})
 
 // 加载问答次数
 const loadQACount = async () => {
@@ -60,19 +98,31 @@ const loadQACount = async () => {
   }
 }
 
+const loadDeepSeekBalance = async () => {
+  if (!settings.deepseekApi?.trim() || !aiMg.isDeepSeekEndpoint()) {
+    deepSeekBalance.value = null
+    return
+  }
+
+  deepSeekBalance.value = await aiMg.fetchDeepSeekBalance()
+}
+
 mitt.on('history-update', loadQACount);
 
 const checkAi = async () => {
   try {
     if (!setMg.get("deepseekApi")?.trim()) {
       info("Home: 未配置 API Key");
+      needApiKey.value = true
       aiStatus.value = {
         healthy: "danger",
         message: '未配置 API Key，请前往设置页面配置'
       }
+      deepSeekBalance.value = null
       return
     }
 
+    needApiKey.value = false
     info("Home: 开始检验AI状态");
     aiStatus.value = {
       healthy: "info",
@@ -87,11 +137,13 @@ const checkAi = async () => {
         healthy: "success",
         message: 'AI 服务正常'
       }
+      await loadDeepSeekBalance()
     } else {
       aiStatus.value = {
         healthy: "danger",
         message: 'AI 服务异常,点击我再次测试'
       }
+      deepSeekBalance.value = null
     }
   } catch (e) {
     error(`Home: AI健康检查异常: ${e}`);
@@ -99,13 +151,45 @@ const checkAi = async () => {
       healthy: "danger",
       message: 'AI 服务检查失败'
     }
+    deepSeekBalance.value = null
   }
+}
+
+const handleStatusClick = () => {
+  if (needApiKey.value) {
+    emit('open-api-key-settings')
+    return
+  }
+
+  checkAi()
+}
+
+const checkWeType = async () => {
+  try {
+    hasWeType.value = await invoke('has_wetype_process')
+    info(`Home: 微信输入法进程检测结果: ${hasWeType.value}`)
+    if (!hasWeType.value && settings.wxInputMode) {
+      settings.wxInputMode = false
+      await setMg.save()
+    }
+  } catch (e) {
+    hasWeType.value = false
+    error(`Home: 微信输入法进程检测失败: ${e}`)
+  }
+}
+
+const syncWeTypeMode = async (enabled) => {
+  // 微信输入法兼容模式依赖去除换行符，开关状态必须和该设置保持一致。
+  settings.wxInputMode = enabled
+  await setMg.save()
 }
 
 onMounted(() => {
   try {
     info("Home: 组件挂载");
     loadQACount()
+    checkWeType()
+    loadDeepSeekBalance()
   } catch (e) {
     error(`Home: 组件挂载失败: ${e}`);
   }
@@ -125,7 +209,7 @@ defineExpose({
 }
 
 .status-panel,
-.metric-panel {
+.guide-panel {
   border: 1px solid var(--ctm-border);
   background: var(--ctm-glass);
   backdrop-filter: blur(22px) saturate(1.25);
@@ -139,8 +223,7 @@ defineExpose({
   padding: 20px;
 }
 
-.status-card small,
-.metric-panel small {
+.status-card small {
   color: var(--ctm-text-muted);
 }
 
@@ -155,6 +238,32 @@ defineExpose({
   background: rgba(255, 255, 255, 0.62);
   cursor: pointer;
   transition: background-color var(--ctm-transition), border-color var(--ctm-transition);
+}
+
+.status-card > div:first-of-type {
+  min-width: 0;
+}
+
+.status-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.status-meta span {
+  min-height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--ctm-border);
+  border-radius: 999px;
+  color: var(--ctm-text-muted);
+  background: rgba(255, 255, 255, 0.66);
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 22px;
+  white-space: nowrap;
 }
 
 .status-card:hover {
@@ -180,8 +289,7 @@ defineExpose({
   box-shadow: 0 0 0 5px var(--ctm-danger-soft);
 }
 
-.status-label,
-.metric-panel span {
+.status-label {
   color: var(--ctm-text-muted);
   font-size: 12px;
   font-weight: 700;
@@ -194,31 +302,91 @@ defineExpose({
   font-size: 16px;
 }
 
-.overview-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.guide-panel {
+  padding: 22px;
+}
+
+.guide-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
+  margin-bottom: 16px;
 }
 
-.metric-panel {
-  padding: 18px 20px;
+.guide-heading span {
+  color: var(--ctm-text);
+  font-size: 18px;
+  font-weight: 800;
 }
 
-.metric-panel strong {
+.guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-list li {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--ctm-border);
+  border-radius: var(--ctm-radius-md);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.guide-list li span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  color: var(--ctm-text);
+  background: var(--ctm-surface-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.guide-list p {
+  margin: 0;
+  color: var(--ctm-text-soft);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.65;
+}
+
+.wetype-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--ctm-radius-md);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.wetype-card strong,
+.wetype-card small {
   display: block;
-  margin: 8px 0 4px;
-  color: var(--ctm-text);
-  font-size: 26px;
-  line-height: 1;
 }
 
-code {
-  padding: 2px 7px;
-  border-radius: 7px;
+.wetype-card strong {
   color: var(--ctm-text);
-  background: var(--ctm-control-soft);
-  font-family: Consolas, 'Courier New', monospace;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 760;
+}
+
+.wetype-card small {
+  margin-top: 3px;
+  color: var(--ctm-text-muted);
+  font-size: 12px;
 }
 
 @media (max-width: 900px) {
@@ -226,8 +394,8 @@ code {
     grid-template-columns: 1fr;
   }
 
-  .overview-grid {
-    grid-template-columns: 1fr;
+  .guide-list li {
+    grid-template-columns: 26px minmax(0, 1fr);
   }
 }
 </style>

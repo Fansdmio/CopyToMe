@@ -16,9 +16,15 @@ use windows::Win32::UI::WindowsAndMessaging::{LoadCursorW, SetSystemCursor, IDC_
 #[cfg(target_os = "windows")]
 use windows::{
     core::PCWSTR,
-    Win32::UI::{
-        Shell::{IsUserAnAdmin, ShellExecuteW},
-        WindowsAndMessaging::SW_SHOWNORMAL,
+    Win32::{
+        System::Diagnostics::ToolHelp::{
+            CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W,
+            TH32CS_SNAPPROCESS,
+        },
+        UI::{
+            Shell::{IsUserAnAdmin, ShellExecuteW},
+            WindowsAndMessaging::SW_SHOWNORMAL,
+        },
     },
 };
 
@@ -89,6 +95,49 @@ fn relaunch_as_admin() -> Result<(), String> {
     #[cfg(not(target_os = "windows"))]
     {
         Err("当前系统不支持管理员重启".to_string())
+    }
+}
+
+#[tauri::command]
+fn has_wetype_process() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        let snapshot = match unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) } {
+            Ok(snapshot) => snapshot,
+            Err(_) => return false,
+        };
+
+        let mut entry = PROCESSENTRY32W {
+            dwSize: std::mem::size_of::<PROCESSENTRY32W>() as u32,
+            ..Default::default()
+        };
+
+        // 启动时不能拉起 tasklist 这类控制台子进程，否则 GUI 会短暂卡住并可能闪出终端窗口。
+        let mut has_process = unsafe { Process32FirstW(snapshot, &mut entry).is_ok() };
+        while has_process {
+            let name_end = entry
+                .szExeFile
+                .iter()
+                .position(|c| *c == 0)
+                .unwrap_or(entry.szExeFile.len());
+            let process_name = String::from_utf16_lossy(&entry.szExeFile[..name_end]).to_lowercase();
+
+            if process_name.contains("wetype")
+                || process_name.contains("wechatinput")
+                || process_name.contains("wechat input")
+            {
+                return true;
+            }
+
+            has_process = unsafe { Process32NextW(snapshot, &mut entry).is_ok() };
+        }
+
+        false
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        false
     }
 }
 
@@ -248,10 +297,11 @@ pub fn run() {
     #[cfg(desktop)]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            let _ = app
-                .get_webview_window("main")
-                .expect("no main window")
-                .set_focus();
+            if let Some(window) = app.get_webview_window("main") {
+                // 窗口可能按启动设置隐藏，再次启动时应恢复显示并聚焦。
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
         }));
     }
 
@@ -281,7 +331,8 @@ pub fn run() {
             unregister_shortcut,
             change_cursor_globally,
             is_running_as_admin,
-            relaunch_as_admin
+            relaunch_as_admin,
+            has_wetype_process
         ]);
     builder
         .run(tauri::generate_context!())

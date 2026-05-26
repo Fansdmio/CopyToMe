@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CopyToMeAndTauri - 剪贴板与AI辅助工具</title>
+    <title>CopyToMeAndTauri - 剪贴板 AI 问答与模拟输入工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <!-- 引入像素风格字体 -->
@@ -219,10 +219,10 @@
                 <div class="max-w-2xl mx-auto space-y-4">
                     <p
                         class="text-xl text-ink/80 bg-white/80 backdrop-blur-sm inline-block px-6 py-2 rounded-lg border-2 border-ink/20 shadow-sm hover:scale-105 transition-transform">
-                        ✨ 剪贴板与AI的治愈系魔法 ✨
+                        ✨ 复制问题，自动得到答案 ✨
                     </p>
                     <p class="text-ink/60 text-sm md:text-base">
-                        基于 Rust + Tauri + Vue 构建的桌面精灵
+                        基于 Rust + Tauri + Vue 构建的 Windows 桌面剪贴板工具
                     </p>
                 </div>
 
@@ -363,15 +363,28 @@
 
         createApp({
             setup() {
-                const appVersion = ref('v0.3.3');
-                const releaseDate = ref('2026-01-19');
-                const downloadLink = ref(`https://cp.uuyo.pw/download/CopyToMeAndTauri_${appVersion.value.slice(1)}_x64-setup.exe`);
+                const appVersion = ref('v0.3.6');
+                const releaseDate = ref('2026-05-27');
+                const downloadLink = ref(`https://cp.wojwo.xyz/download/CopyToMeAndTauri_${appVersion.value.slice(1)}_x64-setup.exe`);
                 const githubLink = ref('https://github.com/leokun0210/CopyToMeAndTauri');
 
                 const features = reactive([
                     {
+                        title: '剪贴板监听问答',
+                        shortcut: '? / ？',
+                        description: '复制以问号结尾的问题即可自动调用 AI。<br>回答会写回剪贴板，鼠标光标变化代表完成。',
+                        icon: 'fa-clipboard',
+                        colorClass: 'secondary-soft',
+                        hoverClass: 'green-50',
+                        items: [
+                            { text: '默认开启，每 900ms 检查一次剪贴板', icon: 'fa-check', color: 'text-secondary' },
+                            { text: '图片、文件和空剪贴板会安全跳过', icon: 'fa-check', color: 'text-secondary' },
+                            { text: '连续非文本异常只记录一次日志', icon: 'fa-check', color: 'text-secondary' }
+                        ]
+                    },
+                    {
                         title: '幽灵打字机',
-                        shortcut: 'Ctrl+K',
+                        shortcut: 'CTRL+K',
                         description: '遇到禁止粘贴的输入框？别担心！<br>这个功能会模拟人类的手指，一个字一个字地帮你敲进去。',
                         icon: 'fa-keyboard-o',
                         colorClass: 'primary-soft',
@@ -384,20 +397,65 @@
                     },
                     {
                         title: 'AI 贤者',
-                        shortcut: 'Ctrl+J',
-                        description: '复制你的问题，召唤 AI 贤者。<br>答案会自动出现在你的剪贴板里，无需切换窗口。',
+                        shortcut: 'CTRL+J',
+                        description: '也可以手动按快捷键召唤 AI。<br>支持 OpenAI 兼容接口，默认 DeepSeek Base URL 和 deepseek-v4-flash 模型。',
                         icon: 'fa-magic',
-                        colorClass: 'secondary-soft',
-                        hoverClass: 'green-50',
+                        colorClass: 'accent-soft',
+                        hoverClass: 'rose-50',
                         items: [
-                            { text: '支持 DeepSeek (R1/V3)', icon: 'fa-check', color: 'text-secondary' },
-                            { text: '支持 OpenAI / Gemini 格式', icon: 'fa-check', color: 'text-secondary' },
+                            { text: '只保留 OpenAI 兼容格式', icon: 'fa-check', color: 'text-secondary' },
+                            { text: '主页展示调用次数和 DeepSeek 余额', icon: 'fa-check', color: 'text-secondary' },
                             { text: '自动去除思考标签 <think>', icon: 'fa-check', color: 'text-secondary' }
+                        ]
+                    },
+                    {
+                        title: '微信输入法兼容',
+                        shortcut: 'WeType',
+                        description: '检测到微信输入法进程后，主页会显示兼容模式开关。<br>开启后会同步去除换行符，方便用中文状态取回答案。',
+                        icon: 'fa-commenting-o',
+                        colorClass: 'primary-soft',
+                        hoverClass: 'blue-50',
+                        items: [
+                            { text: '仅检测到 WeType 时显示开关', icon: 'fa-check', color: 'text-primary-dark' },
+                            { text: '开启后教程切换为 v -> 2 -> 空格', icon: 'fa-check', color: 'text-primary-dark' },
+                            { text: '关闭兼容模式会同步关闭去除换行', icon: 'fa-check', color: 'text-primary-dark' }
                         ]
                     }
                 ]);
 
                 const changelog = reactive([
+                    {
+                        version: 'v0.3.6',
+                        date: '2026-05-27',
+                        colorClass: 'accent-soft',
+                        items: [
+                            { text: '修复启动时卡顿和终端闪烁问题', color: 'text-accent-soft' },
+                            { text: '优化启动隐藏窗口逻辑，避免先显示再隐藏', color: 'text-accent-soft' },
+                            { text: '统一更新弹窗和重置确认弹窗的毛玻璃样式', color: 'text-accent-soft' },
+                            { text: '修复关于页赞赏图片放大预览顶到窗口顶部的问题', color: 'text-accent-soft' }
+                        ]
+                    },
+                    {
+                        version: 'v0.3.5',
+                        date: '2026-05-27',
+                        colorClass: 'secondary-soft',
+                        items: [
+                            { text: '新增剪贴板监听问答模式，复制问号结尾的问题即可自动调用 AI', color: 'text-secondary-soft' },
+                            { text: '主页加入使用教程、AI 调用次数和 DeepSeek 余额展示', color: 'text-secondary-soft' },
+                            { text: '检测微信输入法并提供兼容模式开关', color: 'text-secondary-soft' },
+                            { text: '优化问答记录折叠、消息提示和确认弹窗样式', color: 'text-secondary-soft' }
+                        ]
+                    },
+                    {
+                        version: 'v0.3.4',
+                        date: '2026-05-26',
+                        colorClass: 'primary-soft',
+                        items: [
+                            { text: '重做应用界面，改为更简洁的白色桌面工具风格', color: 'text-primary-soft' },
+                            { text: '精简主页、设置页、关于页和问答记录页', color: 'text-primary-soft' },
+                            { text: '增加管理员启动开关和非侵入式管理员重启提示', color: 'text-primary-soft' }
+                        ]
+                    },
                     {
                         version: 'v0.3.0',
                         date: '2026-01-19',
@@ -438,7 +496,7 @@
                         colorClass: 'primary-soft',
                         items: [
                             { text: '新增 OpenAI 格式自定义 AI 支持', color: 'text-primary-soft' },
-                            { text: '新增 Gemini 格式兼容', color: 'text-primary-soft' },
+                            { text: '旧版自定义 AI 格式兼容', color: 'text-primary-soft' },
                             { text: '添加 AI 历史记录删除功能', color: 'text-primary-soft' },
                             { text: '主页增加注入状态显示', color: 'text-primary-soft' }
                         ]

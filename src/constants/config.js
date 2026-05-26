@@ -10,21 +10,21 @@ export const SHORTCUT_FIELDS = [
   {
     key: 'textKey',
     label: '模拟输入快捷键',
-    placeholder: '例如: CmdOrControl+K',
+    placeholder: '例如: CTRL+K',
     enableKey: 'textProcessEnabled', // 关联的功能开关字段
     enableLabel: '模拟输入' // 功能名称
   },
   {
     key: 'questionKey',
     label: 'AI 问答快捷键',
-    placeholder: '例如: CmdOrControl+J',
+    placeholder: '例如: CTRL+J',
     enableKey: 'aiQAEnabled',
     enableLabel: 'AI问答'
   },
   {
     key: 'toggleWindowKey',
     label: '显示/隐藏托盘',
-    placeholder: '例如: CmdOrControl+Shift+Y',
+    placeholder: '例如: CTRL+Shift+Y',
     enableKey: 'toggleWindowEnabled', // 添加功能开关
     enableLabel: '显示/隐藏托盘'
   }
@@ -40,7 +40,7 @@ export const AI_CONFIG_FIELDS = [
     placeholder: '请输入 OpenAI 兼容接口的 API Key',
     type: 'password',
     showPassword: true,
-    hint: '默认使用 DeepSeek Base URL 和 v4-flash 模型'
+    hint: '默认使用 DeepSeek Base URL 和 deepseek-v4-flash 模型'
   }
 ]
 
@@ -59,14 +59,14 @@ export const FEATURE_TOGGLES = [
     description: '启用后可使用快捷键进行 AI 问答'
   },
   {
+    key: 'clipboardQuestionEnabled',
+    label: '监听剪贴板',
+    description: '复制以问号结尾的问题时自动发起 AI 问答'
+  },
+  {
     key: 'quickInput',
     label: '快速输入模式',
     description: '启用后进入模拟输入模式时自动开始输入'
-  },
-  {
-    key: 'wxInputMode',
-    label: '去除换行',
-    description: '使用AI问答后，去除回答文本中的所有换行符'
   },
   {
     key: 'hideWindow',

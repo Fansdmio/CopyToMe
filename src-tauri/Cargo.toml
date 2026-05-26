@@ -1,6 +1,6 @@
 [package]
 name = "copytomeandtauri"
-version = "0.3.4"
+version = "0.3.6"
 description = "绕过禁止粘贴限制的剪贴板工具"
 authors = ["uuyo"]
 edition = "2021"
@@ -28,7 +28,7 @@ enigo = "0.6.1"
 anyhow = "1.0.100"
 rand = "0.9.2"
 tauri-plugin-http = "2"
-windows = { version = "0.62.2", features = ["Win32", "Win32_UI", "Win32_UI_Input", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging", "Win32_UI_Shell"] }
+windows = { version = "0.62.2", features = ["Win32", "Win32_Foundation", "Win32_System_Diagnostics_ToolHelp", "Win32_UI", "Win32_UI_Input", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging", "Win32_UI_Shell"] }
 tauri-plugin-store = "2"
 tauri-plugin-log = "2"
 tauri-plugin-process = "2"

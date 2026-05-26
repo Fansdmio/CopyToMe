@@ -1,5 +1,5 @@
 <template>
-  <section class="settings-page">
+  <section class="settings-page" ref="settingsPageRef">
     <header class="settings-hero">
       <div>
         <h2>设置</h2>
@@ -35,7 +35,7 @@
                 >
                   <span class="field-glyph" aria-hidden="true">{{ shortcutGlyphs[shortcut.key] }}</span>
                   <span class="key-value">
-                    {{ capturingKey === shortcut.key ? '请按下快捷键...' : settings[shortcut.key] || shortcut.placeholder }}
+                    {{ capturingKey === shortcut.key ? '请按下快捷键...' : formatShortcutForDisplay(settings[shortcut.key]) || shortcut.placeholder }}
                   </span>
                 </button>
                 <el-button
@@ -71,13 +71,18 @@
           </h3>
 
           <el-form label-width="120px" label-position="left">
-            <el-form-item v-for="field in aiConfigFields" :key="field.key" :label="field.label">
+            <el-form-item
+              v-for="field in aiConfigFields"
+              :key="field.key"
+              :label="field.label"
+              :class="{ 'api-key-field': field.key === 'deepseekApi' }"
+            >
               <el-input
                 v-model="settings[field.key]"
                 :placeholder="field.placeholder"
                 :type="field.type"
                 :show-password="field.showPassword"
-                class="aesthetic-input"
+                :class="['aesthetic-input', { 'is-api-key-input': field.key === 'deepseekApi' }]"
                 clearable
               />
               <template #extra>
@@ -114,7 +119,7 @@
                         <el-option v-for="model in availableModels" :key="model" :label="model" :value="model" />
                       </el-select>
                     </div>
-                    <el-input v-else v-model="settings.customAIModel" placeholder="v4-flash" class="model-input aesthetic-input" />
+                    <el-input v-else v-model="settings.customAIModel" placeholder="deepseek-v4-flash" class="model-input aesthetic-input" />
                     <el-button class="model-fetch-button" @click="fetchModels" :disabled="loadingModels">
                       <el-icon :class="{ 'is-loading': loadingModels }">
                         <Refresh />
@@ -178,7 +183,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   Cpu,
@@ -198,6 +203,7 @@ import {
 import setMg from "../composables/setMg.js";
 import aiMg from "../composables/aiMg.js";
 import { info, error } from '@tauri-apps/plugin-log';
+import { formatShortcutForDisplay } from '../utils/shortcutFormat.js';
 
 const emit = defineEmits(['update-shortcuts']);
 const settings = setMg.settings;
@@ -206,6 +212,7 @@ const aiConfigFields = AI_CONFIG_FIELDS;
 const featureToggles = FEATURE_TOGGLES;
 
 const showAdvancedSettings = ref(false);
+const settingsPageRef = ref(null);
 const capturingKey = ref(null);
 const pressedKeys = ref(new Set());
 const availableModels = ref([]);
@@ -226,6 +233,8 @@ const resetSettingsHandler = async () => {
       cancelButtonText: '取消',
       lockScroll: false,
       type: 'warning',
+      // 重置确认属于高风险操作，使用专用类固定毛玻璃提示样式。
+      customClass: 'ctm-glass-message-box',
     });
 
     await setMg.reset();
@@ -234,6 +243,17 @@ const resetSettingsHandler = async () => {
   } catch {
     info("Setting: 用户取消重置设置");
   }
+};
+
+const focusApiKeyField = async () => {
+  await nextTick();
+
+  const apiKeyField = settingsPageRef.value?.querySelector('.api-key-field');
+  const input = apiKeyField?.querySelector('input');
+
+  // 从主页跳转过来时滚动到 API Key 输入区并聚焦，减少用户寻找成本。
+  apiKeyField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setTimeout(() => input?.focus(), 220);
 };
 
 const fetchModels = async () => {
@@ -367,7 +387,7 @@ const handleKeyDown = async (event) => {
 
   await setMg.save();
   emit('update-shortcuts');
-  ElMessage.success(`已设置快捷键: ${shortcutString}`);
+  ElMessage.success(`已设置快捷键: ${formatShortcutForDisplay(shortcutString)}`);
 };
 
 const handleKeyUp = (event) => {
@@ -385,6 +405,10 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
   window.removeEventListener('keyup', handleKeyUp);
+});
+
+defineExpose({
+  focusApiKeyField
 });
 </script>
 

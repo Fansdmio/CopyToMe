@@ -32,12 +32,12 @@
               <Picture />
             </el-icon>
             <div class="placeholder-text">
-              <p class="sub-text">点击查看赞赏图片</p>
+              <p class="sub-text">查看作者萝莉照</p>
             </div>
           </div>
           <div v-else class="image-container">
             <el-image :src="`${setMg.baseUrl}/zsm.jpg`" fit="contain" class="about-image"
-              :preview-src-list="[`${setMg.baseUrl}/zsm.jpg`]">
+              :preview-src-list="[`${setMg.baseUrl}/zsm.jpg`]" :preview-teleported="true" :z-index="4000">
               <template #error>
                 <div class="image-placeholder">
                   <el-icon :size="40">

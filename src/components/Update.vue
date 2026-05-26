@@ -1,6 +1,6 @@
 <template>
     <el-dialog v-model="updateDialogVisible" title="发现新版本" width="500px" :close-on-click-modal="false"
-        :show-close="false" align-center class="update-dialog">
+        :show-close="false" align-center class="ctm-glass-dialog update-dialog">
         <div class="update-content">
             <!-- 顶部图标 -->
             <div class="update-icon">

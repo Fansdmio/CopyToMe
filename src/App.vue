@@ -30,7 +30,7 @@
       <el-main class="main-content">
         <!-- 主页 -->
         <div v-show="activeMenu === 'home'" class="page-container">
-          <HomePage ref="homeRef" />
+          <HomePage ref="homeRef" @open-api-key-settings="openApiKeySettings" />
         </div>
 
         <!-- 问答记录页面 -->
@@ -40,7 +40,7 @@
 
         <!-- 设置页面 -->
         <div v-show="activeMenu === 'settings'" class="page-container">
-          <SettingPage @update-shortcuts="handleUpdateShortcuts" />
+          <SettingPage ref="settingRef" @update-shortcuts="handleUpdateShortcuts" />
         </div>
 
         <!-- 关于 -->
@@ -55,7 +55,7 @@
 </template>
 
 <script setup>
-import { h, ref, watch, onMounted } from 'vue'
+import { h, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { ElButton, ElMessage, ElNotification } from 'element-plus'
@@ -93,6 +93,7 @@ const {
   unregisterLKey
 } = useShortcuts()
 const homeRef = ref(null)
+const settingRef = ref(null)
 
 // 模拟输入状态管理
 const typingState = ref({
@@ -113,6 +114,10 @@ const settings = setMg.settings
 // 当前激活的菜单
 const activeMenu = ref('home')
 let adminPrompt = null
+let clipboardWatchTimer = null
+let lastClipboardSnapshot = ''
+let clipboardQuestionProcessing = false
+let clipboardReadWarningShown = false
 
 // 侧栏使用克制的线性图标，避免 Element Plus 默认图标带来的强组件库质感。
 const navItems = [
@@ -157,6 +162,13 @@ const navItems = [
 const handleMenuSelect = (index) => {
   info(`App.vue: 菜单切换 -> ${index}`)
   activeMenu.value = index
+}
+
+const openApiKeySettings = async () => {
+  info('App.vue: 从主页跳转到 API Key 配置')
+  activeMenu.value = 'settings'
+  await nextTick()
+  settingRef.value?.focusApiKeyField()
 }
 
 const clearTextCache = () => {
@@ -348,20 +360,36 @@ const handleLKey = async () => {
   }
 }
 
-// AI 问答快捷键处理函数
-const handleQuestion = debounce(async () => {
-  info("App.vue: 触发AI问答快捷键");
+const shouldAutoAskClipboard = (text) => {
+  const normalizedText = text?.trim()
+  return normalizedText?.endsWith('?') || normalizedText?.endsWith('？')
+}
+
+const safeReadClipboardText = async (source = 'clipboard') => {
+  try {
+    const text = await readText()
+    clipboardReadWarningShown = false
+    return typeof text === 'string' ? text : ''
+  } catch (e) {
+    // 剪贴板里可能是图片、文件或其他非文本格式，这是正常状态，直接跳过处理。
+    if (!clipboardReadWarningShown) {
+      info(`App.vue: ${source} 未读取到可处理文本: ${e}`)
+      clipboardReadWarningShown = true
+    }
+    return ''
+  }
+}
+
+const processAiQuestion = async (question, source = 'shortcut') => {
   if (!settings.aiQAEnabled) {
     info("App.vue: AI问答功能已禁用");
     ElMessage.warning('AI 问答功能已禁用,请在设置中启用')
     return
   }
 
-  const question = await readText()
-  info(`App.vue: 读取到问题,长度: ${question?.length || 0}`);
   if (!question?.trim()) return
 
-  info(`App.vue: 处理问题: ${question.substring(0, 50)}...`)
+  info(`App.vue: 处理${source === 'clipboard' ? '剪贴板监听' : '快捷键'}问题: ${question.substring(0, 50)}...`)
 
   // 调用 AI
   let answer = await aiMg.askAi(question)
@@ -386,6 +414,7 @@ const handleQuestion = debounce(async () => {
   }
 
   await writeText(clipboardAnswer)
+  lastClipboardSnapshot = clipboardAnswer
   info("App.vue: AI回答已写入剪贴板");
 
   // 调用后端全局改变鼠标样式（仅Windows）
@@ -396,7 +425,53 @@ const handleQuestion = debounce(async () => {
   }
 
   ElMessage.success('AI 回答已复制到剪贴板')
+}
+
+// AI 问答快捷键处理函数
+const handleQuestion = debounce(async () => {
+  info("App.vue: 触发AI问答快捷键");
+  const question = await safeReadClipboardText('快捷键读取剪贴板')
+  info(`App.vue: 读取到问题,长度: ${question?.length || 0}`);
+  await processAiQuestion(question)
 })
+
+const stopClipboardQuestionWatcher = () => {
+  if (!clipboardWatchTimer) return
+
+  clearInterval(clipboardWatchTimer)
+  clipboardWatchTimer = null
+  info("App.vue: 已停止监听剪贴板问题")
+}
+
+const checkClipboardQuestion = async () => {
+  if (!settings.clipboardQuestionEnabled || clipboardQuestionProcessing) return
+
+  try {
+    const text = await safeReadClipboardText('剪贴板监听')
+    if (text === lastClipboardSnapshot) return
+
+    lastClipboardSnapshot = text || ''
+    if (!shouldAutoAskClipboard(text)) return
+
+    clipboardQuestionProcessing = true
+    info("App.vue: 检测到剪贴板问题, 自动触发 AI 问答")
+    await processAiQuestion(text, 'clipboard')
+  } catch (e) {
+    error(`App.vue: 监听剪贴板问题失败: ${e}`)
+  } finally {
+    clipboardQuestionProcessing = false
+  }
+}
+
+const startClipboardQuestionWatcher = async () => {
+  if (clipboardWatchTimer || !settings.clipboardQuestionEnabled) return
+
+  lastClipboardSnapshot = await safeReadClipboardText('初始化剪贴板监听快照')
+
+  // Tauri 剪贴板没有变化事件，这里使用轻量轮询检测用户复制的新问题。
+  clipboardWatchTimer = setInterval(checkClipboardQuestion, 900)
+  info("App.vue: 已启动监听剪贴板问题")
+}
 
 // 托盘图标显示/隐藏切换处理函数
 const handleToggleWindow = async () => {
@@ -493,7 +568,7 @@ const showAdminPrompt = () => {
   adminPrompt = ElNotification({
     title: '当前不是管理员权限',
     message: h('div', { class: 'admin-prompt' }, [
-      h('p', { class: 'admin-prompt__text' }, '部分系统级功能可能需要管理员权限。'),
+      h('p', { class: 'admin-prompt__text' }, '比 CopyToMe 权限高的应用,无法使用模拟输入功能'),
       h(ElButton, {
         type: 'primary',
         size: 'small',
@@ -525,6 +600,24 @@ const checkAdminPrivilege = async () => {
   }
 }
 
+const applyStartupWindowVisibility = async () => {
+  const appWindow = getCurrentWindow()
+
+  try {
+    if (setMg.get("hideWindow")) {
+      info("App.vue: 启动设置为隐藏窗口");
+      await appWindow.hide()
+      return
+    }
+
+    // 主窗口在 Tauri 配置中默认不可见，等设置加载完成后再显示，避免启动时先闪窗再隐藏。
+    info("App.vue: 启动设置为显示窗口");
+    await appWindow.show()
+  } catch (e) {
+    error(`App.vue: 启动窗口显示状态应用失败: ${e}`);
+  }
+}
+
 // 初始化
 onMounted(async () => {
   info("App.vue: 开始初始化");
@@ -532,9 +625,11 @@ onMounted(async () => {
     //等待 AI 模块初始化完成
     await aiMg.init()
     info("App.vue: AI模块初始化完成");
+    await applyStartupWindowVisibility()
     await checkAdminPrivilege()
   } catch (e) {
     error(`App.vue: AI模块初始化失败: ${e}`);
+    await getCurrentWindow().show()
     ElMessage.error('初始化失败, 请重启应用');
   }
   info("发送历史更新事件")
@@ -542,15 +637,6 @@ onMounted(async () => {
 
   info("发送检查更新事件")
   mitt.emit("check-update")
-
-  try {
-    if (setMg.get("hideWindow")) {
-      info("App.vue: 隐藏窗口");
-      getCurrentWindow().hide()
-    }
-  } catch (e) {
-    error(`App.vue: 窗口操作失败: ${e}`);
-  }
 
   // 处理自动隐藏托盘图标
   try {
@@ -586,6 +672,15 @@ onMounted(async () => {
 
   // 自启动设置
   watch(() => settings.autoStart, saveAutoStart)
+
+  watch(() => settings.clipboardQuestionEnabled, async (enabled) => {
+    await setMg.save()
+    if (enabled) {
+      await startClipboardQuestionWatcher()
+    } else {
+      stopClipboardQuestionWatcher()
+    }
+  })
 
   // 自动隐藏托盘图标（需要额外逻辑）
   watch(() => settings.autoHideTray, async (val) => {
@@ -643,7 +738,12 @@ onMounted(async () => {
     ElMessage.warning('托盘图标切换快捷键注册失败, 但应用可以继续使用');
   }
 
+  await startClipboardQuestionWatcher()
   info("App.vue: 初始化完成");
+})
+
+onUnmounted(() => {
+  stopClipboardQuestionWatcher()
 })
 </script>
 

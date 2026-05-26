@@ -36,6 +36,47 @@ const aiMg = {
         return isHealthy;
     },
 
+    isDeepSeekEndpoint() {
+        const baseUrl = this.completeEndpoint(setMg.get('customAIEndpoint'));
+        return /^https:\/\/api\.deepseek\.com\/v1\/?$/i.test(baseUrl);
+    },
+
+    async fetchDeepSeekBalance() {
+        const apiKey = this.getApiKey();
+        if (!apiKey || !this.isDeepSeekEndpoint()) return null;
+
+        info("aiMg: 获取 DeepSeek 账户余额");
+        try {
+            const response = await fetch('https://api.deepseek.com/user/balance', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                }
+            });
+
+            const data = await response.json();
+            if (data.error) {
+                error(`aiMg: DeepSeek 余额获取失败: ${data.error.message}`);
+                return null;
+            }
+
+            const balances = data.balance_infos || [];
+            const totalBalance = balances.reduce((sum, item) => {
+                const amount = Number(item.total_balance || 0);
+                return Number.isFinite(amount) ? sum + amount : sum;
+            }, 0);
+
+            return {
+                currency: balances[0]?.currency || 'CNY',
+                totalBalance
+            };
+        } catch (e) {
+            error(`aiMg: DeepSeek 余额获取异常: ${e}`);
+            return null;
+        }
+    },
+
     async askAi(question, customSystemPrompt = null, saveHistory = true) {
         info(`aiMg: 发起 AI 请求, 问题长度: ${question.length}, 保存记录: ${saveHistory}`);
 
@@ -51,7 +92,7 @@ const aiMg = {
 
     async callOpenAICompatible(question, systemPrompt, saveHistory, apiKey) {
         const baseUrl = this.completeEndpoint(setMg.get('customAIEndpoint'));
-        const model = setMg.get('customAIModel') || 'v4-flash';
+        const model = setMg.get('customAIModel') || 'deepseek-v4-flash';
         const endpoint = `${baseUrl}/chat/completions`;
 
         info(`aiMg: 使用 OpenAI 兼容接口, 端点: ${endpoint}, 模型: ${model}`);
@@ -98,7 +139,7 @@ const aiMg = {
         }
     },
 
-    async saveQAHistory(question, answer, model = 'v4-flash') {
+    async saveQAHistory(question, answer, model = 'deepseek-v4-flash') {
         info("aiMg: 保存问答记录");
         try {
             let history = await this.store.get(QA_HISTORY_KEY) || [];

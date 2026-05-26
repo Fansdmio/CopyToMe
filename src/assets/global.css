@@ -303,6 +303,109 @@ body, html {
   -webkit-backdrop-filter: blur(28px) saturate(1.5);
 }
 
+.el-dialog.ctm-glass-dialog,
+.el-message-box.ctm-glass-message-box {
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.045);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+}
+
+.el-dialog.ctm-glass-dialog {
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+.el-dialog.ctm-glass-dialog .el-dialog__header {
+  margin: 0;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--ctm-border);
+  background: rgba(255, 255, 255, 0.36);
+}
+
+.el-dialog.ctm-glass-dialog .el-dialog__title {
+  color: var(--ctm-text);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.el-dialog.ctm-glass-dialog .el-dialog__body {
+  padding: 24px;
+}
+
+.el-dialog.ctm-glass-dialog .el-dialog__footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--ctm-border);
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.el-dialog.ctm-glass-dialog .el-button:not(.el-button--primary) {
+  border-color: var(--ctm-border);
+  color: var(--ctm-text-soft);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.el-dialog.ctm-glass-dialog .el-button:not(.el-button--primary):hover {
+  border-color: var(--ctm-border-strong);
+  color: var(--ctm-text);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.el-dialog.ctm-glass-dialog .el-button--primary {
+  border-color: var(--ctm-control);
+  color: #ffffff;
+  background: var(--ctm-control);
+}
+
+.el-dialog.ctm-glass-dialog .el-button--primary:hover {
+  border-color: var(--ctm-control-hover);
+  background: var(--ctm-control-hover);
+}
+
+/* 图片预览需要避开桌面窗口顶部标题区，避免放大图贴到拖拽栏下方。 */
+.el-image-viewer__wrapper {
+  top: 42px !important;
+  height: calc(100vh - 42px);
+  z-index: 4000 !important;
+}
+
+.el-image-viewer__mask {
+  background: rgba(0, 0, 0, 0.56);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.el-image-viewer__canvas {
+  box-sizing: border-box;
+  padding: 44px 72px 96px;
+}
+
+.el-image-viewer__img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.el-image-viewer__close {
+  top: 20px;
+  right: 28px;
+}
+
+.el-image-viewer__actions {
+  bottom: 28px;
+}
+
+@media (max-width: 768px) {
+  .el-image-viewer__canvas {
+    padding: 42px 18px 92px;
+  }
+
+  .el-image-viewer__close {
+    right: 18px;
+  }
+}
+
 .el-message-box__header {
   padding: 0 42px 14px 0;
 }

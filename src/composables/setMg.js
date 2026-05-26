@@ -3,7 +3,7 @@ import { reactive, ref } from 'vue';
 import { info, error } from '@tauri-apps/plugin-log';
 
 const STORAGE_KEY = 'copytome_settings'
-const VERSION = '200260526v0@0.3.4'
+const VERSION = '200260527v1@0.3.6'
 const BASE_URL = "https://cp.uuyo.pw"
 
 // 默认配置
@@ -11,9 +11,10 @@ const DEFAULT_SETTINGS = {
     textKey: 'CmdOrControl+K',
     questionKey: 'CmdOrControl+J',
     toggleWindowKey: 'CmdOrControl+Shift+Y',  // 显示/隐藏窗口快捷键
-    wxInputMode: true,
+    wxInputMode: false,
     textProcessEnabled: true,
     aiQAEnabled: true,
+    clipboardQuestionEnabled: true,  // 监听剪贴板问题并自动触发 AI 问答
     toggleWindowEnabled: true,  // 显示/隐藏托盘功能开关
     hideWindow: false,
     autoStart: false,
@@ -23,7 +24,7 @@ const DEFAULT_SETTINGS = {
     timeRange: [1, 5],  // 时间范围 [最小值, 最大值] (毫秒),
     deepseekApi: '',
     customAIEndpoint: 'https://api.deepseek.com',  // OpenAI 兼容 Base URL
-    customAIModel: 'v4-flash',  // 默认模型
+    customAIModel: 'deepseek-v4-flash',  // 默认模型
     systemPrompt: '你是一个说话极简的答题助手,只给出答案即可,不要使用md语法',  // AI 提示词
     skippedVersions: [],  // 跳过的版本列表
 }
