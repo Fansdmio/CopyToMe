@@ -130,12 +130,6 @@ const aiMg = {
         }
     },
 
-    async clearQAHistory() {
-        info("aiMg: 清空问答历史记录");
-        this.store.set(QA_HISTORY_KEY, []);
-        await this.store.save();
-    },
-
     async deleteQAHistoryByIndex(index) {
         info(`aiMg: 删除问答记录, 索引: ${index}`);
         try {

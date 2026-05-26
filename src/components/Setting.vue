@@ -1,18 +1,18 @@
 <template>
-  <el-card class="settings-card" shadow="hover">
-    <template #header>
-      <div class="card-header">
+  <section class="settings-page">
+    <header class="settings-hero">
+      <div>
         <h2>设置</h2>
+        <p>调整快捷键、AI 接口和应用行为。所有选项都会自动保存。</p>
+      </div>
         <el-button @click="resetSettingsHandler">
           <el-icon>
             <RefreshLeft />
           </el-icon>
           重置
         </el-button>
-      </div>
-    </template>
+    </header>
 
-    <el-space direction="vertical" :size="12" style="width: 100%;">
       <div class="settings-content">
         <!-- 快捷键设置 -->
         <div class="setting-section">
@@ -27,44 +27,36 @@
 
           <el-form :model="settings" label-width="120px" label-position="left">
             <el-form-item v-for="shortcut in shortcutFields" :key="shortcut.key" :label="shortcut.label">
-              <el-input
-                :model-value="capturingKey === shortcut.key ? '' : settings[shortcut.key]"
-                :placeholder="capturingKey === shortcut.key ? '请按下快捷键...' : shortcut.placeholder"
-                class="shortcut-input"
-                readonly
-                @click="startCapture(shortcut.key)"
-              >
-                <template #prepend>
-                  <el-icon>
-                    <component :is="shortcut.icon" />
-                  </el-icon>
-                </template>
-                <template #append>
-                  <el-button-group>
-                    <el-button
-                      :type="capturingKey === shortcut.key ? 'primary' : 'default'"
-                      @click.stop="toggleCapture(shortcut.key)"
-                    >
-                      {{ capturingKey === shortcut.key ? '取消' : '捕获' }}
-                    </el-button>
-                    <el-button
-                      :class="['status-toggle-button', settings[shortcut.enableKey] ? 'status-enabled' : 'status-disabled']"
-                      @click.stop="toggleFeature(shortcut.enableKey, shortcut.enableLabel)"
-                    >
-                      <el-icon>
-                        <CircleCheckFilled v-if="settings[shortcut.enableKey]" />
-                        <CircleCloseFilled v-else />
-                      </el-icon>
-                      <span class="status-text">{{ settings[shortcut.enableKey] ? '已启用' : '已禁用' }}</span>
-                    </el-button>
-                  </el-button-group>
-                </template>
-              </el-input>
+              <div class="shortcut-control">
+                <button
+                  type="button"
+                  :class="['key-field', { 'is-capturing': capturingKey === shortcut.key }]"
+                  @click="startCapture(shortcut.key)"
+                >
+                  <span class="field-glyph" aria-hidden="true">{{ shortcutGlyphs[shortcut.key] }}</span>
+                  <span class="key-value">
+                    {{ capturingKey === shortcut.key ? '请按下快捷键...' : settings[shortcut.key] || shortcut.placeholder }}
+                  </span>
+                </button>
+                <el-button
+                  class="capture-button"
+                  :type="capturingKey === shortcut.key ? 'primary' : 'default'"
+                  @click.stop="toggleCapture(shortcut.key)"
+                >
+                  {{ capturingKey === shortcut.key ? '取消' : '捕获' }}
+                </el-button>
+                <button
+                  type="button"
+                  :class="['state-pill', settings[shortcut.enableKey] ? 'is-enabled' : 'is-disabled']"
+                  @click.stop="toggleFeature(shortcut.enableKey, shortcut.enableLabel)"
+                >
+                  <span class="state-dot"></span>
+                  <span>{{ settings[shortcut.enableKey] ? '已启用' : '已禁用' }}</span>
+                </button>
+              </div>
             </el-form-item>
           </el-form>
         </div>
-
-        <el-divider style="margin: 12px 0" />
 
         <!-- AI 配置 -->
         <div class="setting-section">
@@ -85,14 +77,9 @@
                 :placeholder="field.placeholder"
                 :type="field.type"
                 :show-password="field.showPassword"
+                class="aesthetic-input"
                 clearable
-              >
-                <template #prepend>
-                  <el-icon>
-                    <component :is="field.icon" />
-                  </el-icon>
-                </template>
-              </el-input>
+              />
               <template #extra>
                 <el-text size="small" type="info">{{ field.hint }}</el-text>
               </template>
@@ -111,23 +98,12 @@
             <el-collapse-transition>
               <div v-show="showAdvancedSettings" class="advanced-settings">
                 <el-form-item label="Base URL">
-                  <el-input v-model="settings.customAIEndpoint" placeholder="https://api.deepseek.com">
-                    <template #prepend>
-                      <el-icon>
-                        <Link />
-                      </el-icon>
-                    </template>
-                  </el-input>
+                  <el-input v-model="settings.customAIEndpoint" placeholder="https://api.deepseek.com" class="aesthetic-input" />
                 </el-form-item>
 
                 <el-form-item label="模型名称">
                   <div class="model-row">
                     <div v-if="availableModels.length > 0" class="model-select-wrapper model-input">
-                      <div class="model-prefix">
-                        <el-icon>
-                          <Cpu />
-                        </el-icon>
-                      </div>
                       <el-select
                         v-model="settings.customAIModel"
                         placeholder="选择模型"
@@ -138,13 +114,7 @@
                         <el-option v-for="model in availableModels" :key="model" :label="model" :value="model" />
                       </el-select>
                     </div>
-                    <el-input v-else v-model="settings.customAIModel" placeholder="v4-flash" class="model-input">
-                      <template #prepend>
-                        <el-icon>
-                          <Cpu />
-                        </el-icon>
-                      </template>
-                    </el-input>
+                    <el-input v-else v-model="settings.customAIModel" placeholder="v4-flash" class="model-input aesthetic-input" />
                     <el-button class="model-fetch-button" @click="fetchModels" :disabled="loadingModels">
                       <el-icon :class="{ 'is-loading': loadingModels }">
                         <Refresh />
@@ -167,8 +137,6 @@
           </el-form>
 
         </div>
-
-        <el-divider style="margin: 8px 0" />
 
         <!-- 功能设置 -->
         <div class="setting-section feature-section">
@@ -206,8 +174,7 @@
           </el-form>
         </div>
       </div>
-    </el-space>
-  </el-card>
+  </section>
 </template>
 
 <script setup>
@@ -218,12 +185,9 @@ import {
   Operation,
   RefreshLeft,
   Tools,
-  Link,
   CaretRight,
   CaretBottom,
-  Refresh,
-  CircleCheckFilled,
-  CircleCloseFilled
+  Refresh
 } from '@element-plus/icons-vue';
 import {
   SHORTCUT_FIELDS,
@@ -246,6 +210,13 @@ const capturingKey = ref(null);
 const pressedKeys = ref(new Set());
 const availableModels = ref([]);
 const loadingModels = ref(false);
+
+// 快捷键输入区使用字符标识，弱化图标存在感，让控件更接近系统设置面板。
+const shortcutGlyphs = {
+  textKey: 'T',
+  questionKey: 'AI',
+  toggleWindowKey: '⌘'
+};
 
 const resetSettingsHandler = async () => {
   info("Setting: 重置所有设置");
@@ -406,32 +377,23 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.settings-card {
-  border-radius: 12px;
-  overflow: hidden;
-  /* 展开高级设置时，避免内部表单的最小内容宽度把页面横向撑开。 */
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   width: 100%;
   min-width: 0;
-}
-
-.settings-card :deep(.el-card__body) {
-  padding: 16px;
-  min-width: 0;
-}
-
-.settings-card :deep(.el-card__header) {
-  padding: 12px 16px;
 }
 
 .settings-content {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   width: 100%;
   min-width: 0;
 }
 
-.card-header,
+.settings-hero,
 .section-title,
 .section-icon,
 .model-row,
@@ -440,77 +402,160 @@ onUnmounted(() => {
   align-items: center;
 }
 
-.card-header {
+.settings-hero {
   justify-content: space-between;
+  gap: 14px;
+  padding: 22px;
+  border: 1px solid var(--ctm-border);
+  border-radius: var(--ctm-radius-lg);
+  background: var(--ctm-surface);
+  box-shadow: var(--ctm-shadow-subtle);
 }
 
-.card-header h2 {
+.settings-hero h2 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #303133;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ctm-text);
+}
+
+.settings-hero p {
+  margin: 6px 0 0;
+  color: var(--ctm-text-muted);
+  font-size: 13px;
 }
 
 .setting-section {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 12px;
   width: 100%;
   min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--ctm-border);
+  border-radius: var(--ctm-radius-lg);
+  background: var(--ctm-surface);
+  box-shadow: var(--ctm-shadow-subtle);
 }
 
 .feature-section {
-  padding-bottom: 36px;
+  padding-bottom: 46px;
 }
 
 .section-title {
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 10px;
+  margin: 0 0 6px;
   font-size: 16px;
-  font-weight: 600;
-  color: #303133;
+  font-weight: 800;
+  color: var(--ctm-text);
 }
 
 .section-icon {
   gap: 8px;
 }
 
-.shortcut-input {
-  max-width: 520px;
+.shortcut-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 76px 92px;
+  gap: 10px;
+  width: 100%;
+  max-width: 720px;
+  min-width: 0;
 }
 
-.status-toggle-button {
+.key-field,
+.state-pill {
+  border: 1px solid var(--ctm-border);
+  background: var(--ctm-surface-raised);
+  color: var(--ctm-text);
+  transition: background-color var(--ctm-transition), border-color var(--ctm-transition), box-shadow var(--ctm-transition);
+}
+
+.key-field {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 12px;
-  border: 1px solid;
-  transition: all 0.3s;
+  gap: 12px;
+  min-width: 0;
+  height: 42px;
+  padding: 0 13px;
+  border-radius: 13px;
+  text-align: left;
+  cursor: text;
 }
 
-.status-toggle-button .status-text {
+.key-field:hover,
+.state-pill:hover {
+  border-color: var(--ctm-border-strong);
+  background: var(--ctm-surface-muted);
+}
+
+.key-field.is-capturing {
+  border-color: var(--ctm-control);
+  box-shadow: 0 0 0 3px var(--ctm-control-soft);
+}
+
+.field-glyph {
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 24px;
+  border-radius: 8px;
+  color: var(--ctm-text-soft);
+  background: var(--ctm-control-soft);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.key-value {
+  overflow: hidden;
+  color: var(--ctm-text);
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.capture-button {
+  height: 42px;
+  border-radius: 13px;
+}
+
+.state-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 42px;
+  border-radius: 13px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.status-enabled {
-  background-color: #8dd466 !important;
-  border-color: #8dd466 !important;
-  color: #ffffff !important;
+.state-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--ctm-text-muted);
 }
 
-.status-disabled {
-  background-color: #f56c6c !important;
-  border-color: #f56c6c !important;
-  color: #ffffff !important;
+.state-pill.is-enabled .state-dot {
+  background: var(--ctm-text);
+}
+
+.state-pill.is-disabled {
+  color: var(--ctm-text-muted);
+  background: var(--ctm-surface-muted);
 }
 
 .advanced-settings {
-  padding: 16px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  margin-top: 4px;
+  padding: 18px 18px 4px;
+  background: var(--ctm-surface-muted);
+  border: 1px solid var(--ctm-border);
+  border-radius: var(--ctm-radius-md);
+  margin-top: 2px;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -526,12 +571,14 @@ onUnmounted(() => {
 
 .advanced-toggle {
   padding-left: 0;
+  color: var(--ctm-control);
+  font-weight: 700;
 }
 
 .model-row {
   gap: 8px;
   width: 100%;
-  max-width: 100%;
+  max-width: 720px;
   min-width: 0;
 }
 
@@ -543,23 +590,12 @@ onUnmounted(() => {
 
 .model-select-wrapper {
   display: flex;
-  height: 40px;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
+  height: 42px;
+  border: 1px solid var(--ctm-border);
+  border-radius: 13px;
   overflow: hidden;
-  background: #fff;
+  background: var(--ctm-surface);
   max-width: 100%;
-}
-
-.model-prefix {
-  width: 68px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #909399;
-  background: #f5f7fa;
-  border-right: 1px solid #dcdfe6;
-  flex-shrink: 0;
 }
 
 .model-select {
@@ -569,8 +605,10 @@ onUnmounted(() => {
 }
 
 .model-fetch-button {
-  flex: 0 0 126px;
-  width: 126px;
+  flex: 0 0 118px;
+  width: 118px;
+  height: 42px;
+  border-radius: 13px;
 }
 
 .model-fetch-button .el-icon {
@@ -602,8 +640,21 @@ onUnmounted(() => {
 
 :deep(.el-form-item__label) {
   font-weight: 500;
-  color: #606266;
+  color: var(--ctm-text-soft);
   font-size: 14px;
+}
+
+:deep(.aesthetic-input) {
+  width: 100%;
+  max-width: 720px;
+}
+
+:deep(.aesthetic-input .el-input__wrapper),
+:deep(.el-textarea__inner) {
+  min-height: 42px;
+  border-radius: 13px;
+  padding-left: 14px;
+  padding-right: 14px;
 }
 
 :deep(.el-form),
@@ -614,24 +665,19 @@ onUnmounted(() => {
   max-width: 100%;
 }
 
-:deep(.el-input-group__prepend) {
-  background-color: #f5f7fa;
-}
-
 :deep(.model-select .el-select__wrapper) {
-  height: 38px;
-  min-height: 38px;
+  height: 40px;
+  min-height: 40px;
   width: 100%;
   min-width: 0;
-  border-radius: 0;
+  border-radius: 13px;
   box-shadow: none;
+  background: transparent;
 }
 
 @media (max-width: 768px) {
-  .card-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+  .shortcut-control {
+    grid-template-columns: 1fr;
   }
 
   .model-row {
@@ -641,6 +687,11 @@ onUnmounted(() => {
 
   .model-select-wrapper {
     width: 100%;
+  }
+
+  .model-fetch-button {
+    width: 100%;
+    flex-basis: auto;
   }
 
   :deep(.el-form-item__label) {

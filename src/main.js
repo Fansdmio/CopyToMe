@@ -8,7 +8,7 @@ import { TrayIcon } from '@tauri-apps/api/tray';
 import { defaultWindowIcon } from '@tauri-apps/api/app';
 import { Menu } from '@tauri-apps/api/menu';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { trace, info, error, attachConsole } from '@tauri-apps/plugin-log';
+import { info, error } from '@tauri-apps/plugin-log';
 
 info('main.js: 应用开始初始化');
 
@@ -188,16 +188,6 @@ export const toggleTrayIcon = async () => {
 // 检查托盘图标是否显示
 export const isTrayIconVisible = () => {
     return !!globalTrayIcon;
-}
-
-// 初始化托盘图标（可选）
-export const initTrayIcon = async (autoHide = false) => {
-    info(`main.js: 初始化托盘图标，自动隐藏: ${autoHide}`);
-    if (!autoHide) {
-        await createTrayIcon();
-    } else {
-        info('main.js: 自动隐藏托盘图标已启用，跳过初始化');
-    }
 }
 
 // 默认创建托盘图标（在 App.vue 中会根据设置决定是否隐藏）

@@ -33,7 +33,7 @@ const update_latest = () => {
 // 部署应用程序到服务器
 const deploy_app = () => {
     // 构建应用程序
-    const build_cmd = `cargo tauri build`
+    const build_cmd = `npm run tauri -- build`
     execSync(build_cmd, { stdio: 'inherit' });
     console.log("应用程序构建完成");
 
@@ -62,6 +62,40 @@ const deploy_guideweb = () => {
     execSync(deploy_cmd, { stdio: 'inherit' });
     console.log("指导网站页面已更新");
 }
+
+const show_help = () => {
+    console.log(`
+CopyToMeAndTauri 部署脚本使用说明
+================================
+
+用法: npm run deploy [模式]
+
+可用模式:
+  app       - 构建并部署应用程序到服务器
+              包含: 构建 Tauri 应用 + 上传安装包 + 更新 latest.json
+
+  web       - 部署主网站页面 (website.html)
+
+  dumpweb   - 部署 dump 网站页面 (website.dump.html)
+
+  guide     - 部署指导页面 (website.guide.html)
+
+  md        - 仅更新 latest.json 和更新公告
+              包含: 更新版本信息 + 上传 latest.json
+
+  all       - 执行所有部署操作
+              包含: app + web + guide + dumpweb
+
+  help      - 显示此帮助信息
+
+示例:
+  npm run deploy app      # 部署应用程序
+  npm run deploy web      # 部署网站页面
+  npm run deploy help     # 显示帮助
+  npm run deploy          # 默认执行 web 模式
+`);
+}
+
 switch (deploy_mode) {
     case 'app':
         deploy_app();
@@ -84,6 +118,10 @@ switch (deploy_mode) {
         deploy_guideweb();
         deploy_dumpweb();
         break;
+    case 'help':
+        show_help();
+        break;
     default:
         console.log(`未知的部署模式: ${deploy_mode}`);
+        console.log(`使用 'npm run deploy help' 查看帮助信息`);
 }

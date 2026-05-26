@@ -1,9 +1,8 @@
 <template>
-  <el-card class="about-card" shadow="hover">
-    <template #header>
-      <div class="header-content">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <el-icon :size="24" color="#409EFF">
+  <section class="about-page">
+    <header class="about-header">
+        <div class="header-title">
+          <el-icon :size="22">
             <InfoFilled />
           </el-icon>
           <h2>关于</h2>
@@ -11,54 +10,53 @@
         <el-button type="text" @click="mitt.emit('check-update', true)">
           <span>点我更新</span>
         </el-button>
-      </div>
-    </template>
+    </header>
 
-    <el-space direction="vertical" :size="20" style="width: 100%">
       <div class="about-content">
-        <el-icon :size="64" color="#409EFF">
-          <img src="/src/assets/logo.png" style="width: 50px;"></img>
-        </el-icon>
-        <h1>CopyToMe & Tauri</h1>
-        <el-text type="info">版本 {{ version }}</el-text>
-        <div style="display: flex;flex-direction: column;gap: 4px;margin-top: 10px;">
-          <span>免费软件，请勿上当受骗</span>
-          <el-link target="_blank" :href="`${setMg.baseUrl}`" underline="never" type="primary">官网链接</el-link>
-        </div>
-      </div>
-
-      <!-- 图片占位符区域 -->
-      <div class="image-placeholder-container">
-        <div v-if="!showImage" class="image-placeholder" @click="showImage = true">
-          <el-icon :size="64" color="#c0c4cc">
-            <Picture />
-          </el-icon>
-          <div class="placeholder-text">
-            <p class="sub-text">作者的萝莉照</p>
+        <div class="brand-block">
+          <div class="brand-icon">
+            <img src="/src/assets/logo.png" alt="CopyToMe" />
+          </div>
+          <h1>CopyToMe</h1>
+          <el-text type="info">版本 {{ version }}</el-text>
+          <div class="brand-links">
+            <span>免费软件，请勿上当受骗</span>
+            <el-link target="_blank" :href="`${setMg.baseUrl}`" underline="never" type="primary">官网链接</el-link>
           </div>
         </div>
-        <div v-else class="image-container">
-          <el-image :src="`${setMg.baseUrl}/zsm.jpg`" fit="contain" class="about-image"
-            :preview-src-list="[`${setMg.baseUrl}/zsm.jpg`]">
-            <template #error>
-              <div class="image-placeholder">
-                <el-icon :size="40" color="#f56c6c">
-                  <PictureFilled />
-                </el-icon>
-                <p>图片加载失败</p>
-              </div>
-            </template>
-          </el-image>
-          <el-button type="info" size="small" text @click="showImage = false" class="hide-image-btn">
-            <el-icon>
-              <Close />
+
+        <!-- 赞赏图片归入关于卡片内部，避免内容上下割裂。 -->
+        <div class="image-placeholder-container">
+          <div v-if="!showImage" class="image-placeholder" @click="showImage = true">
+            <el-icon :size="58">
+              <Picture />
             </el-icon>
-            隐藏图片
-          </el-button>
+            <div class="placeholder-text">
+              <p class="sub-text">点击查看赞赏图片</p>
+            </div>
+          </div>
+          <div v-else class="image-container">
+            <el-image :src="`${setMg.baseUrl}/zsm.jpg`" fit="contain" class="about-image"
+              :preview-src-list="[`${setMg.baseUrl}/zsm.jpg`]">
+              <template #error>
+                <div class="image-placeholder">
+                  <el-icon :size="40">
+                    <PictureFilled />
+                  </el-icon>
+                  <p>图片加载失败</p>
+                </div>
+              </template>
+            </el-image>
+            <el-button type="info" size="small" text @click="showImage = false" class="hide-image-btn">
+              <el-icon>
+                <Close />
+              </el-icon>
+              隐藏图片
+            </el-button>
+          </div>
         </div>
       </div>
-    </el-space>
-  </el-card>
+  </section>
 </template>
 
 <script setup>
@@ -78,48 +76,80 @@ const showImage = ref(false)
 </script>
 
 <style scoped>
-.about-card {
-  border-radius: 12px;
-  overflow: hidden;
+.about-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.about-card :deep(.el-card__body) {
-  padding: 16px;
+.about-header,
+.about-content,
+.image-placeholder,
+.image-container {
+  border: 1px solid var(--ctm-border);
+  background: var(--ctm-surface);
+  border-radius: var(--ctm-radius-lg);
+  box-shadow: var(--ctm-shadow-subtle);
 }
 
-.about-card :deep(.el-card__header) {
-  padding: 12px 16px;
-}
-
-.card-header {
+.about-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 18px 20px;
 }
 
-.header-content {
+.header-title {
   display: flex;
   align-items: center;
   gap: 10px;
-  justify-content: space-between;
+  color: var(--ctm-control);
 }
 
-.header-content h2 {
+.header-title h2 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #303133;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ctm-text);
 }
 
 .about-content {
   text-align: center;
-  padding: 12px 0;
+  padding: 34px 28px 30px;
+}
+
+.brand-block {
+  padding-bottom: 26px;
+}
+
+.brand-icon {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  border-radius: 22px;
+  background: var(--ctm-surface-muted);
+  border: 1px solid var(--ctm-border);
+}
+
+.brand-icon img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
 }
 
 .about-content h1 {
   margin: 12px 0 6px;
-  font-size: 24px;
-  color: #303133;
+  font-size: 28px;
+  color: var(--ctm-text);
+}
+
+.brand-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
 }
 
 /* 图片占位符样式 */
@@ -127,28 +157,29 @@ const showImage = ref(false)
   width: 100%;
   display: flex;
   justify-content: center;
+  padding-top: 26px;
+  border-top: 1px solid var(--ctm-border);
 }
 
 .image-placeholder {
   width: 400px;
   height: 400px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e7ed 100%);
-  border: 2px dashed #c0c4cc;
-  border-radius: 12px;
+  color: var(--ctm-text-muted);
+  background: var(--ctm-surface-muted);
+  border-style: dashed;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 20px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: border-color var(--ctm-transition), background-color var(--ctm-transition), color var(--ctm-transition);
 }
 
 .image-placeholder:hover {
-  border-color: #409EFF;
-  background: linear-gradient(135deg, #ecf5ff 0%, #d9ecff 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+  color: var(--ctm-control);
+  border-color: var(--ctm-control);
+  background: var(--ctm-control-soft);
 }
 
 .placeholder-text {
@@ -159,13 +190,13 @@ const showImage = ref(false)
   margin: 0 0 8px 0;
   font-size: 16px;
   font-weight: 500;
-  color: #606266;
+  color: var(--ctm-text-soft);
 }
 
 .placeholder-text .sub-text {
   margin: 0;
   font-size: 13px;
-  color: #909399;
+  color: var(--ctm-text-muted);
 }
 
 .image-container {
@@ -180,13 +211,13 @@ const showImage = ref(false)
 .about-image {
   width: 100%;
   max-height: 500px;
-  border-radius: 12px;
+  border-radius: var(--ctm-radius-lg);
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--ctm-shadow-subtle);
 }
 
 .about-image :deep(.el-image__inner) {
-  border-radius: 12px;
+  border-radius: var(--ctm-radius-lg);
 }
 
 .image-error {
@@ -196,7 +227,7 @@ const showImage = ref(false)
   justify-content: center;
   height: 300px;
   width: 100%;
-  color: #909399;
+  color: var(--ctm-text-muted);
 }
 
 .image-error p {

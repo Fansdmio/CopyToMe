@@ -2,41 +2,27 @@
   <div id="app">
     <el-container class="app-container">
       <!-- 侧边栏 -->
-      <el-aside width="240px" class="sidebar">
-        <div class="logo-container">
-          <img src="/src/assets/logo.png" style="width: 40px;"></img>
-          <h2>CopyToMe</h2>
-        </div>
+      <el-aside width="236px" class="sidebar">
+        <div class="sidebar-inner">
+          <div class="logo-container">
+            <div class="logo-mark">
+              <img src="/src/assets/logo.png" alt="CopyToMe" />
+            </div>
+            <div>
+              <h2>CopyToMe</h2>
+            </div>
+          </div>
 
-        <el-menu :default-active="activeMenu" class="sidebar-menu" @select="handleMenuSelect">
-          <el-menu-item index="home">
-            <el-icon>
-              <HomeFilled />
-            </el-icon>
-            <span>主页</span>
-          </el-menu-item>
-          <el-menu-item index="history">
-            <el-icon>
-              <ChatDotRound />
-            </el-icon>
-            <span>问答记录</span>
-          </el-menu-item>
-          <el-menu-item index="settings">
-            <el-icon>
-              <Setting />
-            </el-icon>
-            <span>设置</span>
-          </el-menu-item>
-          <el-menu-item index="about">
-            <el-icon>
-              <InfoFilled />
-            </el-icon>
-            <span>关于</span>
-          </el-menu-item>
-        </el-menu>
-
-        <div class="sidebar-footer">
-          <el-text size="small" type="info">20251103</el-text>
+          <el-menu :default-active="activeMenu" class="sidebar-menu" @select="handleMenuSelect">
+            <el-menu-item v-for="item in navItems" :key="item.index" :index="item.index">
+              <span class="nav-icon-wrap" aria-hidden="true">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
+                  <path v-for="path in item.paths" :key="path" :d="path" />
+                </svg>
+              </span>
+              <span>{{ item.label }}</span>
+            </el-menu-item>
+          </el-menu>
         </div>
       </el-aside>
 
@@ -73,25 +59,23 @@ import { h, ref, watch, onMounted } from 'vue'
 import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { ElButton, ElMessage, ElNotification } from 'element-plus'
-import { HomeFilled, Setting, InfoFilled, ChatDotRound } from '@element-plus/icons-vue'
 import { enable, disable } from '@tauri-apps/plugin-autostart'
 import HomePage from './components/Home.vue'
 import HistoryPage from './components/History.vue'
 import SettingPage from './components/Setting.vue'
 import AboutPage from './components/About.vue'
 import { invoke } from '@tauri-apps/api/core'
-import { debounceAfter, debounce, getFormattedDate } from './utils/common.js'
+import { debounceAfter, debounce } from './utils/common.js'
 import { useShortcuts } from './composables/useShortcuts.js'
 import { handleWxInput, removeThinkingTags } from './utils/textProcessing.js'
 import { listen } from '@tauri-apps/api/event';
 import aiMg from "./composables/aiMg.js";
 import setMg from "./composables/setMg.js";
 import mitt from './utils/mitt.js'
-import { trace, info, error, attachConsole } from '@tauri-apps/plugin-log';
+import { info, error } from '@tauri-apps/plugin-log';
 import Update from './components/Update.vue';
 import { toggleTrayIcon, isTrayIconVisible, hideTrayIcon, showTrayIcon } from './main.js';
 
-// const detach = await attachConsole();
 info('App.vue: 应用启动');
 
 
@@ -129,6 +113,44 @@ const settings = setMg.settings
 // 当前激活的菜单
 const activeMenu = ref('home')
 let adminPrompt = null
+
+// 侧栏使用克制的线性图标，避免 Element Plus 默认图标带来的强组件库质感。
+const navItems = [
+  {
+    index: 'home',
+    label: '主页',
+    paths: [
+      'M4.5 11.4 12 5l7.5 6.4',
+      'M6.5 10.8v7.7h4v-4.3h3v4.3h4v-7.7'
+    ]
+  },
+  {
+    index: 'history',
+    label: '问答记录',
+    paths: [
+      'M6.5 6.5h11v8.2H10l-3.5 3.1V6.5Z',
+      'M9 9.2h6',
+      'M9 12h4.2'
+    ]
+  },
+  {
+    index: 'settings',
+    label: '设置',
+    paths: [
+      'M12 8.2a3.8 3.8 0 1 1 0 7.6 3.8 3.8 0 0 1 0-7.6Z',
+      'M12 4.5v2.1M12 17.4v2.1M18.5 12h-2.1M7.6 12H5.5M16.6 7.4l-1.5 1.5M8.9 15.1l-1.5 1.5M16.6 16.6l-1.5-1.5M8.9 8.9 7.4 7.4'
+    ]
+  },
+  {
+    index: 'about',
+    label: '关于',
+    paths: [
+      'M12 19.2a7.2 7.2 0 1 0 0-14.4 7.2 7.2 0 0 0 0 14.4Z',
+      'M12 10.7v4.5',
+      'M12 8.2h.01'
+    ]
+  }
+]
 
 
 // 菜单选择处理
@@ -478,7 +500,6 @@ const showAdminPrompt = () => {
         onClick: relaunchWithAdmin
       }, () => '以管理员身份重启')
     ]),
-    type: 'info',
     duration: 0,
     position: 'bottom-right',
     onClose: () => {
@@ -640,7 +661,8 @@ html {
 }
 
 #app {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  position: relative;
+  font-family: var(--ctm-font);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   height: 100vh;
@@ -648,89 +670,160 @@ html {
 }
 
 .app-container {
+  position: relative;
+  z-index: 1;
   height: 100vh;
-  background: #f5f7fa;
+  background: transparent;
+  padding: 14px;
+  gap: 14px;
 }
 
 /* 侧边栏样式 */
 .sidebar {
-  background: #fff;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  margin: 8px 4px 8px 8px;
-  /* 右边距改为4px,增加与主内容的间隙 */
-  border-radius: 12px;
+  flex: 0 0 236px;
+  width: 236px !important;
+  background: var(--ctm-glass-strong);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  border: 1px solid var(--ctm-border);
+  box-shadow: var(--ctm-shadow-subtle);
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  border-radius: var(--ctm-radius-lg);
+  overflow: hidden;
+}
+
+.sidebar-inner {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  min-height: 0;
 }
 
 .logo-container {
-  padding: 20px 16px 16px;
+  padding: 18px 16px 14px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  border-bottom: 1px solid #e4e7ed;
+  gap: 12px;
+  border-bottom: 1px solid var(--ctm-border);
+}
+
+.logo-mark {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--ctm-surface-muted);
+  border: 1px solid var(--ctm-border);
+}
+
+.logo-mark img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }
 
 .logo-container h2 {
   margin: 0;
   font-size: 18px;
-  font-weight: 600;
-  color: #303133;
+  font-weight: 700;
+  color: var(--ctm-text);
+  letter-spacing: 0;
 }
 
 .sidebar-menu {
-  flex: 1;
   border-right: none;
-  padding: 8px 8px;
+  padding: 16px 18px !important;
+  background: transparent;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .sidebar-menu .el-menu-item {
-  border-radius: 8px;
-  margin-bottom: 2px;
+  position: relative;
+  display: flex;
+  width: 100% !important;
+  min-width: 0;
+  border-radius: 14px;
+  margin: 0 0 8px !important;
+  padding: 0 14px !important;
   height: 44px;
   line-height: 44px;
   font-size: 14px;
+  color: var(--ctm-text-soft);
+  gap: 10px;
+  box-sizing: border-box;
+  overflow: hidden;
+  transform: none !important;
 }
 
 .sidebar-menu .el-menu-item:hover {
-  background: #ecf5ff;
+  background: var(--ctm-surface-muted);
+  color: var(--ctm-text);
 }
 
 .sidebar-menu .el-menu-item.is-active {
-  background: linear-gradient(90deg, #409EFF 0%, #66b1ff 100%);
-  color: #fff !important;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--ctm-text) !important;
+  font-weight: 700;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.07);
 }
 
-.sidebar-footer {
-  padding: 12px 16px;
-  text-align: center;
-  border-top: 1px solid #e4e7ed;
+.nav-icon-wrap {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 28px;
+  border-radius: 10px;
+  color: var(--ctm-text-muted);
+  transition: background-color var(--ctm-transition), color var(--ctm-transition);
+}
+
+.nav-icon {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sidebar-menu .el-menu-item:hover .nav-icon-wrap,
+.sidebar-menu .el-menu-item.is-active .nav-icon-wrap {
+  background: rgba(0, 0, 0, 0.055);
+  color: var(--ctm-text);
 }
 
 /* 主内容区域 */
 .main-content {
-  background: #fff;
-  padding: 16px;
+  background: var(--ctm-glass-strong);
+  backdrop-filter: blur(24px) saturate(1.18);
+  -webkit-backdrop-filter: blur(24px) saturate(1.18);
+  border: 1px solid var(--ctm-border);
+  padding: 18px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-gutter: stable;
-  height: calc(100vh - 16px);
-  margin: 8px 8px 8px 4px;
-  /* 左边距改为4px,增加与侧边栏的间隙 */
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  border-radius: var(--ctm-radius-lg);
+  box-shadow: var(--ctm-shadow-soft);
 }
 
 .page-container {
   max-width: 100%;
   margin: 0 auto;
+  padding-bottom: 34px;
 }
 
 /* 响应式布局 */
 @media (min-width: 1400px) {
   .page-container {
-    max-width: 1200px;
+    max-width: 1180px;
   }
 
   .main-content {
@@ -744,19 +837,19 @@ html {
   }
 
   .sidebar {
-    width: 200px;
+    flex-basis: 200px;
+    width: 200px !important;
   }
 }
 
 @media (max-width: 768px) {
   .sidebar {
-    width: 180px;
-    margin: 4px 0 4px 4px;
+    flex-basis: 180px;
+    width: 180px !important;
   }
 
   .main-content {
-    padding: 8px;
-    margin: 4px 4px 4px 0;
+    padding: 10px;
   }
 
   .logo-container h2 {
@@ -767,7 +860,7 @@ html {
 /* 卡片样式 */
 .welcome-card,
 .about-card {
-  border-radius: 12px;
+  border-radius: var(--ctm-radius-lg);
   overflow: hidden;
 }
 
@@ -779,20 +872,6 @@ html {
   padding: 12px 16px;
 }
 
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.card-header h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #303133;
-}
-
-
 /* 滚动条样式 */
 .main-content::-webkit-scrollbar {
   width: 8px;
@@ -803,12 +882,12 @@ html {
 }
 
 .main-content::-webkit-scrollbar-thumb {
-  background: #dcdfe6;
+  background: rgba(0, 0, 0, 0.18);
   border-radius: 4px;
 }
 
 .main-content::-webkit-scrollbar-thumb:hover {
-  background: #c0c4cc;
+  background: rgba(0, 0, 0, 0.28);
 }
 
 .admin-prompt {
@@ -819,7 +898,7 @@ html {
 
 .admin-prompt__text {
   margin: 0;
-  color: #606266;
+  color: var(--ctm-text-soft);
   line-height: 1.5;
 }
 </style>

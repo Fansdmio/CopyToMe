@@ -1,4 +1,45 @@
 /* 全局样式重置 */
+:root {
+  color-scheme: light;
+  /* Apple-like 浅色主题：白色主体、石墨文字、柔和彩色景深。 */
+  --ctm-font: 'SF Pro Text', 'Inter', 'MiSans', 'HarmonyOS Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
+  --ctm-font-display: 'SF Pro Display', 'Inter', 'MiSans', 'HarmonyOS Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
+  --ctm-bg: #f7f8fb;
+  --ctm-bg-soft: #f5f5f7;
+  --ctm-surface: #ffffff;
+  --ctm-surface-muted: #f5f5f7;
+  --ctm-surface-raised: #ffffff;
+  --ctm-glass: rgba(255, 255, 255, 0.72);
+  --ctm-glass-strong: rgba(255, 255, 255, 0.86);
+  --ctm-text: #1d1d1f;
+  --ctm-text-soft: #424245;
+  --ctm-text-muted: #6e6e73;
+  --ctm-border: rgba(0, 0, 0, 0.08);
+  --ctm-border-strong: rgba(0, 0, 0, 0.16);
+  --ctm-control: #1d1d1f;
+  --ctm-control-soft: #f2f2f4;
+  --ctm-control-hover: #000000;
+  --ctm-success: #2f8f5b;
+  --ctm-success-soft: #eef8f2;
+  --ctm-warning: #b26a00;
+  --ctm-warning-soft: #fff8ec;
+  --ctm-danger: #c2413a;
+  --ctm-danger-soft: #fff0ee;
+  --ctm-shadow-soft: 0 18px 48px rgba(0, 0, 0, 0.08);
+  --ctm-shadow-subtle: 0 8px 24px rgba(0, 0, 0, 0.055);
+  --ctm-radius-lg: 18px;
+  --ctm-radius-md: 14px;
+  --ctm-radius-sm: 10px;
+  --ctm-transition: 180ms ease;
+  --el-color-primary: var(--ctm-control);
+  --el-color-primary-light-3: #3a3a3c;
+  --el-color-primary-light-5: #6e6e73;
+  --el-color-primary-light-7: #d2d2d7;
+  --el-color-primary-light-8: #e5e5ea;
+  --el-color-primary-light-9: var(--ctm-control-soft);
+  --el-color-primary-dark-2: var(--ctm-control-hover);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -24,7 +65,9 @@ textarea,
 body, html {
   height: 100%;
   overflow: hidden;
-  font-family: 'Segoe UI', 'Microsoft YaHei', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: var(--ctm-font);
+  background: var(--ctm-bg);
+  color: var(--ctm-text);
 }
 
 /* 自定义滚动条 */
@@ -34,35 +77,49 @@ body, html {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f5f7fa;
+  background: transparent;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #dcdfe6;
+  background: rgba(0, 0, 0, 0.18);
   border-radius: 4px;
-  transition: background 0.3s;
+  transition: background var(--ctm-transition);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #c0c4cc;
+  background: rgba(0, 0, 0, 0.28);
 }
 
 /* Element Plus 组件自定义样式 */
 .el-card {
-  transition: all 0.3s;
+  border: 1px solid var(--ctm-border);
+  background: var(--ctm-surface);
+  color: var(--ctm-text);
+  transition: border-color var(--ctm-transition), box-shadow var(--ctm-transition);
 }
 
 .el-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--ctm-shadow-subtle);
 }
 
 .el-button {
-  transition: all 0.3s;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: background-color var(--ctm-transition), border-color var(--ctm-transition), color var(--ctm-transition), box-shadow var(--ctm-transition);
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--ctm-control);
+  --el-button-border-color: var(--ctm-control);
+  --el-button-hover-bg-color: var(--ctm-control-hover);
+  --el-button-hover-border-color: var(--ctm-control-hover);
+  --el-button-active-bg-color: var(--ctm-control-hover);
+  --el-button-active-border-color: var(--ctm-control-hover);
 }
 
 .el-menu-item {
-  transition: all 0.3s;
+  transition: background-color var(--ctm-transition), color var(--ctm-transition);
 }
 
 .el-space {
@@ -75,6 +132,39 @@ body, html {
 
 .el-tag {
   font-size: 12px;
+  border-radius: 999px;
+}
+
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select__wrapper {
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px var(--ctm-border) inset;
+  background: var(--ctm-surface-raised);
+}
+
+.el-input__wrapper:hover,
+.el-textarea__inner:hover,
+.el-select__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--ctm-border-strong) inset;
+}
+
+.el-input__wrapper.is-focus,
+.el-textarea__inner:focus,
+.el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px var(--ctm-control) inset, 0 0 0 3px var(--ctm-control-soft);
+}
+
+.el-switch.is-checked .el-switch__core {
+  background-color: var(--ctm-control);
+  border-color: var(--ctm-control);
+}
+
+.el-message,
+.el-notification {
+  border-radius: var(--ctm-radius-md);
+  border-color: var(--ctm-border);
+  box-shadow: var(--ctm-shadow-soft);
 }
 
 /* 动画效果 */
@@ -101,10 +191,6 @@ body, html {
 }
 
 @media (max-width: 768px) {
-  .sidebar {
-    width: 180px !important;
-  }
-  
   .main-content {
     padding: 12px;
   }
@@ -115,10 +201,6 @@ body, html {
 }
 
 @media (max-width: 576px) {
-  .sidebar {
-    width: 160px !important;
-  }
-  
   .main-content {
     padding: 8px;
   }

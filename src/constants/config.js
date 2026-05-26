@@ -1,13 +1,7 @@
 /**
  * 应用配置常量
- * 集中管理所有可配置的选项和数据
+ * 集中管理当前设置页仍在使用的配置项。
  */
-import {
-  Document,
-  ChatDotRound,
-  Key,
-  View
-} from '@element-plus/icons-vue'
 
 /**
  * 快捷键字段配置
@@ -17,7 +11,6 @@ export const SHORTCUT_FIELDS = [
     key: 'textKey',
     label: '模拟输入快捷键',
     placeholder: '例如: CmdOrControl+K',
-    icon: Document,
     enableKey: 'textProcessEnabled', // 关联的功能开关字段
     enableLabel: '模拟输入' // 功能名称
   },
@@ -25,7 +18,6 @@ export const SHORTCUT_FIELDS = [
     key: 'questionKey',
     label: 'AI 问答快捷键',
     placeholder: '例如: CmdOrControl+J',
-    icon: ChatDotRound,
     enableKey: 'aiQAEnabled',
     enableLabel: 'AI问答'
   },
@@ -33,7 +25,6 @@ export const SHORTCUT_FIELDS = [
     key: 'toggleWindowKey',
     label: '显示/隐藏托盘',
     placeholder: '例如: CmdOrControl+Shift+Y',
-    icon: View,
     enableKey: 'toggleWindowEnabled', // 添加功能开关
     enableLabel: '显示/隐藏托盘'
   }
@@ -49,7 +40,6 @@ export const AI_CONFIG_FIELDS = [
     placeholder: '请输入 OpenAI 兼容接口的 API Key',
     type: 'password',
     showPassword: true,
-    icon: Key,
     hint: '默认使用 DeepSeek Base URL 和 v4-flash 模型'
   }
 ]
@@ -122,72 +112,3 @@ export const TEXT_PROCESSING_CONFIG = {
   }
 }
 
-/**
- * 快捷键预设
- */
-export const SHORTCUT_PRESETS = [
-  {
-    name: '默认配置',
-    textKey: 'CmdOrControl+K',
-    questionKey: 'CmdOrControl+J'
-  },
-  {
-    name: '备用配置',
-    textKey: 'CmdOrControl+Shift+K',
-    questionKey: 'CmdOrControl+Shift+J'
-  },
-  {
-    name: '数字键盘',
-    textKey: 'CmdOrControl+1',
-    questionKey: 'CmdOrControl+2'
-  }
-]
-
-/**
- * 键盘帮助数据
- */
-export const KEYBOARD_HELP_DATA = [
-  {
-    key: 'CmdOrControl',
-    description: 'Windows 下为 Ctrl, Mac 下为 Cmd',
-    example: 'CmdOrControl+K'
-  },
-  {
-    key: 'Alt',
-    description: 'Alt 键',
-    example: 'Alt+K'
-  },
-  {
-    key: 'Shift',
-    description: 'Shift 键',
-    example: 'Shift+K'
-  },
-  {
-    key: 'A-Z',
-    description: '字母键',
-    example: 'CmdOrControl+A'
-  },
-  {
-    key: '0-9',
-    description: '数字键',
-    example: 'CmdOrControl+1'
-  },
-  {
-    key: 'F1-F12',
-    description: '功能键',
-    example: 'F5'
-  },
-  {
-    key: '+',
-    description: '组合键连接符',
-    example: 'Ctrl+Shift+K'
-  }
-]
-
-/**
- * 使用提示信息
- */
-export const USAGE_TIPS = [
-  '使用模拟输入时,微信输入法不要在中文模式下',
-  '开启AI问答模式,需要去设置页面配置 API Key',
-]

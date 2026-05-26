@@ -3,7 +3,7 @@ import { reactive, ref } from 'vue';
 import { info, error } from '@tauri-apps/plugin-log';
 
 const STORAGE_KEY = 'copytome_settings'
-const VERSION = '200260204v0@0.3.3'
+const VERSION = '200260526v0@0.3.4'
 const BASE_URL = "https://cp.uuyo.pw"
 
 // 默认配置

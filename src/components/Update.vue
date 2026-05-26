@@ -101,11 +101,8 @@ const downloadPercentage = computed(() => {
 
 // 进度条颜色 - 平滑的渐变色系
 const progressColors = [
-    { color: '#409EFF', percentage: 20 },
-    { color: '#66b1ff', percentage: 40 },
-    { color: '#5bacf5', percentage: 60 },
-    { color: '#3aa1f5', percentage: 80 },
-    { color: '#1890ff', percentage: 100 }
+    { color: '#1d1d1f', percentage: 60 },
+    { color: '#2f8f5b', percentage: 100 }
 ]
 
 // 格式化日期
@@ -247,21 +244,25 @@ onMounted(() => {
 
 <style scoped>
 .update-dialog :deep(.el-dialog) {
-    border-radius: 16px;
+    border-radius: var(--ctm-radius-lg);
     overflow: hidden;
+    background: var(--ctm-surface);
+    border: 1px solid var(--ctm-border);
+    box-shadow: var(--ctm-shadow-soft);
 }
 
 .update-dialog :deep(.el-dialog__header) {
-    background: linear-gradient(135deg, #409EFF 0%, #1989fa 100%);
-    color: white;
-    padding: 20px 24px;
+    background: var(--ctm-surface-muted);
+    color: var(--ctm-text);
+    padding: 18px 24px;
     margin: 0;
+    border-bottom: 1px solid var(--ctm-border);
 }
 
 .update-dialog :deep(.el-dialog__title) {
-    color: white;
+    color: var(--ctm-text);
     font-size: 18px;
-    font-weight: 600;
+    font-weight: 800;
 }
 
 .update-dialog :deep(.el-dialog__body) {
@@ -270,7 +271,7 @@ onMounted(() => {
 
 .update-dialog :deep(.el-dialog__footer) {
     padding: 16px 24px;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--ctm-border);
 }
 
 .update-content {
@@ -284,27 +285,6 @@ onMounted(() => {
     justify-content: center;
     align-items: center;
     margin: 10px 0;
-    animation: bounceIn 0.6s ease-out;
-}
-
-@keyframes bounceIn {
-    0% {
-        opacity: 0;
-        transform: scale(0.3);
-    }
-
-    50% {
-        opacity: 1;
-        transform: scale(1.05);
-    }
-
-    70% {
-        transform: scale(0.9);
-    }
-
-    100% {
-        transform: scale(1);
-    }
 }
 
 .version-info {
@@ -314,12 +294,12 @@ onMounted(() => {
 .version-title {
     margin: 0 0 8px 0;
     font-size: 20px;
-    font-weight: 600;
-    color: #303133;
+    font-weight: 800;
+    color: var(--ctm-text);
 }
 
 .version-number {
-    color: #409EFF;
+    color: var(--ctm-control);
     font-weight: 700;
 }
 
@@ -329,12 +309,13 @@ onMounted(() => {
     justify-content: center;
     gap: 6px;
     font-size: 14px;
-    color: #909399;
+    color: var(--ctm-text-muted);
 }
 
 .release-notes {
-    background: #f5f7fa;
-    border-radius: 12px;
+    background: var(--ctm-surface-muted);
+    border: 1px solid var(--ctm-border);
+    border-radius: var(--ctm-radius-md);
     padding: 16px;
     max-height: 300px;
     overflow-y: auto;
@@ -343,8 +324,8 @@ onMounted(() => {
 .notes-title {
     margin: 0 0 16px 0;
     font-size: 15px;
-    font-weight: 600;
-    color: #303133;
+    font-weight: 800;
+    color: var(--ctm-text);
     position: relative;
     padding-left: 12px;
 }
@@ -357,15 +338,14 @@ onMounted(() => {
     transform: translateY(-50%);
     width: 4px;
     height: 18px;
-    background: linear-gradient(180deg, #409EFF 0%, #66b1ff 100%);
+    background: var(--ctm-control);
     border-radius: 2px;
-    box-shadow: 0 0 8px rgba(64, 158, 255, 0.4);
 }
 
 .notes-content {
     font-size: 14px;
     line-height: 1.8;
-    color: #606266;
+    color: var(--ctm-text-soft);
 }
 
 /* Markdown 标题样式 */
@@ -376,7 +356,7 @@ onMounted(() => {
 .notes-content :deep(h5),
 .notes-content :deep(h6) {
     margin: 16px 0 8px 0;
-    color: #303133;
+    color: var(--ctm-text);
     font-weight: 600;
     line-height: 1.4;
 }
@@ -396,9 +376,8 @@ onMounted(() => {
     transform: translateY(-50%);
     width: 4px;
     height: 20px;
-    background: linear-gradient(180deg, #409EFF 0%, #66b1ff 100%);
+    background: var(--ctm-control);
     border-radius: 2px;
-    box-shadow: 0 0 8px rgba(64, 158, 255, 0.4);
 }
 
 .notes-content :deep(h2) {
@@ -416,9 +395,8 @@ onMounted(() => {
     transform: translateY(-50%);
     width: 3px;
     height: 16px;
-    background: linear-gradient(180deg, #66b1ff 0%, #a0cfff 100%);
+    background: var(--ctm-control);
     border-radius: 2px;
-    box-shadow: 0 0 6px rgba(102, 177, 255, 0.4);
 }
 
 .notes-content :deep(h3) {
@@ -475,15 +453,15 @@ onMounted(() => {
     top: 10px;
     width: 6px;
     height: 6px;
-    background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+    background: var(--ctm-control);
     border-radius: 50%;
-    box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.15);
+    box-shadow: 0 0 0 3px var(--ctm-control-soft);
     transition: all 0.3s ease;
 }
 
 .notes-content :deep(ul > li:hover)::before {
     transform: scale(1.3);
-    box-shadow: 0 0 0 5px rgba(64, 158, 255, 0.25);
+    box-shadow: 0 0 0 5px var(--ctm-control-soft);
 }
 
 /* 数字列表样式 */
@@ -502,7 +480,7 @@ onMounted(() => {
     top: 2px;
     width: 20px;
     height: 20px;
-    background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+    background: var(--ctm-control);
     color: white;
     border-radius: 50%;
     font-size: 11px;
@@ -510,37 +488,35 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 4px rgba(64, 158, 255, 0.3);
     transition: all 0.3s ease;
 }
 
 .notes-content :deep(ol > li:hover)::before {
     transform: scale(1.15);
-    box-shadow: 0 3px 8px rgba(64, 158, 255, 0.4);
 }
 
 /* 二级列表 */
 .notes-content :deep(ul ul > li)::before {
-    background: linear-gradient(135deg, #66b1ff 0%, #a0cfff 100%);
-    box-shadow: 0 0 0 3px rgba(102, 177, 255, 0.15);
+    background: var(--ctm-control);
+    box-shadow: 0 0 0 3px var(--ctm-control-soft);
     width: 5px;
     height: 5px;
 }
 
 .notes-content :deep(ol ol > li)::before {
-    background: linear-gradient(135deg, #66b1ff 0%, #a0cfff 100%);
+    background: var(--ctm-control);
 }
 
 /* 三级列表 */
 .notes-content :deep(ul ul ul > li)::before {
-    background: linear-gradient(135deg, #a0cfff 0%, #d9ecff 100%);
-    box-shadow: 0 0 0 3px rgba(160, 207, 255, 0.15);
+    background: var(--ctm-border-strong);
+    box-shadow: 0 0 0 3px var(--ctm-surface-muted);
     width: 4px;
     height: 4px;
 }
 
 .notes-content :deep(ol ol ol > li)::before {
-    background: linear-gradient(135deg, #a0cfff 0%, #d9ecff 100%);
+    background: var(--ctm-border-strong);
 }
 
 /* 嵌套列表间距调整 */
@@ -559,11 +535,11 @@ onMounted(() => {
     border-radius: 4px;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-size: 13px;
-    color: #e83e8c;
+    color: var(--ctm-control);
 }
 
 .notes-content :deep(pre) {
-    background-color: #f6f8fa;
+    background-color: var(--ctm-surface);
     border-radius: 6px;
     padding: 12px;
     overflow-x: auto;
@@ -573,7 +549,7 @@ onMounted(() => {
 .notes-content :deep(pre code) {
     background-color: transparent;
     padding: 0;
-    color: #24292e;
+    color: var(--ctm-text);
     font-size: 13px;
 }
 
@@ -581,9 +557,9 @@ onMounted(() => {
 .notes-content :deep(blockquote) {
     margin: 12px 0;
     padding: 8px 16px;
-    border-left: 4px solid #409EFF;
-    background-color: rgba(64, 158, 255, 0.05);
-    color: #606266;
+    border-left: 4px solid var(--ctm-control);
+    background-color: var(--ctm-control-soft);
+    color: var(--ctm-text-soft);
 }
 
 .notes-content :deep(blockquote p) {
@@ -592,13 +568,13 @@ onMounted(() => {
 
 /* 链接样式 */
 .notes-content :deep(a) {
-    color: #409EFF;
+    color: var(--ctm-control);
     text-decoration: none;
     transition: color 0.2s;
 }
 
 .notes-content :deep(a:hover) {
-    color: #66b1ff;
+    color: var(--ctm-control-hover);
     text-decoration: underline;
 }
 
@@ -606,7 +582,7 @@ onMounted(() => {
 .notes-content :deep(hr) {
     margin: 16px 0;
     border: none;
-    border-top: 1px solid #e1e4e8;
+    border-top: 1px solid var(--ctm-border);
 }
 
 /* 表格样式 */
@@ -619,24 +595,24 @@ onMounted(() => {
 .notes-content :deep(table th),
 .notes-content :deep(table td) {
     padding: 8px 12px;
-    border: 1px solid #e1e4e8;
+    border: 1px solid var(--ctm-border);
     text-align: left;
 }
 
 .notes-content :deep(table th) {
-    background-color: #f6f8fa;
+    background-color: var(--ctm-surface-muted);
     font-weight: 600;
-    color: #303133;
+    color: var(--ctm-text);
 }
 
 .notes-content :deep(table tr:nth-child(even)) {
-    background-color: #fafbfc;
+    background-color: var(--ctm-surface);
 }
 
 /* 强调样式 */
 .notes-content :deep(strong) {
     font-weight: 600;
-    color: #303133;
+    color: var(--ctm-text);
 }
 
 .notes-content :deep(em) {
@@ -654,9 +630,9 @@ onMounted(() => {
     flex-direction: column;
     gap: 12px;
     padding: 16px;
-    background: linear-gradient(135deg, rgba(64, 158, 255, 0.05) 0%, rgba(102, 177, 255, 0.05) 100%);
-    border-radius: 12px;
-    border: 1px solid rgba(64, 158, 255, 0.1);
+    background: var(--ctm-control-soft);
+    border-radius: var(--ctm-radius-md);
+    border: 1px solid var(--ctm-border);
 }
 
 .progress-info {
@@ -664,7 +640,7 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
     font-size: 13px;
-    color: #606266;
+    color: var(--ctm-text-soft);
 }
 
 .progress-label {
@@ -672,36 +648,21 @@ onMounted(() => {
 }
 
 .progress-size {
-    color: #909399;
+    color: var(--ctm-text-muted);
     font-family: 'Consolas', 'Monaco', monospace;
 }
 
 /* 自定义进度条样式 */
 .custom-progress :deep(.el-progress-bar__outer) {
-    background-color: rgba(64, 158, 255, 0.1);
+    background-color: var(--ctm-surface-muted);
     border-radius: 10px;
     overflow: hidden;
 }
 
 .custom-progress :deep(.el-progress-bar__inner) {
     border-radius: 10px;
-    background: linear-gradient(90deg, #409EFF 0%, #66b1ff 50%, #409EFF 100%);
-    background-size: 200% 100%;
-    animation: progressShine 2s ease-in-out infinite;
-    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+    background: var(--ctm-control);
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes progressShine {
-    0% {
-        background-position: 200% 0;
-    }
-    50% {
-        background-position: 0% 0;
-    }
-    100% {
-        background-position: -200% 0;
-    }
 }
 
 .installing-hint {
@@ -710,9 +671,9 @@ onMounted(() => {
     justify-content: center;
     gap: 8px;
     padding: 12px;
-    background: linear-gradient(135deg, rgba(64, 158, 255, 0.1) 0%, rgba(102, 177, 255, 0.1) 100%);
+    background: var(--ctm-control-soft);
     border-radius: 8px;
-    color: #409EFF;
+    color: var(--ctm-control);
     font-weight: 500;
 }
 
@@ -728,17 +689,17 @@ onMounted(() => {
 }
 
 .release-notes::-webkit-scrollbar-track {
-    background: #e9ecef;
+    background: var(--ctm-surface-muted);
     border-radius: 3px;
 }
 
 .release-notes::-webkit-scrollbar-thumb {
-    background: #cbd5e0;
+    background: rgba(0, 0, 0, 0.18);
     border-radius: 3px;
 }
 
 .release-notes::-webkit-scrollbar-thumb:hover {
-    background: #a0aec0;
+    background: rgba(0, 0, 0, 0.28);
 }
 
 /* 响应式设计 */

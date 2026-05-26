@@ -1,9 +1,9 @@
 <template>
-  <el-card class="history-card" shadow="hover">
-    <template #header>
-      <div class="card-header">
+  <section class="history-page">
+    <header class="history-header">
+      <div>
         <div class="header-content">
-          <el-icon :size="24" color="#409EFF">
+          <el-icon :size="22">
             <ChatDotRound />
           </el-icon>
           <h2>AI 问答记录</h2>
@@ -11,23 +11,23 @@
             共 {{ allHistory.length }} 条
           </el-tag>
         </div>
+        <p>保留最近的 AI 问答，方便回看、复制和清理。</p>
       </div>
-    </template>
+    </header>
 
     <div v-if="allHistory.length === 0" class="empty-state">
       <el-empty description="暂无问答记录">
         <template #image>
-          <el-icon :size="80" color="#c0c4cc">
+          <el-icon :size="80" class="empty-icon">
             <ChatLineSquare />
           </el-icon>
         </template>
       </el-empty>
     </div>
 
-    <div v-else class="timeline-container" @scroll="handleScroll" ref="scrollContainer">
-      <el-timeline class="history-timeline">
-        <el-timeline-item v-for="(item, index) in displayedHistory" :key="index" :timestamp="item.time" placement="top">
-          <el-card class="history-item" shadow="hover">
+    <div v-else class="timeline-container">
+      <div class="history-list">
+          <article v-for="(item, index) in displayedHistory" :key="`${item.time}-${index}`" class="history-item">
             <!-- 删除按钮（右上角） -->
             <div class="delete-button-wrapper">
               <el-button type="info" size="small" text @click="deleteHistoryItem(index)" circle>
@@ -39,10 +39,11 @@
             
             <div class="question-section">
               <div class="section-header">
-                <el-icon color="#409EFF">
+                <el-icon>
                   <QuestionFilled />
                 </el-icon>
                 <span class="section-title">问题</span>
+                <span class="history-time">{{ item.time }}</span>
               </div>
               <div class="content">{{ item.question }}</div>
             </div>
@@ -51,7 +52,7 @@
 
             <div class="answer-section">
               <div class="section-header">
-                <el-icon color="#67C23A">
+                <el-icon class="success-icon">
                   <CircleCheck />
                 </el-icon>
                 <span class="section-title">回答</span>
@@ -68,23 +69,22 @@
                 复制回答
               </el-button>
             </div>
-          </el-card>
-        </el-timeline-item>
-      </el-timeline>
+          </article>
+      </div>
 
       <!-- 加载更多提示 -->
-      <div v-if="hasMore" class="load-more">
+      <div v-if="hasMore" class="load-more" ref="loadMoreRef" @click="loadMoreRecords">
         <el-text type="info" size="small">向下滚动加载更多...</el-text>
       </div>
       <div v-else-if="displayedHistory.length > 0" class="load-more">
         <el-text type="info" size="small">已加载全部记录</el-text>
       </div>
     </div>
-  </el-card>
+  </section>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ChatDotRound,
@@ -103,7 +103,8 @@ const allHistory = ref([])
 const displayedHistory = ref([])
 const currentPage = ref(1)
 const pageSize = 5
-const scrollContainer = ref(null)
+const loadMoreRef = ref(null)
+let loadObserver = null
 
 // 是否还有更多记录
 const hasMore = computed(() => displayedHistory.value.length < allHistory.value.length)
@@ -117,6 +118,8 @@ const loadHistory = async () => {
     allHistory.value = await aiMg.getQAHistory()
     info(`History: 加载了 ${allHistory.value.length} 条历史记录`);
     loadMoreRecords()
+    await nextTick()
+    setupLoadObserver()
   } catch (e) {
     error(`History: 加载历史记录失败: ${e}`);
     allHistory.value = []
@@ -137,40 +140,21 @@ const loadMoreRecords = () => {
   }
 }
 
-// 处理滚动事件
-const handleScroll = (e) => {
-  const container = e.target
-  const { scrollTop, scrollHeight, clientHeight } = container
-  // 距离底部小于 100px 时加载更多
-  if (scrollHeight - scrollTop - clientHeight < 100 && hasMore.value) {
-    loadMoreRecords()
-  }
-}
+const setupLoadObserver = () => {
+  loadObserver?.disconnect()
+  if (!loadMoreRef.value) return
 
-// 清空历史记录
-const clearHistory = async () => {
-  info("History: 尝试清空历史记录");
-  try {
-    await ElMessageBox.confirm('确定要清空所有问答记录吗?', '警告', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
-
-    if (aiMg.clearQAHistory()) {
-      allHistory.value = []
-      displayedHistory.value = []
-      currentPage.value = 1
-      info("History: 历史记录已清空");
-      ElMessage.success('已清空历史记录')
-    } else {
-      error("History: 清空失败");
-      ElMessage.error('清空失败')
+  // 历史页不再创建内部滚动条，使用底部哨兵跟随外层页面滚动加载更多。
+  loadObserver = new IntersectionObserver((entries) => {
+    if (entries.some(entry => entry.isIntersecting) && hasMore.value) {
+      loadMoreRecords()
     }
-  } catch {
-    // 用户取消
-    info("History: 用户取消清空操作");
-  }
+  }, {
+    root: null,
+    rootMargin: '160px 0px',
+    threshold: 0
+  })
+  loadObserver.observe(loadMoreRef.value)
 }
 
 // 复制到剪贴板
@@ -230,36 +214,29 @@ onMounted(() => {
     error(`History: 组件挂载失败: ${e}`);
   }
 })
+
+onUnmounted(() => {
+  loadObserver?.disconnect()
+})
 </script>
 
 <style scoped>
-.history-card {
-  border-radius: 12px;
-  overflow: hidden;
-  height: calc(100vh - 70px);
-  /* 占满整个窗口，只留小边距 */
+.history-page {
   display: flex;
   flex-direction: column;
-}
-
-.history-card :deep(.el-card__body) {
-  padding: 0;
-  flex: 1;
+  gap: 12px;
   min-height: 0;
-  /* 允许内容缩小 */
-  overflow: hidden;
 }
 
-.history-card :deep(.el-card__header) {
-  padding: 12px 16px;
-  flex-shrink: 0;
-  /* 防止头部被压缩 */
-}
-
-.card-header {
+.history-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 20px;
+  border: 1px solid var(--ctm-border);
+  border-radius: var(--ctm-radius-lg);
+  background: var(--ctm-surface);
+  box-shadow: var(--ctm-shadow-subtle);
 }
 
 .header-content {
@@ -270,9 +247,15 @@ onMounted(() => {
 
 .header-content h2 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #303133;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ctm-text);
+}
+
+.history-header p {
+  margin: 7px 0 0;
+  color: var(--ctm-text-muted);
+  font-size: 13px;
 }
 
 .empty-state {
@@ -281,56 +264,29 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   text-align: center;
+  border: 1px solid var(--ctm-border);
+  border-radius: var(--ctm-radius-lg);
+  background: var(--ctm-surface);
 }
 
 /* 滚动容器 */
 .timeline-container {
-  height: 100%;
-  /* 占满剩余空间 */
-  overflow-y: auto;
-  padding: 16px;
+  overflow: visible;
 }
 
-/* 自定义滚动条样式 */
-.timeline-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.timeline-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-.timeline-container::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
-}
-
-.timeline-container::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-.history-timeline {
-  padding-top: 8px;
-}
-
-.history-timeline :deep(.el-timeline-item__wrapper) {
-  padding-left: 24px;
-}
-
-.history-timeline :deep(.el-timeline-item__timestamp) {
-  font-size: 12px;
-  color: #909399;
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .history-item {
-  margin-bottom: 8px;
   position: relative;
-}
-
-.history-item :deep(.el-card__body) {
-  padding: 12px;
-  padding-top: 8px;
+  padding: 16px;
+  border: 1px solid var(--ctm-border);
+  border-radius: var(--ctm-radius-lg);
+  background: var(--ctm-surface);
+  box-shadow: var(--ctm-shadow-subtle);
 }
 
 .delete-button-wrapper {
@@ -341,13 +297,13 @@ onMounted(() => {
 }
 
 .delete-button-wrapper .el-button {
-  color: #909399;
-  transition: all 0.3s;
+  color: var(--ctm-text-muted);
+  transition: color var(--ctm-transition), background-color var(--ctm-transition);
 }
 
 .delete-button-wrapper .el-button:hover {
-  color: #f56c6c;
-  background-color: #fef0f0;
+  color: var(--ctm-danger);
+  background-color: var(--ctm-danger-soft);
 }
 
 .question-section,
@@ -360,24 +316,36 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   margin-bottom: 8px;
+  color: var(--ctm-control);
 }
 
 .section-title {
   font-size: 14px;
-  font-weight: 600;
-  color: #303133;
+  font-weight: 800;
+  color: var(--ctm-text);
+}
+
+.history-time {
+  margin-left: auto;
+  padding-right: 34px;
+  color: var(--ctm-text-muted);
+  font-size: 12px;
+}
+
+.success-icon {
+  color: var(--ctm-success);
 }
 
 .content {
   font-size: 13px;
   line-height: 1.6;
-  color: #606266;
-  background: #f5f7fa;
-  padding: 8px 12px;
-  border-radius: 6px;
+  color: var(--ctm-text-soft);
+  background: var(--ctm-surface-muted);
+  padding: 10px 12px;
+  border: 1px solid var(--ctm-border);
+  border-radius: var(--ctm-radius-sm);
   white-space: pre-wrap;
   word-break: break-word;
-  /* 允许选中文本 */
   -webkit-user-select: text;
   -moz-user-select: text;
   -ms-user-select: text;
@@ -396,17 +364,21 @@ onMounted(() => {
 }
 
 .answer-content::-webkit-scrollbar-track {
-  background: #e4e7ed;
+  background: var(--ctm-surface-muted);
   border-radius: 3px;
 }
 
 .answer-content::-webkit-scrollbar-thumb {
-  background: #c0c4cc;
+  background: rgba(0, 0, 0, 0.18);
   border-radius: 3px;
 }
 
 .answer-content::-webkit-scrollbar-thumb:hover {
-  background: #a8abb2;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.empty-icon {
+  color: var(--ctm-text-muted);
 }
 
 .item-footer {
@@ -415,12 +387,13 @@ onMounted(() => {
   justify-content: space-between;
   margin-top: 12px;
   padding-top: 8px;
-  border-top: 1px solid #e4e7ed;
+  border-top: 1px solid var(--ctm-border);
 }
 
 /* 加载更多提示 */
 .load-more {
   text-align: center;
   padding: 16px 0;
+  cursor: pointer;
 }
 </style>

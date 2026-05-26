@@ -1,11 +1,11 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "CopyToMeAndTauri",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "identifier": "com.uuyo.copytomeandtauri",
   "build": {
     "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:5173",
+    "devUrl": "http://localhost:18928",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },

@@ -1154,7 +1154,7 @@
                 // 初始化
                 const init = async () => {
                     userId.value = getUserId();
-                    
+
                     // 应用初始展开状态
                     const mainContainer = document.getElementById('main-container');
                     const toggleBtn = document.getElementById('comment-toggle');
@@ -1162,11 +1162,29 @@
                         mainContainer?.classList.add('shifted');
                         toggleBtn?.classList.add('hidden');
                     }
-                    
+
                     // 总是加载评论（公开的）
                     await loadComments();
-                    
-                    // 不自动验证，需要通过 Turnstile
+
+                    // 检查是否有有效的验证状态
+                    const verifyData = localStorage.getItem('comment_verify_data');
+                    if (verifyData) {
+                        try {
+                            const { timestamp, username: savedUsername } = JSON.parse(verifyData);
+                            const now = Date.now();
+                            // 验证状态保持24小时
+                            if (now - timestamp < 24 * 60 * 60 * 1000) {
+                                isVerified.value = true;
+                                username.value = savedUsername;
+                                await loadComments();
+                            } else {
+                                // 过期则清除
+                                localStorage.removeItem('comment_verify_data');
+                            }
+                        } catch (e) {
+                            localStorage.removeItem('comment_verify_data');
+                        }
+                    }
                 };
 
                 // 验证用户
@@ -1185,10 +1203,17 @@
                         });
 
                         const data = await response.json();
-                        
+
                         if (data.success) {
                             isVerified.value = true;
                             username.value = data.username;
+
+                            // 保存验证状态到 localStorage，包含时间戳
+                            localStorage.setItem('comment_verify_data', JSON.stringify({
+                                timestamp: Date.now(),
+                                username: data.username
+                            }));
+
                             showMessage('验证成功！', 'success');
                             await loadComments();
                         } else {
