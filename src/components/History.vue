@@ -27,48 +27,64 @@
 
     <div v-else class="timeline-container">
       <div class="history-list">
-          <article v-for="(item, index) in displayedHistory" :key="`${item.time}-${index}`" class="history-item">
-            <!-- 删除按钮（右上角） -->
-            <div class="delete-button-wrapper">
-              <el-button type="info" size="small" text @click="deleteHistoryItem(index)" circle>
-                <el-icon>
-                  <Delete />
-                </el-icon>
-              </el-button>
-            </div>
+          <article
+            v-for="(item, index) in displayedHistory"
+            :key="historyItemKey(item, index)"
+            class="history-item"
+            :class="{ 'is-expanded': isExpanded(item, index) }"
+            @click="handleRecordClick($event, item, index)"
+          >
+            <!-- 折叠态只保留问题摘要和时间，减少记录列表的视觉噪音。 -->
+            <template v-if="!isExpanded(item, index)">
+              <div class="collapsed-record">
+                <div class="collapsed-question" :title="item.question">{{ item.question }}</div>
+                <time class="collapsed-time">{{ item.time }}</time>
+              </div>
+            </template>
+
+            <template v-else>
+              <!-- 删除按钮只在展开后展示，避免折叠列表被操作控件打断。 -->
+              <div class="delete-button-wrapper">
+                <el-button type="info" size="small" text @click.stop="deleteHistoryItem(index)" circle>
+                  <el-icon>
+                    <Delete />
+                  </el-icon>
+                </el-button>
+              </div>
             
-            <div class="question-section">
-              <div class="section-header">
-                <el-icon>
-                  <QuestionFilled />
-                </el-icon>
-                <span class="section-title">问题</span>
-                <span class="history-time">{{ item.time }}</span>
+              <div class="question-section">
+                <div class="section-header">
+                  <el-icon>
+                    <QuestionFilled />
+                  </el-icon>
+                  <span class="section-title">问题</span>
+                  <span class="history-time">{{ item.time }}</span>
+                </div>
+                <div class="content question-content" :title="item.question" @click.stop>{{ item.question }}</div>
               </div>
-              <div class="content">{{ item.question }}</div>
-            </div>
 
-            <el-divider style="margin: 12px 0" />
+              <el-divider style="margin: 12px 0" />
 
-            <div class="answer-section">
-              <div class="section-header">
-                <el-icon class="success-icon">
-                  <CircleCheck />
-                </el-icon>
-                <span class="section-title">回答</span>
+              <div class="answer-section">
+                <div class="section-header">
+                  <el-icon class="success-icon">
+                    <CircleCheck />
+                  </el-icon>
+                  <span class="section-title">回答</span>
+                </div>
+                <div class="content answer-content" @click.stop>{{ item.answer }}</div>
               </div>
-              <div class="content answer-content">{{ item.answer }}</div>
-            </div>
 
-            <div class="item-footer">
-              <el-tag size="small" type="info">{{ item.model }}</el-tag>
-              <el-button type="primary" size="small" text @click="copyToClipboard(item.answer)">
-                <el-icon>
-                  <CopyDocument />
-                </el-icon>
-                复制回答
-              </el-button>
-            </div>
+              <div class="item-footer">
+                <el-tag size="small" type="info">{{ item.model }}</el-tag>
+                <el-button type="primary" size="small" text @click.stop="copyToClipboard(item.answer)">
+                  <el-icon>
+                    <CopyDocument />
+                  </el-icon>
+                  复制回答
+                </el-button>
+              </div>
+            </template>
           </article>
       </div>
 
@@ -104,10 +120,38 @@ const displayedHistory = ref([])
 const currentPage = ref(1)
 const pageSize = 5
 const loadMoreRef = ref(null)
+const expandedKeys = ref(new Set())
 let loadObserver = null
 
 // 是否还有更多记录
 const hasMore = computed(() => displayedHistory.value.length < allHistory.value.length)
+
+const historyItemKey = (item, index) => `${item.time}-${index}`
+
+const isExpanded = (item, index) => expandedKeys.value.has(historyItemKey(item, index))
+
+const toggleExpand = (item, index) => {
+  const key = historyItemKey(item, index)
+  const nextKeys = new Set(expandedKeys.value)
+
+  // Set 需要替换引用，确保 Vue 能稳定触发展开状态更新。
+  if (nextKeys.has(key)) {
+    nextKeys.delete(key)
+  } else {
+    nextKeys.add(key)
+  }
+
+  expandedKeys.value = nextKeys
+}
+
+const handleRecordClick = (event, item, index) => {
+  const selectedText = window.getSelection()?.toString()?.trim()
+
+  // 用户正在选择文本时不切换折叠状态，避免复制问题或答案时误收起。
+  if (selectedText) return
+
+  toggleExpand(item, index)
+}
 
 // 加载历史记录
 const loadHistory = async () => {
@@ -115,6 +159,7 @@ const loadHistory = async () => {
     info("History: 加载历史记录");
     currentPage.value = 1
     displayedHistory.value = []
+    expandedKeys.value = new Set()
     allHistory.value = await aiMg.getQAHistory()
     info(`History: 加载了 ${allHistory.value.length} 条历史记录`);
     loadMoreRecords()
@@ -176,6 +221,7 @@ const deleteHistoryItem = async (index) => {
     await ElMessageBox.confirm('确定要删除这条问答记录吗?', '确认删除', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
+      lockScroll: false,
       type: 'warning',
     })
 
@@ -282,11 +328,18 @@ onUnmounted(() => {
 
 .history-item {
   position: relative;
-  padding: 16px;
+  padding: 14px 16px;
   border: 1px solid var(--ctm-border);
   border-radius: var(--ctm-radius-lg);
   background: var(--ctm-surface);
   box-shadow: var(--ctm-shadow-subtle);
+  cursor: pointer;
+  transition: border-color var(--ctm-transition), box-shadow var(--ctm-transition), transform var(--ctm-transition);
+}
+
+.history-item:hover {
+  border-color: rgba(0, 0, 0, 0.14);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.08);
 }
 
 .delete-button-wrapper {
@@ -330,6 +383,30 @@ onUnmounted(() => {
   padding-right: 34px;
   color: var(--ctm-text-muted);
   font-size: 12px;
+}
+
+.collapsed-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.collapsed-question {
+  overflow: hidden;
+  color: var(--ctm-text);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.55;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collapsed-time {
+  flex-shrink: 0;
+  color: var(--ctm-text-muted);
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .success-icon {

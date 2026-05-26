@@ -179,7 +179,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   Cpu,
   Operation,
@@ -220,8 +220,20 @@ const shortcutGlyphs = {
 
 const resetSettingsHandler = async () => {
   info("Setting: 重置所有设置");
-  await setMg.reset();
-  emit('update-shortcuts');
+  try {
+    await ElMessageBox.confirm('确定要恢复所有默认设置吗？当前快捷键、AI 配置和功能开关都会被重置。', '确认重置', {
+      confirmButtonText: '重置',
+      cancelButtonText: '取消',
+      lockScroll: false,
+      type: 'warning',
+    });
+
+    await setMg.reset();
+    emit('update-shortcuts');
+    ElMessage.success('设置已重置');
+  } catch {
+    info("Setting: 用户取消重置设置");
+  }
 };
 
 const fetchModels = async () => {

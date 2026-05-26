@@ -1,6 +1,6 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-import ElementPlus from 'element-plus'
+import ElementPlus, { ElMessage, ElMessageBox } from 'element-plus'
 import 'element-plus/dist/index.css'
 import './assets/global.css'
 
@@ -11,6 +11,47 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { info, error } from '@tauri-apps/plugin-log';
 
 info('main.js: 应用开始初始化');
+
+// 统一 Element Plus 消息提示的默认行为，保持全应用右上角弹出、可手动关闭。
+const setupMessageDefaults = () => {
+    const normalizeOptions = (options = {}) => {
+        const normalizedOptions = typeof options === 'string' ? { message: options } : { ...options };
+        const classNames = ['ctm-message', normalizedOptions.customClass].filter(Boolean).join(' ');
+
+        return {
+            showClose: true,
+            offset: 48,
+            duration: 3200,
+            ...normalizedOptions,
+            customClass: classNames,
+        };
+    };
+
+    const messageTypes = ['success', 'warning', 'info', 'error', 'primary'];
+
+    messageTypes.forEach((type) => {
+        const rawTypeMessage = ElMessage[type];
+
+        if (typeof rawTypeMessage === 'function') {
+            ElMessage[type] = (options) => rawTypeMessage(normalizeOptions(options));
+        }
+    });
+}
+
+setupMessageDefaults();
+
+// 统一确认弹窗默认行为，关闭滚动锁定避免页面容器在弹出时横向抖动。
+const setupMessageBoxDefaults = () => {
+    const withStableLayout = (options = {}) => ({
+        lockScroll: false,
+        ...options,
+    });
+    const rawConfirm = ElMessageBox.confirm;
+
+    ElMessageBox.confirm = (message, title, options) => rawConfirm(message, title, withStableLayout(options));
+}
+
+setupMessageBoxDefaults();
 
 // 捕获未处理的错误
 window.addEventListener('error', (event) => {

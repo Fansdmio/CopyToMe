@@ -167,6 +167,291 @@ body, html {
   box-shadow: var(--ctm-shadow-soft);
 }
 
+.el-message.ctm-message {
+  left: auto !important;
+  right: 24px;
+  min-width: 280px;
+  max-width: min(420px, calc(100vw - 48px));
+  min-height: 54px;
+  padding: 13px 48px 13px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.54);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.045);
+  backdrop-filter: blur(26px) saturate(1.55);
+  -webkit-backdrop-filter: blur(26px) saturate(1.55);
+  transform: none !important;
+}
+
+.el-message.ctm-message::before {
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+  content: "";
+  flex: 0 0 auto;
+  background-color: var(--ctm-text-muted);
+  mask: var(--ctm-message-icon) center / contain no-repeat;
+  -webkit-mask: var(--ctm-message-icon) center / contain no-repeat;
+}
+
+.el-message.ctm-message .el-message__icon {
+  display: none;
+}
+
+.el-message.ctm-message .el-message__content {
+  color: var(--ctm-text);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.el-message.ctm-message .el-message__closeBtn {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  color: var(--ctm-text-muted);
+  font-size: 15px;
+  background: rgba(255, 255, 255, 0.38);
+  transform: translateY(-50%);
+  transition: color var(--ctm-transition), background-color var(--ctm-transition), transform var(--ctm-transition);
+}
+
+.el-message.ctm-message .el-message__closeBtn:hover {
+  color: var(--ctm-text);
+  background: rgba(0, 0, 0, 0.06);
+  transform: translateY(-50%) scale(1.04);
+}
+
+.el-message.ctm-message.el-message--success {
+  border-color: rgba(47, 143, 91, 0.2);
+  background: rgba(251, 254, 252, 0.72);
+}
+
+.el-message.ctm-message.el-message--success::before {
+  --ctm-message-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 18 18' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7.3 11.45 4.5 8.65 3.35 9.8l3.95 3.95 7.35-7.35-1.15-1.15Z' fill='black'/%3E%3C/svg%3E");
+  background-color: var(--ctm-success);
+}
+
+.el-message.ctm-message.el-message--warning {
+  border-color: rgba(178, 106, 0, 0.2);
+  background: rgba(255, 254, 251, 0.72);
+}
+
+.el-message.ctm-message.el-message--warning::before {
+  --ctm-message-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 18 18' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9 2.4 16 15H2Zm.75 4.6h-1.5v4.2h1.5Zm0 5.4h-1.5v1.5h1.5Z' fill='black'/%3E%3C/svg%3E");
+  background-color: var(--ctm-warning);
+}
+
+.el-message.ctm-message.el-message--error {
+  border-color: rgba(194, 65, 58, 0.2);
+  background: rgba(255, 252, 252, 0.72);
+}
+
+.el-message.ctm-message.el-message--error::before {
+  --ctm-message-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 18 18' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9 1.8a7.2 7.2 0 1 0 0 14.4A7.2 7.2 0 0 0 9 1.8m2.9 9.05-1.05 1.05L9 10.05 7.15 11.9 6.1 10.85 7.95 9 6.1 7.15 7.15 6.1 9 7.95l1.85-1.85 1.05 1.05L10.05 9Z' fill='black'/%3E%3C/svg%3E");
+  background-color: var(--ctm-danger);
+}
+
+.el-message.ctm-message.el-message--info,
+.el-message.ctm-message.el-message--primary {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.el-message.ctm-message.el-message--info::before,
+.el-message.ctm-message.el-message--primary::before {
+  --ctm-message-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 18 18' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9 1.9a7.1 7.1 0 1 0 0 14.2A7.1 7.1 0 0 0 9 1.9m.8 11.3H8.2V8h1.6Zm0-6.45H8.2V5.2h1.6Z' fill='black'/%3E%3C/svg%3E");
+  background-color: var(--ctm-text-muted);
+}
+
+.el-message.ctm-message.el-message-fade-enter-active,
+.el-message.ctm-message.el-message-fade-leave-active {
+  transition: opacity 220ms cubic-bezier(.2, .8, .2, 1), transform 220ms cubic-bezier(.2, .8, .2, 1) !important;
+}
+
+.el-message.ctm-message.el-message-fade-enter-from,
+.el-message.ctm-message.el-message-fade-leave-to {
+  opacity: 0;
+  transform: translate3d(36px, 0, 0) scale(.98) !important;
+}
+
+.el-message.ctm-message.el-message-fade-enter-to,
+.el-message.ctm-message.el-message-fade-leave-from {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1) !important;
+}
+
+.v-modal {
+  background: rgba(15, 15, 18, 0.32);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.el-message-box {
+  width: min(420px, calc(100vw - 40px));
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.045);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+}
+
+.el-message-box__header {
+  padding: 0 42px 14px 0;
+}
+
+.el-message-box__title {
+  color: var(--ctm-text);
+  font-size: 18px;
+  font-weight: 760;
+  letter-spacing: 0;
+}
+
+.el-message-box__headerbtn {
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  transition: background-color var(--ctm-transition), transform var(--ctm-transition);
+}
+
+.el-message-box__headerbtn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  transform: scale(1.03);
+}
+
+.el-message-box__headerbtn .el-message-box__close {
+  color: var(--ctm-text-muted);
+  font-size: 17px;
+}
+
+.el-message-box__headerbtn:hover .el-message-box__close,
+.el-message-box__headerbtn:focus .el-message-box__close {
+  color: var(--ctm-text);
+}
+
+.el-message-box__content {
+  padding: 0;
+  color: var(--ctm-text-soft);
+  font-size: 14px;
+}
+
+.el-message-box__container {
+  align-items: center;
+  gap: 14px;
+}
+
+.el-message-box__status {
+  width: 32px;
+  height: 32px;
+  margin-top: 0;
+  border-radius: 0;
+  color: transparent !important;
+  background: transparent;
+  box-shadow: none;
+  flex: 0 0 32px;
+  overflow: visible;
+  position: relative;
+}
+
+.el-message-box__status svg {
+  display: none;
+}
+
+.el-message-box__status::before {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  content: "";
+  background: center / contain no-repeat url("data:image/svg+xml,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='4' y='4' width='24' height='24' rx='12' fill='%23fff8ec'/%3E%3Cpath d='M16 7.8c4.53 0 8.2 3.67 8.2 8.2s-3.67 8.2-8.2 8.2-8.2-3.67-8.2-8.2 3.67-8.2 8.2-8.2Z' fill='none' stroke='%23b26a00' stroke-width='1.6'/%3E%3Cpath d='M16 11.2v5.9' stroke='%23b26a00' stroke-width='1.8' stroke-linecap='round'/%3E%3Cpath d='M16 20.65h.01' stroke='%23b26a00' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.el-message-box__message {
+  color: var(--ctm-text-soft);
+  font-weight: 560;
+}
+
+.el-message-box__btns {
+  gap: 12px;
+  padding-top: 22px;
+}
+
+.el-message-box__btns .el-button {
+  min-width: 74px;
+  height: 38px;
+  margin-left: 0 !important;
+  border-radius: 13px;
+  font-size: 14px;
+  font-weight: 760;
+}
+
+.el-message-box__btns .el-button:not(.el-button--primary) {
+  border-color: var(--ctm-border);
+  color: var(--ctm-text-soft);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.el-message-box__btns .el-button:not(.el-button--primary):hover {
+  border-color: var(--ctm-border-strong);
+  color: var(--ctm-text);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.el-message-box__btns .el-button--primary {
+  border-color: var(--ctm-control);
+  color: #ffffff;
+  background: var(--ctm-control);
+}
+
+.el-message-box__btns .el-button--primary:hover {
+  border-color: var(--ctm-control-hover);
+  background: var(--ctm-control-hover);
+}
+
+.fade-in-linear-enter-active .el-overlay-message-box {
+  animation: ctmDialogIn 220ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.fade-in-linear-leave-active .el-overlay-message-box {
+  animation: ctmDialogOut 180ms cubic-bezier(.4, 0, 1, 1) forwards;
+}
+
+/* Element Plus 弹窗会尝试给 body 增加滚动条补偿，桌面壳里会造成内容区横向收缩。 */
+body.el-popup-parent--hidden {
+  padding-right: 0 !important;
+}
+
+@keyframes ctmDialogIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes ctmDialogOut {
+  to {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(.985);
+  }
+}
+
 /* 动画效果 */
 @keyframes fadeIn {
   from {
