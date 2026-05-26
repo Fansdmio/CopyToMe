@@ -29,25 +29,8 @@
     "store:allow-set",
     "store:allow-save",
     "store:allow-load",
-    "dialog:default",
-    "fs:default",
     "updater:default",
     "process:default",
-    {
-      "identifier": "fs:scope",
-      "allow": [
-        {
-          "path": "**"
-        }
-      ]
-    },
-    "fs:allow-copy-file",
-    "fs:allow-write-text-file",
-    "fs:allow-write-file",
-    "fs:allow-read-file",
-    "fs:allow-read-text-file",
-    "fs:write-all",
-    "fs:read-all",
     "log:default",
     {
       "identifier": "http:default",

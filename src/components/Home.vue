@@ -27,86 +27,14 @@
           </el-statistic>
           <div class="status-bar">
             <el-tag @click="checkAi" :type="aiStatus.healthy" effect="light" round>{{ aiStatus.message }}</el-tag>
-            <el-tag @click="checkInjection" :type="injectionStatus.type" effect="light" round>{{ injectionStatus.message
-            }}</el-tag>
           </div>
         </el-col>
       </el-row>
 
       <el-divider style="margin: 12px 0" />
 
-      <!-- 快捷键说明 -->
-      <div class="shortcut-section">
-        <h3>
-          <el-icon>
-            <Pointer />
-          </el-icon>
-          快捷键说明
-        </h3>
-        <el-card v-for="shortcut in shortcuts" :key="shortcut.key" class="shortcut-card" shadow="hover">
-          <div class="shortcut-detail">
-            <div class="shortcut-icon">
-              <el-icon :size="32" :color="shortcut.color">
-                <component :is="shortcut.icon" />
-              </el-icon>
-            </div>
-            <div class="shortcut-info">
-              <h4>{{ shortcut.title }}</h4>
-              <p>{{ shortcut.description }}</p>
-            </div>
-            <div class="shortcut-key">
-              <el-tag size="large" :type="shortcut.tagType">{{ shortcut.keyValue }}</el-tag>
-            </div>
-          </div>
-        </el-card>
-      </div>
-
-      <el-divider style="margin: 12px 0" />
-
-
-      <!-- 功能状态 -->
-      <div class="status-section">
-        <h3>
-          <el-icon>
-            <Monitor />
-          </el-icon>
-          功能状态
-        </h3>
-        <el-descriptions border size="small">
-          <el-descriptions-item v-for="status in featureStatuses" :key="status.key" align="center"
-            :label="status.label">
-            <StatusTag :enabled="status.enabled" :disabled-text="status.disabledText" />
-          </el-descriptions-item>
-        </el-descriptions>
-      </div>
-
-      <el-divider style="margin: 12px 0" />
-
-      <!-- 使用指南 -->
-      <!-- <div class="guide-section">
-        <h3>
-          <el-icon>
-            <Reading />
-          </el-icon>
-          使用指南
-        </h3>
-        <el-timeline class="compact-timeline">
-          <el-timeline-item v-for="(step, index) in steps" :key="index" :icon="step.icon" :type="step.type"
-            :size="step.size" :hollow="step.hollow">
-            <div class="timeline-content">
-              <h4>{{ step.title }}</h4>
-              <p>{{ step.description }}</p>
-            </div>
-          </el-timeline-item>
-        </el-timeline>
-      </div> -->
-
       <el-alert title="使用建议" type="primary" :closable="false" class="custom-alert">
         <div class="tips-container">
-          <!-- 快捷键键使用说明 -->
-          <div>
-
-          </div>
           <!-- 日常使用场景 -->
           <div class="tips-item">
             <div class="tips-header">
@@ -171,7 +99,7 @@
         <div class="tips-item">
           <div class="tips-desc">
             使用<span class="highlight-info">AI问答</span>,请前往<span class="highlight-info">设置页面</span>配置<span
-              class="highlight">DeepSeek API</span>
+              class="highlight">API Key</span>
           </div>
         </div>
       </div>
@@ -191,39 +119,22 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import {
   Promotion,
   ChatDotRound,
-  Pointer,
-  Document,
-  Monitor,
-  Reading,
-  CopyDocument,
-  Key,
-  Position,
-  VideoPause,
-  View
+  Monitor
 } from '@element-plus/icons-vue'
 
-import StatusTag from './common/StatusTag.vue'
 import aiMg from "../composables/aiMg.js";
 import setMg from "../composables/setMg.js";
 import mitt from '../utils/mitt.js';
 import { info, error } from '@tauri-apps/plugin-log';
-import { exists } from '@tauri-apps/plugin-fs';
-import { dirname, join } from '@tauri-apps/api/path';
-const { settings } = setMg
 
 
 const aiStatus = ref({
   healthy: "info",
   message: '检查AI服务中...'
-})
-
-const injectionStatus = ref({
-  type: "info",
-  message: '检查注入状态中...'
 })
 
 // 问答次数统计
@@ -243,93 +154,13 @@ const loadQACount = async () => {
 
 mitt.on('history-update', loadQACount);
 
-
-// 快捷键配置
-const shortcuts = computed(() => [
-  {
-    key: 'text',
-    title: '模拟输入',
-    description: '进入模拟输入模式,JKL进行操控',
-    icon: Document,
-    color: '#409EFF',
-    tagType: 'primary',
-    keyValue: settings.textKey
-  },
-  {
-    key: 'question',
-    title: 'AI 问答',
-    description: '智能对话功能',
-    icon: ChatDotRound,
-    color: '#67C23A',
-    tagType: 'success',
-    keyValue: settings.questionKey
-  },
-  {
-    key: 'toggleWindow',
-    title: '显示/隐藏托盘图标',
-    description: '快速切换系统托盘图标的显示和隐藏',
-    icon: View,
-    color: '#E6A23C',
-    tagType: 'warning',
-    keyValue: settings.toggleWindowKey
-  }
-])
-
-// 功能状态配置
-const featureStatuses = computed(() => [
-  {
-    key: 'textProcess',
-    label: '模拟输入',
-    enabled: settings.textProcessEnabled,
-    disabledText: '已禁用'
-  },
-  {
-    key: 'aiQA',
-    label: 'AI 问答',
-    enabled: settings.aiQAEnabled,
-    disabledText: '已禁用'
-  },
-  {
-    key: 'wxInput',
-    label: '去除换行',
-    enabled: settings.wxInputMode,
-    disabledText: '未启用'
-  }
-])
-
-// 使用指南步骤
-const steps = [
-  {
-    title: '复制文本',
-    description: '选择需要处理的文本,按 Ctrl+X 或者Ctrl+C 复制到剪贴板',
-    icon: CopyDocument,
-    type: 'primary',
-    size: 'large'
-  },
-  {
-    title: '按下快捷键',
-    description: '根据需求按下对应的全局快捷键',
-    icon: Key,
-    type: 'success',
-    size: 'large'
-  },
-  {
-    title: '处理结果',
-    description: '如果使用AI问答,选择自己的方式从剪切板获取答案',
-    icon: Position,
-    type: 'warning',
-    size: 'large'
-  }
-]
-
-
 const checkAi = async () => {
   try {
-    if (setMg.get("deepseekApi") === "" && setMg.get("userName") === "") {
-      info("Home: 未配置DeepSeek API或用户名");
+    if (!setMg.get("deepseekApi")?.trim()) {
+      info("Home: 未配置 API Key");
       aiStatus.value = {
         healthy: "danger",
-        message: '未配置 DeepSeek API 或 用户名，请前往设置页面配置'
+        message: '未配置 API Key，请前往设置页面配置'
       }
       return
     }
@@ -363,86 +194,10 @@ const checkAi = async () => {
   }
 }
 
-// 判断是否是URL
-const isURL = (str) => {
-  try {
-    const url = new URL(str)
-    return url.protocol === 'http:' || url.protocol === 'https:'
-  } catch {
-    return false
-  }
-}
-
-const checkInjection = async () => {
-  try {
-    info("Home: 开始检查注入状态");
-    injectionStatus.value = {
-      type: "info",
-      message: '检查注入状态中...'
-    }
-
-    const targetProgramPath = setMg.get('targetProgramPath');
-    const dllPath = setMg.get('dllPath');
-
-    // 未配置路径时也显示未注入
-    if (!targetProgramPath || !dllPath) {
-      info("Home: 未配置目标程序或DLL路径，显示未注入");
-      injectionStatus.value = {
-        type: "warning",
-        message: '未注入'
-      }
-      return
-    }
-
-    const targetDir = await dirname(targetProgramPath);
-
-    // 获取 DLL 文件名
-    let dllFileName = dllPath.split(/[\/\\]/).pop();
-
-    // 如果是URL，需要从URL中提取文件名
-    if (isURL(dllPath)) {
-      const urlPath = new URL(dllPath).pathname;
-      dllFileName = urlPath.split('/').pop() || 'downloaded.dll';
-    }
-
-    const targetDllPath = await join(targetDir, dllFileName);
-    const apiFilePath = await join(targetDir, 'eat_rice.txt');
-
-    // 检查两个文件是否都存在
-    const dllExists = await exists(targetDllPath);
-    const apiExists = await exists(apiFilePath);
-
-    const isInjected = dllExists && apiExists;
-    info(`Home: 注入状态检查完成 - DLL存在:${dllExists}, API文件存在:${apiExists}, 注入状态:${isInjected}`);
-
-    if (isInjected) {
-      injectionStatus.value = {
-        type: "success",
-        message: '已注入'
-      }
-    } else {
-      injectionStatus.value = {
-        type: "warning",
-        message: '未注入'
-      }
-    }
-  } catch (e) {
-    error(`Home: 注入状态检查异常: ${e}`);
-    injectionStatus.value = {
-      type: "warning",
-      message: '未注入'
-    }
-  }
-}
-
-// 监听注入状态更新事件
-mitt.on('injection-update', checkInjection);
-
 onMounted(() => {
   try {
     info("Home: 组件挂载");
     loadQACount()
-    checkInjection()
   } catch (e) {
     error(`Home: 组件挂载失败: ${e}`);
   }

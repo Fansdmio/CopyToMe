@@ -6,8 +6,6 @@ import {
   Document,
   ChatDotRound,
   Key,
-  User,
-  EditPen,
   View
 } from '@element-plus/icons-vue'
 
@@ -47,38 +45,12 @@ export const SHORTCUT_FIELDS = [
 export const AI_CONFIG_FIELDS = [
   {
     key: 'deepseekApi',
-    label: 'DeepSeek API',
-    placeholder: '请输入 DeepSeek API Key',
+    label: 'API Key',
+    placeholder: '请输入 OpenAI 兼容接口的 API Key',
     type: 'password',
     showPassword: true,
     icon: Key,
-    hint: '优先使用此 API,如果为空则使用用户名获取'
-  },
-  {
-    key: 'userName',
-    label: '用户名',
-    placeholder: '请输入用户名 (可不填)',
-    type: 'text',
-    showPassword: false,
-    icon: User,
-    hint: '当 API 为空时,使用此用户名从服务器获取 API'
-  },
-  {
-    key: 'deepThinking',
-    label: '深度思考',
-    placeholder: '',
-    type: 'switch',
-    showPassword: false,
-    hint: '启用后AI将使用 deepseek-reasoner 模型进行深度思考,提供更详细的分析和推理过程'
-  },
-  {
-    key: 'systemPrompt',
-    label: 'AI 提示词',
-    placeholder: '请输入自定义的 AI 提示词',
-    type: 'textarea',
-    showPassword: false,
-    icon: EditPen,
-    hint: '设置 AI 助手的角色和行为,例如: 你是一个极简的助手,回答要简洁明了'
+    hint: '默认使用 DeepSeek Base URL 和 v4-flash 模型'
   }
 ]
 
@@ -120,6 +92,11 @@ export const FEATURE_TOGGLES = [
     key: 'autoStart',
     label: '开机自启动',
     description: '开机自启动'
+  },
+  {
+    key: 'runAsAdmin',
+    label: '管理员启动',
+    description: '启用后每次打开应用都会先请求管理员权限'
   }
 ]
 
@@ -208,18 +185,9 @@ export const KEYBOARD_HELP_DATA = [
 ]
 
 /**
- * AI 提示信息
- */
-export const AI_TIPS = [
-  '如果没有Deepseek API,可以去 https://platform.deepseek.com/api_keys 申请',
-  '不想申请和可以填入用户名,使用的是作者的api',
-  '不要滥用API,作者很穷,可以去关于页面支持作者'
-]
-
-/**
  * 使用提示信息
  */
 export const USAGE_TIPS = [
   '使用模拟输入时,微信输入法不要在中文模式下',
-  '开启AI问答模式,需要去设置页面配值DeepSeek API 或者用户名',
+  '开启AI问答模式,需要去设置页面配置 API Key',
 ]

@@ -17,28 +17,14 @@ const DEFAULT_SETTINGS = {
     toggleWindowEnabled: true,  // 显示/隐藏托盘功能开关
     hideWindow: false,
     autoStart: false,
+    runAsAdmin: false,  // 启动时自动请求管理员权限
     autoHideTray: false,  // 自动隐藏托盘图标
     quickInput: true,  // 快速输入模式
     timeRange: [1, 5],  // 时间范围 [最小值, 最大值] (毫秒),
     deepseekApi: '',
-    userName: '',
-    systemPrompt: '你是一个说话极简的答题助手,只给出答案即可,不要使用md语法',  // AI提示词
-    deepThinking: false,  // 深度思考模式
-    // 自定义AI设置
-    useCustomAI: false,  // 是否使用自定义AI
-    customAIEndpoint: '',  // 自定义AI端点
-    customAIModel: '',  // 自定义AI模型
-    customAIFormat: 'openai',  // API格式: 'openai' 或 'google'
-    customAIKey: '',  // 自定义AI的API Key
-    // AI高级参数
-    aiTemperature: 0.7,  // 温度参数 0-2
-    aiTopP: 0.85,  // top_p参数 0-1
-    aiMaxTokens: 1500,  // 最大token数
-    aiFrequencyPenalty: 0.2,  // 频率惩罚 -2到2
-    aiPresencePenalty: 0.1,  // 存在惩罚 -2到2
-    targetProgramPath: '',  // 目标程序路径
-    dllPath: '',  // DLL 文件路径
-    dllPassword: '',  // DLL 注入密码
+    customAIEndpoint: 'https://api.deepseek.com',  // OpenAI 兼容 Base URL
+    customAIModel: 'v4-flash',  // 默认模型
+    systemPrompt: '你是一个说话极简的答题助手,只给出答案即可,不要使用md语法',  // AI 提示词
     skippedVersions: [],  // 跳过的版本列表
 }
 
@@ -60,6 +46,13 @@ const setMg = {
             // 只有当设置存在时才合并，避免 undefined/null 覆盖默认值
             if (settings && typeof settings === 'object') {
                 Object.assign(this.settings, settings)
+                // 旧版本可能保存了空的自定义 AI 字段，这里补齐新的简洁默认值。
+                if (!this.settings.customAIEndpoint?.trim()) {
+                    this.settings.customAIEndpoint = DEFAULT_SETTINGS.customAIEndpoint
+                }
+                if (!this.settings.customAIModel?.trim()) {
+                    this.settings.customAIModel = DEFAULT_SETTINGS.customAIModel
+                }
                 info(`setMg: 设置加载完成: ${JSON.stringify(this.settings)}`);
             } else {
                 info("setMg: 未找到已保存的设置，使用默认设置");

@@ -27,12 +27,6 @@
             </el-icon>
             <span>设置</span>
           </el-menu-item>
-          <el-menu-item index="notifications">
-            <el-icon>
-              <BellFilled />
-            </el-icon>
-            <span>通知中心</span>
-          </el-menu-item>
           <el-menu-item index="about">
             <el-icon>
               <InfoFilled />
@@ -63,11 +57,6 @@
           <SettingPage @update-shortcuts="handleUpdateShortcuts" />
         </div>
 
-        <!-- 通知中心 -->
-        <div v-show="activeMenu === 'notifications'" class="page-container">
-          <NotificationsPage />
-        </div>
-
         <!-- 关于 -->
         <div v-show="activeMenu === 'about'" class="page-container">
           <AboutPage />
@@ -75,26 +64,21 @@
       </el-main>
     </el-container>
 
-    <!-- 通知视图组件 -->
-    <NotificationView :notification="activeNotification" />
-
     <Update></Update>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted, h } from 'vue'
+import { h, ref, watch, onMounted } from 'vue'
 import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { ElMessage, ElNotification } from 'element-plus'
-import { HomeFilled, Setting, InfoFilled, ChatDotRound, BellFilled } from '@element-plus/icons-vue'
+import { ElButton, ElMessage, ElNotification } from 'element-plus'
+import { HomeFilled, Setting, InfoFilled, ChatDotRound } from '@element-plus/icons-vue'
 import { enable, disable } from '@tauri-apps/plugin-autostart'
 import HomePage from './components/Home.vue'
 import HistoryPage from './components/History.vue'
 import SettingPage from './components/Setting.vue'
 import AboutPage from './components/About.vue'
-import NotificationsPage from './components/Notifications.vue'
-import NotificationView from './components/NotificationView.vue'
 import { invoke } from '@tauri-apps/api/core'
 import { debounceAfter, debounce, getFormattedDate } from './utils/common.js'
 import { useShortcuts } from './composables/useShortcuts.js'
@@ -106,7 +90,6 @@ import mitt from './utils/mitt.js'
 import { trace, info, error, attachConsole } from '@tauri-apps/plugin-log';
 import Update from './components/Update.vue';
 import { toggleTrayIcon, isTrayIconVisible, hideTrayIcon, showTrayIcon } from './main.js';
-import { useNotifications } from './composables/notificationMg.js';
 
 // const detach = await attachConsole();
 info('App.vue: 应用启动');
@@ -140,18 +123,12 @@ const typingState = ref({
   jKeyCooldown: false     // J键是否在冷却中
 })
 
-// 使用通知管理器
-const {
-  activeNotification,
-  loadStoredNotifications,
-  checkAndShowNotifications
-} = useNotifications()
-
 // 初始化设置为默认值, 会在 onBeforeMount 中更新为实际值
 const settings = setMg.settings
 
 // 当前激活的菜单
 const activeMenu = ref('home')
+let adminPrompt = null
 
 
 // 菜单选择处理
@@ -438,18 +415,6 @@ const handleUpdateShortcuts = async () => {
   }
 }
 
-// 从服务器获取信息并显示通知
-const fromServerGetInfo = async () => {
-  try {
-    info("App.vue: 开始检查服务器通知");
-    await loadStoredNotifications();
-    await checkAndShowNotifications();
-    info("App.vue: 通知检查完成");
-  } catch (e) {
-    error(`App.vue: 检查通知失败: ${e}`);
-  }
-}
-
 //更新时间范围
 const updateTimeRange = async (val) => {
   info(`App.vue: 更新时间范围 [${val[0]}, ${val[1]}]`);
@@ -488,6 +453,57 @@ const saveAutoStart = async (val) => {
   }
 }
 
+const relaunchWithAdmin = async () => {
+  try {
+    adminPrompt?.close()
+    info("App.vue: 请求以管理员身份重启");
+    await invoke('relaunch_as_admin')
+  } catch (e) {
+    error(`App.vue: 管理员重启失败: ${e}`)
+    ElMessage.error('管理员重启失败')
+  }
+}
+
+const showAdminPrompt = () => {
+  if (adminPrompt) return
+
+  // 使用通知而不是模态框，避免打断用户进入应用后的正常操作。
+  adminPrompt = ElNotification({
+    title: '当前不是管理员权限',
+    message: h('div', { class: 'admin-prompt' }, [
+      h('p', { class: 'admin-prompt__text' }, '部分系统级功能可能需要管理员权限。'),
+      h(ElButton, {
+        type: 'primary',
+        size: 'small',
+        onClick: relaunchWithAdmin
+      }, () => '以管理员身份重启')
+    ]),
+    type: 'info',
+    duration: 0,
+    position: 'bottom-right',
+    onClose: () => {
+      adminPrompt = null
+    }
+  })
+}
+
+const checkAdminPrivilege = async () => {
+  try {
+    const isAdmin = await invoke('is_running_as_admin')
+    info(`App.vue: 当前管理员权限状态: ${isAdmin}`)
+    if (isAdmin) return
+
+    if (settings.runAsAdmin) {
+      await relaunchWithAdmin()
+      return
+    }
+
+    showAdminPrompt()
+  } catch (e) {
+    error(`App.vue: 管理员权限检查失败: ${e}`)
+  }
+}
+
 // 初始化
 onMounted(async () => {
   info("App.vue: 开始初始化");
@@ -495,6 +511,7 @@ onMounted(async () => {
     //等待 AI 模块初始化完成
     await aiMg.init()
     info("App.vue: AI模块初始化完成");
+    await checkAdminPrivilege()
   } catch (e) {
     error(`App.vue: AI模块初始化失败: ${e}`);
     ElMessage.error('初始化失败, 请重启应用');
@@ -504,9 +521,6 @@ onMounted(async () => {
 
   info("发送检查更新事件")
   mitt.emit("check-update")
-
-  // 检查服务器通知
-  await fromServerGetInfo()
 
   try {
     if (setMg.get("hideWindow")) {
@@ -542,8 +556,8 @@ onMounted(async () => {
     () => settings.textProcessEnabled,
     () => settings.aiQAEnabled,
     () => settings.hideWindow,
-    () => settings.deepThinking,
-    () => settings.quickInput
+    () => settings.quickInput,
+    () => settings.runAsAdmin
   ], () => setMg.save())
 
   // 时间范围变化（需要防抖）
@@ -699,6 +713,8 @@ html {
   background: #fff;
   padding: 16px;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
   height: calc(100vh - 16px);
   margin: 8px 8px 8px 4px;
   /* 左边距改为4px,增加与侧边栏的间隙 */
@@ -793,5 +809,17 @@ html {
 
 .main-content::-webkit-scrollbar-thumb:hover {
   background: #c0c4cc;
+}
+
+.admin-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-prompt__text {
+  margin: 0;
+  color: #606266;
+  line-height: 1.5;
 }
 </style>

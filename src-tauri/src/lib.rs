@@ -1,6 +1,5 @@
 use enigo::{Enigo, Keyboard, Settings};
 use rand::Rng;
-use std::fs;
 use std::sync::{atomic::AtomicBool, atomic::Ordering, Arc, LazyLock, Mutex};
 use std::thread::{self, sleep};
 use std::time::Duration;
@@ -13,6 +12,15 @@ use tauri_plugin_log::{Target, TargetKind};
 
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{LoadCursorW, SetSystemCursor, IDC_CROSS, OCR_NORMAL};
+
+#[cfg(target_os = "windows")]
+use windows::{
+    core::PCWSTR,
+    Win32::UI::{
+        Shell::{IsUserAnAdmin, ShellExecuteW},
+        WindowsAndMessaging::SW_SHOWNORMAL,
+    },
+};
 
 #[tauri::command]
 fn update_time_range(left: u64, right: u64) {
@@ -28,38 +36,60 @@ fn stop_typing() {
     println!("设置停止标志");
 }
 
-#[tauri::command]
-fn create_directory(path: String) -> Result<(), String> {
-    fs::create_dir_all(&path).map_err(|e| e.to_string())
+#[cfg(target_os = "windows")]
+fn to_wide_null(value: &str) -> Vec<u16> {
+    value.encode_utf16().chain(std::iter::once(0)).collect()
 }
 
 #[tauri::command]
-fn open_folder(path: String) -> Result<(), String> {
+fn is_running_as_admin() -> bool {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        return IsUserAnAdmin().as_bool();
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        false
+    }
+}
+
+#[tauri::command]
+fn relaunch_as_admin() -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
-        std::process::Command::new("explorer")
-            .arg(&path)
-            .spawn()
-            .map_err(|e| e.to_string())?;
+        let exe_path = std::env::current_exe()
+            .map_err(|e| format!("获取当前程序路径失败: {}", e))?;
+        let exe_path = exe_path
+            .to_str()
+            .ok_or_else(|| "当前程序路径包含无法处理的字符".to_string())?;
+
+        let operation = to_wide_null("runas");
+        let file = to_wide_null(exe_path);
+
+        // 使用 Windows 的 runas 动词触发 UAC，成功拉起后退出当前非管理员进程。
+        let result = unsafe {
+            ShellExecuteW(
+                None,
+                PCWSTR(operation.as_ptr()),
+                PCWSTR(file.as_ptr()),
+                PCWSTR::null(),
+                PCWSTR::null(),
+                SW_SHOWNORMAL,
+            )
+        };
+
+        if result.0 as isize <= 32 {
+            return Err(format!("管理员重启失败,错误码: {}", result.0 as isize));
+        }
+
+        std::process::exit(0);
     }
 
-    #[cfg(target_os = "macos")]
+    #[cfg(not(target_os = "windows"))]
     {
-        std::process::Command::new("open")
-            .arg(&path)
-            .spawn()
-            .map_err(|e| e.to_string())?;
+        Err("当前系统不支持管理员重启".to_string())
     }
-
-    #[cfg(target_os = "linux")]
-    {
-        std::process::Command::new("xdg-open")
-            .arg(&path)
-            .spawn()
-            .map_err(|e| e.to_string())?;
-    }
-
-    Ok(())
 }
 
 #[tauri::command]
@@ -213,8 +243,6 @@ pub fn run() {
                 .level(tauri_plugin_log::log::LevelFilter::Info)
                 .build(),
         )
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_store::Builder::new().build());
 
     #[cfg(desktop)]
@@ -248,12 +276,12 @@ pub fn run() {
             handle_text,
             update_time_range,
             stop_typing,
-            create_directory,
-            open_folder,
             type_single_char,
             register_shortcut,
             unregister_shortcut,
-            change_cursor_globally
+            change_cursor_globally,
+            is_running_as_admin,
+            relaunch_as_admin
         ]);
     builder
         .run(tauri::generate_context!())
