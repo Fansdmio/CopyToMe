@@ -1,10 +1,10 @@
 {
   "version": "0.3.4",
   "notes": "### 少女少年请留步 ⬇\r\n如果你仍然处于 0.1.x 版本,建议***更新到此版本***\r\n此次更新的版本为: `0.3.4`\n\r\n### 少年少女请留步 ⬆\r\n\r\n# 0.3.4 更新内容\n- 重做应用界面，改为更简洁的白色桌面工具风格。\n- 精简主页、设置页、关于页和问答记录页，移除冗余说明与旧入口。\n- AI 配置简化为 OpenAI 兼容接口，默认 DeepSeek Base URL 和 v4-flash 模型。\n- 增加管理员启动开关和非侵入式管理员重启提示。\n- 修复设置页高级设置对齐、模型获取按钮加载图标、页面底部留白和侧边栏边距问题。\n- 清理无用代码并更新代理项目指南。\n\n# 0.3.3 更新内容\n- 更新域名, 域名 cp.uuyo.fun 2026-03-06 07:59:59 过期(作者续不起费用) ,目前新域名叫 ***cp.uuyo.pw***\r\n\r\n## 不更新的话我还能用吗\r\n- 可以,核心功能不影响,作者的服务器只是起到了辅助作用\r\n\r\n## 不更新该版本的影响如下\r\n- 无法查看作者的萝莉照 (这你还能忍住不更新吗)\r\n- 以后不会收到更新通知,需要去官网手动更新\r\n- 无法收到通知\r\n- AI配置里的获取用户名失效\r\n\r\n# 0.3.2 更新内容\r\n## 核心更新\r\n- 更新了一些东西\r\n\r\n# 0.3.1 更新内容\r\n## 核心更新\r\n- 更新了一些东西\r\n\r\n# 0.3.0 更新内容\r\n## 核心更新\r\n- 模拟输入方法进行重新改造,请学习新版的使用方法\r\n- 问答完成之后鼠标出现短暂变化,用来提示\r\n## 其他更新\r\n- 优化快捷键逻辑\r\n\r\n# 0.2.3 更新内容\r\n## 核心更新\r\n- 模拟输入可以接着上次中断的地方继续输入\r\n- 添加通知功能\r\n## 其他更新\r\n- 修复设置界面变化问题,增加美观\r\n- 更新使用文档\r\n\r\n\r\n# 0.2.2 更新内容\r\n## 核心更新\r\n- 优化了快捷键注册逻辑\r\n\r\n# 0.2.1 更新内容\r\n## 核心更新\r\n- 增加隐藏托盘图标快捷方式,增加隐蔽性\r\n## 其他更新\r\n- 增加自定义ai功能,支持openai,google格式,可进行各种参数调节\r\n- 历史记录添加删除功能\r\n- 更换了下载时的进度条样式\r\n- 提高历史记录上限为2000\r\n- 优化了图标\r\n## 修复\r\n- 修复了ai健康检查会污染历史记录\n",
-  "pub_date": "2026-05-26T11:33:58.691Z",
+  "pub_date": "2026-05-26T11:40:06.967Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVScDYwTk1iY0lvQ1ZiOTRtSmd5bnVEalI3UnROVUt0TjJZK1pNdEZKUnNsMy9FT3hkaVFwYzNvclA3WU5yUlBOeHk3Y2w3QlNqRFBZYmhyM1A1dit2MHhGcFNCSVBGcEFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc5Nzk0OTMzCWZpbGU6Q29weVRvTWVBbmRUYXVyaV8wLjMuNF94NjQtc2V0dXAuZXhlCldKa011RGRzZDBJaHVXd1lFb3NJd0twdmlUZmgwd1pwbmZaSVdLQnhMenRxTmlTYmF1T3paR2ZIMTMzNk9mNktLZXZhaHNaWGphWk8wUnVUT084c0FBPT0K",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVScDYwTk1iY0lvQ2FlRHNyWjRUY0g1b3JhZk04dHNyR2tDYWpCQlJWQnBFdUZ6WnVRZ24ram5mZnpEYWViN04rZ1dDZHNjUHRrYytnRTVVcVlVdzN5cE9BL1NHU0h1TVFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc5Nzk1NTU3CWZpbGU6Q29weVRvTWVBbmRUYXVyaV8wLjMuNF94NjQtc2V0dXAuZXhlCmZuYk5kRGdJNzJWQTRWQVZkK2tGNlJKamRsUHc4bzI5Q0NBOU5xempEL2d2NjBQamNGa3pSWmF6ZzVsOWQ4QjdDalRPbzhzbnFjRFNDbXExSDh2R0F3PT0K",
       "url": "https://cp.wojwo.xyz/download/CopyToMeAndTauri_0.3.4_x64-setup.exe"
     }
   }
