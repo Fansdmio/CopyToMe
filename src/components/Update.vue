@@ -1,24 +1,35 @@
 <template>
-    <el-dialog v-model="updateDialogVisible" title="发现新版本" width="500px" :close-on-click-modal="false"
-        :show-close="false" align-center class="ctm-glass-dialog update-dialog">
+    <el-dialog v-model="updateDialogVisible" width="min(720px, calc(100vw - 32px))" :close-on-click-modal="false"
+        :lock-scroll="false" :show-close="false" align-center class="ctm-glass-dialog update-dialog">
         <div class="update-content">
-            <!-- 顶部图标 -->
-            <div class="update-icon">
-                <img src="../assets/logo.png" style="width: 50px;" alt="Update Icon" />
-            </div>
-
-            <!-- 版本信息 -->
-            <div v-if="updateInfo" class="version-info">
-                <h3 class="version-title">
-                    版本 <span class="version-number">{{ updateInfo.version }}</span> 已发布
-                </h3>
-                <div class="version-date">
-                    <el-icon>
-                        <Clock />
-                    </el-icon>
-                    <span>{{ formatDate(updateInfo.date) }}</span>
+            <button
+                type="button"
+                class="update-close"
+                :disabled="downloading || installing"
+                aria-label="稍后提醒"
+                @click="remindLater"
+            >
+                ×
+            </button>
+            <header class="update-hero">
+                <div class="update-icon">
+                    <img src="../assets/logo.png" alt="Update Icon" />
                 </div>
-            </div>
+
+                <!-- 版本信息 -->
+                <div v-if="updateInfo" class="version-info">
+                    <span class="update-eyebrow">发现新版本</span>
+                    <h3 class="version-title">
+                        <span class="version-number">{{ updateInfo.version }}</span> 已发布
+                    </h3>
+                    <div class="version-date">
+                        <el-icon>
+                            <Clock />
+                        </el-icon>
+                        <span>{{ formatDate(updateInfo.date) }}</span>
+                    </div>
+                </div>
+            </header>
 
             <!-- 更新说明 -->
             <div v-if="updateInfo && updateInfo.body" class="release-notes">
@@ -45,9 +56,7 @@
                 </el-icon>
                 <span>正在安装更新...</span>
             </div>
-        </div>
 
-        <template #footer>
             <div class="dialog-footer">
                 <el-button @click="skipVersion" :disabled="downloading || installing">
                     跳过此版本
@@ -60,7 +69,7 @@
                     {{ downloading ? '下载中...' : installing ? '安装中...' : '立即更新' }}
                 </el-button>
             </div>
-        </template>
+        </div>
     </el-dialog>
 </template>
 
@@ -243,99 +252,168 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.update-dialog :deep(.el-dialog) {
-    border-radius: var(--ctm-radius-lg);
+.update-dialog {
+    border-radius: 26px;
     overflow: hidden;
-    background: var(--ctm-surface);
-    border: 1px solid var(--ctm-border);
-    box-shadow: var(--ctm-shadow-soft);
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(235, 235, 238, 0.56)),
+        var(--ctm-glass);
+    border: 1px solid rgba(255, 255, 255, 0.68);
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    backdrop-filter: blur(30px) saturate(1.45);
+    -webkit-backdrop-filter: blur(30px) saturate(1.45);
 }
 
-.update-dialog :deep(.el-dialog__header) {
-    background: var(--ctm-surface-muted);
-    color: var(--ctm-text);
-    padding: 18px 24px;
+.update-dialog :deep(.el-dialog__header),
+:global(.el-dialog.update-dialog .el-dialog__header) {
+    display: none;
+    height: 0;
+    padding: 0;
     margin: 0;
-    border-bottom: 1px solid var(--ctm-border);
 }
 
-.update-dialog :deep(.el-dialog__title) {
-    color: var(--ctm-text);
-    font-size: 18px;
-    font-weight: 800;
+.update-dialog :deep(.el-dialog__body),
+:global(.el-dialog.update-dialog .el-dialog__body) {
+    padding: 0;
 }
 
-.update-dialog :deep(.el-dialog__body) {
-    padding: 24px;
-}
-
-.update-dialog :deep(.el-dialog__footer) {
-    padding: 16px 24px;
-    border-top: 1px solid var(--ctm-border);
+.update-dialog :deep(.el-dialog__footer),
+:global(.el-dialog.update-dialog .el-dialog__footer) {
+    display: none;
 }
 
 .update-content {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 8px;
+    max-height: min(82vh, 680px);
+    padding: 42px 8px 10px;
+}
+
+.update-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.56);
+    border-radius: 999px;
+    color: var(--ctm-text-soft);
+    background: rgba(255, 255, 255, 0.36);
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 160ms ease;
+}
+
+.update-close:hover {
+    color: var(--ctm-text);
+    background: rgba(255, 255, 255, 0.64);
+}
+
+.update-close:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.update-hero {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.64);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.24);
 }
 
 .update-icon {
     display: flex;
-    justify-content: center;
     align-items: center;
-    margin: 10px 0;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.38);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74), 0 12px 24px rgba(0, 0, 0, 0.08);
+}
+
+.update-icon img {
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
 }
 
 .version-info {
-    text-align: center;
+    min-width: 0;
+}
+
+.update-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    padding: 0 10px;
+    border: 1px solid var(--ctm-border);
+    border-radius: 999px;
+    color: var(--ctm-text-soft);
+    background: rgba(255, 255, 255, 0.34);
+    font-size: 12px;
+    font-weight: 760;
 }
 
 .version-title {
-    margin: 0 0 8px 0;
-    font-size: 20px;
-    font-weight: 800;
+    margin: 6px 0 4px;
     color: var(--ctm-text);
+    font-size: 22px;
+    font-weight: 860;
+    line-height: 1.2;
 }
 
 .version-number {
     color: var(--ctm-control);
-    font-weight: 700;
+    font-weight: 860;
 }
 
 .version-date {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 6px;
-    font-size: 14px;
     color: var(--ctm-text-muted);
+    font-size: 13px;
+    font-weight: 650;
 }
 
 .release-notes {
-    background: var(--ctm-surface-muted);
-    border: 1px solid var(--ctm-border);
-    border-radius: var(--ctm-radius-md);
-    padding: 16px;
-    max-height: 300px;
+    min-height: 0;
+    max-height: min(50vh, 380px);
     overflow-y: auto;
+    padding: 14px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.58);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62);
 }
 
 .notes-title {
-    margin: 0 0 16px 0;
-    font-size: 15px;
-    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    padding: 0;
     color: var(--ctm-text);
-    position: relative;
-    padding-left: 12px;
+    font-weight: 800;
+    font-size: 14px;
+    background: transparent;
 }
 
 .notes-title::before {
     content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
     width: 4px;
     height: 18px;
     background: var(--ctm-control);
@@ -344,7 +422,7 @@ onMounted(() => {
 
 .notes-content {
     font-size: 14px;
-    line-height: 1.8;
+    line-height: 1.75;
     color: var(--ctm-text-soft);
 }
 
@@ -629,10 +707,10 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 16px;
-    background: var(--ctm-control-soft);
-    border-radius: var(--ctm-radius-md);
-    border: 1px solid var(--ctm-border);
+    padding: 14px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.58);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.46);
 }
 
 .progress-info {
@@ -670,17 +748,19 @@ onMounted(() => {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 12px;
-    background: var(--ctm-control-soft);
-    border-radius: 8px;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.58);
+    background: rgba(255, 255, 255, 0.46);
+    border-radius: 16px;
     color: var(--ctm-control);
-    font-weight: 500;
+    font-weight: 700;
 }
 
 .dialog-footer {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
+    padding-top: 4px;
 }
 
 /* 滚动条样式 */
@@ -689,7 +769,7 @@ onMounted(() => {
 }
 
 .release-notes::-webkit-scrollbar-track {
-    background: var(--ctm-surface-muted);
+    background: transparent;
     border-radius: 3px;
 }
 
@@ -704,16 +784,42 @@ onMounted(() => {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-    .update-dialog {
-        width: 90% !important;
+    .update-content {
+        max-height: min(84vh, 640px);
+        padding: 40px 8px 8px;
+    }
+
+    .update-close {
+        top: 10px;
+        right: 10px;
+        width: 30px;
+        height: 30px;
+        font-size: 22px;
+    }
+
+    .update-hero {
+        grid-template-columns: 52px minmax(0, 1fr);
+        gap: 12px;
+        padding: 14px;
+    }
+
+    .update-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 15px;
+    }
+
+    .update-icon img {
+        width: 36px;
+        height: 36px;
     }
 
     .version-title {
-        font-size: 18px;
+        font-size: 20px;
     }
 
     .release-notes {
-        max-height: 200px;
+        max-height: 44vh;
     }
 
     .dialog-footer {

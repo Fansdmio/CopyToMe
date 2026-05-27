@@ -382,6 +382,31 @@ body, html {
   background: var(--ctm-control-hover);
 }
 
+/* 更新弹窗需要更贴边的内容布局，避免通用玻璃弹窗的默认内边距造成大面积空白。 */
+.el-dialog.ctm-glass-dialog.update-dialog {
+  position: relative;
+}
+
+.el-dialog.ctm-glass-dialog.update-dialog .el-dialog__header {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+.el-dialog.ctm-glass-dialog.update-dialog .el-dialog__body {
+  padding: 0 !important;
+}
+
+.el-dialog.ctm-glass-dialog.update-dialog .el-dialog__footer {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
 /* 图片预览需要避开桌面窗口顶部标题区，避免放大图贴到拖拽栏下方。 */
 .el-image-viewer__wrapper {
   top: 42px !important;
