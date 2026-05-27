@@ -44,7 +44,7 @@
 
         <!-- 教程页面 -->
         <div v-show="activeMenu === 'tutorial'" class="page-container">
-          <TutorialPage ref="tutorialRef" />
+          <TutorialPage ref="tutorialRef" @update-shortcuts="handleUpdateShortcuts" />
         </div>
 
         <!-- 设置页面 -->

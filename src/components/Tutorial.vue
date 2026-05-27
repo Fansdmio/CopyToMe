@@ -14,7 +14,7 @@
         <span class="tutorial-kicker">{{ modeLabel }}</span>
         <h2>{{ stageTitle }}</h2>
       </div>
-      <div class="stage-meter" aria-hidden="true">
+      <div v-if="!isFreeTraining" class="stage-meter" aria-hidden="true">
         <span
           v-for="item in stageMeter"
           :key="item"
@@ -36,10 +36,16 @@
         进阶教程
         <small v-if="!settings.tutorialBasicCompleted">完成基础后解锁</small>
       </button>
+      <button type="button" :class="{ active: tutorialMode === 'free' }" @click="switchTutorialMode('free')">
+        自由训练
+      </button>
     </div>
 
     <div v-if="advancedQuickInputNotice" class="quick-input-note">
       已为进阶教程关闭快速输入模式，离开教程后会自动恢复。
+    </div>
+    <div v-if="advancedWxInputNotice" class="quick-input-note">
+      已为进阶教程暂时关闭微信输入兼容模式，并恢复模拟输入，离开教程后会自动恢复。
     </div>
 
     <div class="tutorial-content">
@@ -51,7 +57,26 @@
         <p class="practice-topic" @copy.prevent @cut.prevent>{{ currentTopic }}</p>
       </article>
 
-      <article v-if="isAdvancedTrainingStage" class="practice-card training-card">
+      <article v-if="isFreeTraining" class="practice-card free-training-card">
+        <div
+          class="tutorial-input-shell"
+          @paste.capture.prevent="blockFreeTrainingPaste"
+          @drop.capture.prevent="blockFreeTrainingPaste"
+          @contextmenu.prevent
+        >
+          <el-input
+            ref="freeInputRef"
+            v-model="freeTrainingText"
+            type="textarea"
+            :rows="10"
+            resize="none"
+            placeholder="在这里自由练习输入，粘贴会被拦截"
+            @keydown="handleFreeTrainingKeydown"
+          />
+        </div>
+      </article>
+
+      <article v-else-if="isAdvancedTrainingStage" class="practice-card training-card">
         <div class="practice-heading">
           <span>{{ trainingTitle }}</span>
           <small>{{ trainingStatusText }}</small>
@@ -136,6 +161,7 @@ import aiMg from '../composables/aiMg.js'
 import mitt from '../utils/mitt.js'
 import { formatShortcutForDisplay } from '../utils/shortcutFormat.js'
 
+const emit = defineEmits(['update-shortcuts'])
 const settings = setMg.settings
 const tutorialMode = ref('basic')
 const stage = ref('inputting')
@@ -143,15 +169,20 @@ const questionText = ref('')
 const currentTopic = ref('')
 const waitingQuestion = ref('')
 const practiceText = ref('')
+const freeTrainingText = ref('')
 const gradingResult = ref(null)
 const confettiPieces = ref([])
 const inputRef = ref(null)
 const practiceInputRef = ref(null)
+const freeInputRef = ref(null)
 const advancedQuickInputNotice = ref(false)
+const advancedWxInputNotice = ref(false)
 let unsubscribeAiCompleted = null
 let unsubscribeTypingModeChanged = null
 let confettiTimer = null
 let shouldRestoreQuickInput = false
+let shouldRestoreWxInputMode = false
+let originalTextProcessEnabledBeforeAdvanced = true
 
 const basicTopics = [
   '高等数学中，拉格朗日乘数法为什么能用于求条件极值？',
@@ -172,12 +203,16 @@ const advancedTopics = [
   '作文题：请以“青年如何面对不确定的未来”为题，写一篇不少于 500 字的议论文。'
 ]
 
+// 自由训练固定使用一个题目，避免进入训练区时出现额外的随机切换干扰。
+const freeTrainingTopic = '请分析人工智能工具对大学生学习效率和独立思考能力的影响。'
+
 const textShortcutText = computed(() => formatShortcutForDisplay(settings.textKey))
 const isQuestionReady = computed(() => {
   const text = questionText.value.trim()
   return text.endsWith('?') || text.endsWith('？')
 })
 const isAdvanced = computed(() => tutorialMode.value === 'advanced')
+const isFreeTraining = computed(() => tutorialMode.value === 'free')
 const isGradingStage = computed(() => ['grading', 'advancedGrading'].includes(stage.value))
 const isPassedStage = computed(() => ['passed', 'advancedPassed'].includes(stage.value))
 const answerTextLength = computed(() => questionText.value.trim().length)
@@ -204,10 +239,14 @@ const activeMeter = computed(() => {
   return 'question'
 })
 
-const modeLabel = computed(() => isAdvanced.value ? '进阶教程' : '基础教程')
+const modeLabel = computed(() => {
+  if (isFreeTraining.value) return '自由训练'
+  return isAdvanced.value ? '进阶教程' : '基础教程'
+})
 const completeTitle = computed(() => isAdvanced.value ? '进阶教程完成' : '教程完成')
 
 const stageTitle = computed(() => {
+  if (isFreeTraining.value) return '自由训练'
   if (['waiting', 'advancedWaiting'].includes(stage.value)) return '请等待 AI 回答完成'
   if (stage.value === 'advancedEnterMode') return '进入模拟输入操作模式'
   if (stage.value === 'advancedTryL') return '练习逐字输入'
@@ -298,6 +337,11 @@ const trainingStatusText = computed(() => {
 })
 
 const pickRandomTopic = () => {
+  if (isFreeTraining.value) {
+    currentTopic.value = freeTrainingTopic
+    return
+  }
+
   const topics = isAdvanced.value ? advancedTopics : basicTopics
   const index = Math.floor(Math.random() * topics.length)
   currentTopic.value = topics[index]
@@ -306,6 +350,7 @@ const pickRandomTopic = () => {
 const clearRuntimeState = () => {
   questionText.value = ''
   practiceText.value = ''
+  freeTrainingText.value = ''
   waitingQuestion.value = ''
   gradingResult.value = null
   confettiPieces.value = []
@@ -316,12 +361,28 @@ const clearRuntimeState = () => {
 }
 
 const enterAdvancedTutorial = async () => {
+  let changedSettings = false
+  let changedShortcutState = false
+
   if (!shouldRestoreQuickInput && settings.quickInput) {
     shouldRestoreQuickInput = true
     settings.quickInput = false
-    await setMg.save()
     advancedQuickInputNotice.value = true
+    changedSettings = true
   }
+
+  if (!shouldRestoreWxInputMode && settings.wxInputMode) {
+    shouldRestoreWxInputMode = true
+    originalTextProcessEnabledBeforeAdvanced = settings.textProcessEnabled
+    settings.wxInputMode = false
+    settings.textProcessEnabled = true
+    advancedWxInputNotice.value = true
+    changedSettings = true
+    changedShortcutState = true
+  }
+
+  if (changedSettings) await setMg.save()
+  if (changedShortcutState) emit('update-shortcuts')
 }
 
 const restoreQuickInputIfNeeded = async () => {
@@ -333,16 +394,34 @@ const restoreQuickInputIfNeeded = async () => {
   await setMg.save()
 }
 
+const restoreWxInputModeIfNeeded = async () => {
+  if (!shouldRestoreWxInputMode) return
+
+  shouldRestoreWxInputMode = false
+  advancedWxInputNotice.value = false
+  settings.wxInputMode = true
+  settings.textProcessEnabled = originalTextProcessEnabledBeforeAdvanced
+  await setMg.save()
+  emit('update-shortcuts')
+}
+
 const resetTutorial = async (focusInput = true) => {
   if (isAdvanced.value) {
     await enterAdvancedTutorial()
   }
   pickRandomTopic()
-  stage.value = isAdvanced.value ? 'advancedInputting' : 'inputting'
+  stage.value = isFreeTraining.value ? 'freeTraining' : (isAdvanced.value ? 'advancedInputting' : 'inputting')
   clearRuntimeState()
 
   await nextTick()
-  if (focusInput) inputRef.value?.focus?.()
+  if (!focusInput) return
+
+  if (isFreeTraining.value) {
+    freeInputRef.value?.focus?.()
+    return
+  }
+
+  inputRef.value?.focus?.()
 }
 
 const switchTutorialMode = async (mode) => {
@@ -353,6 +432,7 @@ const switchTutorialMode = async (mode) => {
 
   if (tutorialMode.value === 'advanced' && mode !== 'advanced') {
     await restoreQuickInputIfNeeded()
+    await restoreWxInputModeIfNeeded()
   }
 
   tutorialMode.value = mode
@@ -361,10 +441,15 @@ const switchTutorialMode = async (mode) => {
 
 const handleLeaveTutorial = async () => {
   await restoreQuickInputIfNeeded()
+  await restoreWxInputModeIfNeeded()
 }
 
 const blockPaste = () => {
   ElMessage.warning('教程输入框禁止粘贴，请手动输入')
+}
+
+const blockFreeTrainingPaste = () => {
+  ElMessage.warning('自由训练输入框禁止粘贴，请手动输入')
 }
 
 const handleInputKeydown = (event) => {
@@ -375,6 +460,17 @@ const handleInputKeydown = (event) => {
   if (isPasteShortcut || isShiftInsert) {
     event.preventDefault()
     blockPaste()
+  }
+}
+
+const handleFreeTrainingKeydown = (event) => {
+  const key = event.key?.toLowerCase()
+  const isPasteShortcut = (event.ctrlKey || event.metaKey) && key === 'v'
+  const isShiftInsert = event.shiftKey && key === 'insert'
+
+  if (isPasteShortcut || isShiftInsert) {
+    event.preventDefault()
+    blockFreeTrainingPaste()
   }
 }
 
@@ -778,6 +874,16 @@ defineExpose({
 
 .training-card :deep(.el-textarea__inner) {
   min-height: 150px !important;
+  padding: 16px;
+  color: var(--ctm-text);
+  background: rgba(255, 255, 255, 0.74);
+  font-size: 15px;
+  font-weight: 620;
+  line-height: 1.65;
+}
+
+.free-training-card :deep(.el-textarea__inner) {
+  min-height: 260px !important;
   padding: 16px;
   color: var(--ctm-text);
   background: rgba(255, 255, 255, 0.74);
