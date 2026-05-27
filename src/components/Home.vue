@@ -37,9 +37,13 @@
       <div v-if="hasWeType" class="wetype-card">
         <div>
           <strong>本机有微信输入法</strong>
-          <small>是否启用兼容微信输入法模式方法</small>
+          <small>{{ weTypeModeHint }}</small>
         </div>
-        <el-switch v-model="settings.wxInputMode" @change="syncWeTypeMode" />
+        <el-switch
+          v-model="settings.wxInputMode"
+          :before-change="beforeWeTypeModeChange"
+          @change="syncWeTypeMode"
+        />
       </div>
     </section>
   </section>
@@ -48,6 +52,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 import aiMg from "../composables/aiMg.js";
 import setMg from "../composables/setMg.js";
@@ -55,8 +60,9 @@ import mitt from '../utils/mitt.js';
 import { info, error } from '@tauri-apps/plugin-log';
 import { formatShortcutForDisplay } from '../utils/shortcutFormat.js';
 
-const emit = defineEmits(['open-api-key-settings'])
+const emit = defineEmits(['open-api-key-settings', 'update-shortcuts'])
 const settings = setMg.settings
+const WETYPE_DISABLE_CONFIRM_TEXT = '我不会在中文模式下使用模拟输入'
 
 const aiStatus = ref({
   healthy: "info",
@@ -83,7 +89,17 @@ const answerGuideText = computed(() => {
     return '使用中文状态下依次点 v -> 2 -> 空格 查看答案'
   }
 
-  return `使用 ${formatShortcutForDisplay(settings.textKey)} 查看答案`
+  return `使用 ${textShortcutText.value} 查看答案`
+})
+
+const textShortcutText = computed(() => formatShortcutForDisplay(settings.textKey))
+
+const weTypeModeHint = computed(() => {
+  if (settings.wxInputMode) {
+    return `已强制启用兼容模式，并禁用模拟输入 ${textShortcutText.value}`
+  }
+
+  return `已确认风险，模拟输入 ${textShortcutText.value} 已恢复`
 })
 
 // 加载问答次数
@@ -168,9 +184,16 @@ const checkWeType = async () => {
   try {
     hasWeType.value = await invoke('has_wetype_process')
     info(`Home: 微信输入法进程检测结果: ${hasWeType.value}`)
+    if (hasWeType.value) {
+      await enableWeTypeProtectedMode()
+      return
+    }
+
     if (!hasWeType.value && settings.wxInputMode) {
       settings.wxInputMode = false
+      settings.textProcessEnabled = true
       await setMg.save()
+      emit('update-shortcuts')
     }
   } catch (e) {
     hasWeType.value = false
@@ -178,10 +201,58 @@ const checkWeType = async () => {
   }
 }
 
-const syncWeTypeMode = async (enabled) => {
-  // 微信输入法兼容模式依赖去除换行符，开关状态必须和该设置保持一致。
-  settings.wxInputMode = enabled
+const enableWeTypeProtectedMode = async () => {
+  // 检测到微信输入法后进入保护模式，避免中文模式下模拟输入触发异常。
+  settings.wxInputMode = true
+  settings.textProcessEnabled = false
   await setMg.save()
+  emit('update-shortcuts')
+}
+
+const confirmDisableWeTypeMode = async () => {
+  try {
+    await ElMessageBox.prompt(
+      `使用微信输入法中文模式下，使用模拟输入(${textShortcutText.value})会出现异常。`,
+      '关闭微信输入法兼容模式',
+      {
+        confirmButtonText: '确认关闭',
+        cancelButtonText: '取消',
+        inputPlaceholder: WETYPE_DISABLE_CONFIRM_TEXT,
+        inputValidator: (value) => value === WETYPE_DISABLE_CONFIRM_TEXT || `请输入：${WETYPE_DISABLE_CONFIRM_TEXT}`,
+        type: 'warning',
+        customClass: 'ctm-glass-message-box',
+        lockScroll: false
+      }
+    )
+    return true
+  } catch (e) {
+    return false
+  }
+}
+
+const beforeWeTypeModeChange = async () => {
+  const nextEnabled = !settings.wxInputMode
+
+  // 关闭保护模式前先完成风险确认，确认失败时保持开关原状态。
+  if (!nextEnabled) {
+    return await confirmDisableWeTypeMode()
+  }
+
+  return true
+}
+
+const syncWeTypeMode = async (enabled) => {
+  if (enabled) {
+    await enableWeTypeProtectedMode()
+    return
+  }
+
+  // 用户明确确认风险后，关闭兼容模式并恢复模拟输入快捷键。
+  settings.wxInputMode = false
+  settings.textProcessEnabled = true
+  await setMg.save()
+  emit('update-shortcuts')
+  ElMessage.success(`已关闭兼容模式，模拟输入 ${textShortcutText.value} 已恢复`)
 }
 
 onMounted(() => {

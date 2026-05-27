@@ -312,6 +312,15 @@ body, html {
   -webkit-backdrop-filter: blur(28px) saturate(1.5);
 }
 
+/* 风险确认弹窗输入框保持轻量玻璃态，聚焦时不变成黑色描边。 */
+.el-message-box.ctm-glass-message-box .el-message-box__input .el-input__wrapper,
+.el-message-box.ctm-glass-message-box .el-message-box__input .el-input__wrapper:hover,
+.el-message-box.ctm-glass-message-box .el-message-box__input .el-input__wrapper.is-focus {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.56);
+  box-shadow: none;
+}
+
 .el-dialog.ctm-glass-dialog {
   overflow: hidden;
   border-radius: 20px;

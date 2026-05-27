@@ -30,12 +30,21 @@
       <el-main class="main-content">
         <!-- 主页 -->
         <div v-show="activeMenu === 'home'" class="page-container">
-          <HomePage ref="homeRef" @open-api-key-settings="openApiKeySettings" />
+          <HomePage
+            ref="homeRef"
+            @open-api-key-settings="openApiKeySettings"
+            @update-shortcuts="handleUpdateShortcuts"
+          />
         </div>
 
         <!-- 问答记录页面 -->
         <div v-show="activeMenu === 'history'" class="page-container">
           <HistoryPage />
+        </div>
+
+        <!-- 教程页面 -->
+        <div v-show="activeMenu === 'tutorial'" class="page-container">
+          <TutorialPage ref="tutorialRef" />
         </div>
 
         <!-- 设置页面 -->
@@ -61,6 +70,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import { ElButton, ElMessage, ElNotification } from 'element-plus'
 import { enable, disable } from '@tauri-apps/plugin-autostart'
 import HomePage from './components/Home.vue'
+import TutorialPage from './components/Tutorial.vue'
 import HistoryPage from './components/History.vue'
 import SettingPage from './components/Setting.vue'
 import AboutPage from './components/About.vue'
@@ -93,6 +103,7 @@ const {
   unregisterLKey
 } = useShortcuts()
 const homeRef = ref(null)
+const tutorialRef = ref(null)
 const settingRef = ref(null)
 
 // 模拟输入状态管理
@@ -139,6 +150,16 @@ const navItems = [
     ]
   },
   {
+    index: 'tutorial',
+    label: '教程',
+    paths: [
+      'M6.5 5.7h8.8a2.2 2.2 0 0 1 2.2 2.2v10.4H8.7a2.2 2.2 0 0 1-2.2-2.2V5.7Z',
+      'M9.4 9h5.2',
+      'M9.4 12h4.2',
+      'M6.5 16.1H5.2a1.7 1.7 0 0 1-1.7-1.7V7.6'
+    ]
+  },
+  {
     index: 'settings',
     label: '设置',
     paths: [
@@ -159,9 +180,14 @@ const navItems = [
 
 
 // 菜单选择处理
-const handleMenuSelect = (index) => {
+const handleMenuSelect = async (index) => {
   info(`App.vue: 菜单切换 -> ${index}`)
   activeMenu.value = index
+
+  if (index === 'tutorial') {
+    await nextTick()
+    tutorialRef.value?.resetTutorial()
+  }
 }
 
 const openApiKeySettings = async () => {
@@ -416,6 +442,10 @@ const processAiQuestion = async (question, source = 'shortcut') => {
   await writeText(clipboardAnswer)
   lastClipboardSnapshot = clipboardAnswer
   info("App.vue: AI回答已写入剪贴板");
+  mitt.emit('ai-answer-completed', {
+    question: question.trim(),
+    source
+  })
 
   // 调用后端全局改变鼠标样式（仅Windows）
   try {
@@ -495,7 +525,13 @@ const handleToggleWindow = async () => {
 // 更新快捷键处理
 const handleUpdateShortcuts = async () => {
   info(`App.vue: 更新快捷键 - 文本:${settings.textKey}(${settings.textProcessEnabled}), 问答:${settings.questionKey}(${settings.aiQAEnabled}), 托盘图标切换:${settings.toggleWindowKey}(${settings.toggleWindowEnabled})`);
-  updateShortcuts(
+
+  // 模拟输入被保护模式禁用时，主动退出当前输入态，避免 J/K/L 临时键继续生效。
+  if (!settings.textProcessEnabled && typingState.value.inputMode) {
+    await exitInputAndClearCache()
+  }
+
+  await updateShortcuts(
     settings.textKey,
     settings.questionKey,
     handleText,
