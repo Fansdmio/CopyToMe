@@ -182,6 +182,10 @@ const navItems = [
 // 菜单选择处理
 const handleMenuSelect = async (index) => {
   info(`App.vue: 菜单切换 -> ${index}`)
+  if (activeMenu.value === 'tutorial' && index !== 'tutorial') {
+    await tutorialRef.value?.handleLeaveTutorial?.()
+  }
+
   activeMenu.value = index
 
   if (index === 'tutorial') {
@@ -259,6 +263,10 @@ const handleText = async () => {
   // 进入模拟输入模式
   info("App.vue: 进入模拟输入模式");
   typingState.value.inputMode = true
+  mitt.emit('typing-mode-changed', {
+    inputMode: true,
+    isTyping: typingState.value.isTyping
+  })
   await checkAndLoadCache()
 
   // 注册 J、K、L 键
@@ -291,6 +299,10 @@ const exitInputMode = async () => {
   // 改变模式状态和停止输入状态
   typingState.value.inputMode = false
   typingState.value.isTyping = false
+  mitt.emit('typing-mode-changed', {
+    inputMode: false,
+    isTyping: false
+  })
 
   // 注销 J、L 键
   await unregisterJKey()
@@ -391,6 +403,11 @@ const shouldAutoAskClipboard = (text) => {
   return normalizedText?.endsWith('?') || normalizedText?.endsWith('？')
 }
 
+const removeTrailingQuestionMarks = (text = '') => {
+  // AI 答案写回剪贴板前去掉末尾问号，避免被剪贴板监听误判成新问题。
+  return text.replace(/[?？]+(\s*)$/u, '$1')
+}
+
 const safeReadClipboardText = async (source = 'clipboard') => {
   try {
     const text = await readText()
@@ -430,13 +447,13 @@ const processAiQuestion = async (question, source = 'shortcut') => {
   mitt.emit("history-update")
 
   // 准备写入剪贴板的内容（去除思考标签）
-  let clipboardAnswer = removeThinkingTags(answer)
+  let clipboardAnswer = removeTrailingQuestionMarks(removeThinkingTags(answer))
   info(`App.vue: 去除思考标签后,长度: ${clipboardAnswer.length}`);
 
   // 微信输入法模式处理
   if (settings.wxInputMode) {
     info("App.vue: 应用微信输入法模式(去除换行)");
-    clipboardAnswer = handleWxInput(clipboardAnswer)
+    clipboardAnswer = removeTrailingQuestionMarks(handleWxInput(clipboardAnswer))
   }
 
   await writeText(clipboardAnswer)

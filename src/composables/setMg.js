@@ -27,6 +27,7 @@ const DEFAULT_SETTINGS = {
     customAIModel: 'deepseek-v4-flash',  // 默认模型
     systemPrompt: '你是一个说话极简的答题助手,只给出答案即可,不要使用md语法',  // AI 提示词
     skippedVersions: [],  // 跳过的版本列表
+    tutorialBasicCompleted: false,  // 基础教程是否已完成
 }
 
 const setMg = {
