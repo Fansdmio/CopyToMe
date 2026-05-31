@@ -235,19 +235,20 @@ export const isTrayIconVisible = () => {
 // 默认创建托盘图标（在 App.vue 中会根据设置决定是否隐藏）
 createTrayIcon();
 
+// 先初始化 store，确保子组件挂载时 store 已就绪，再挂载 Vue 应用
+;(async () => {
+    await setMg.init()
+    info('main.js: 设置管理器初始化完成');
 
-// 先初始化 store，确保子组件挂载时 store 已就绪
-await setMg.init()
-info('main.js: 设置管理器初始化完成');
+    const app = createApp(App)
 
-const app = createApp(App)
-
-info('main.js: 挂载Vue应用');
-try {
-    app.use(ElementPlus)
-    app.mount('#app')
-    info('main.js: Vue应用挂载完成');
-} catch (e) {
-    error(`main.js: Vue应用挂载失败: ${e}`);
-    error(`main.js: 错误堆栈: ${e.stack}`);
-}
+    info('main.js: 挂载Vue应用');
+    try {
+        app.use(ElementPlus)
+        app.mount('#app')
+        info('main.js: Vue应用挂载完成');
+    } catch (e) {
+        error(`main.js: Vue应用挂载失败: ${e}`);
+        error(`main.js: 错误堆栈: ${e.stack}`);
+    }
+})()
