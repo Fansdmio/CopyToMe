@@ -28,6 +28,15 @@ const DEFAULT_SETTINGS = {
     systemPrompt: '你是一个说话极简的答题助手,只给出答案即可,不要使用md语法',  // AI 提示词
     skippedVersions: [],  // 跳过的版本列表
     tutorialBasicCompleted: false,  // 基础教程是否已完成
+    hasSupported: false,  // 用户是否已点击"我已支持过"
+    // 教程备份（断电/异常退出恢复用）
+    inAdvancedTutorial: false,          // 进阶教程是否正在进行
+    tutorialBackupQuickInput: null,     // 备份: quickInput 原始值
+    tutorialBackupWxInputMode: null,    // 备份: wxInputMode 原始值
+    tutorialBackupTextProcessEnabled: null, // 备份: textProcessEnabled 原始值
+    // 用户手动关闭微信输入法兼容模式的标记
+    wxInputModeManuallyDisabled: false,
+    singleLineOutput: false,  // 去除换行符模式（独立于微信输入法兼容模式）
 }
 
 const setMg = {
@@ -40,6 +49,7 @@ const setMg = {
         ...DEFAULT_SETTINGS,
     }),
     store: null,
+    _pendingSave: false,  // store 未就绪时标记待保存
     async init() {
         info("setMg: 开始初始化设置管理器");
         try {
@@ -58,6 +68,11 @@ const setMg = {
                 info(`setMg: 设置加载完成: ${JSON.stringify(this.settings)}`);
             } else {
                 info("setMg: 未找到已保存的设置，使用默认设置");
+            }
+            // init 完成后，如果有待保存的设置，立即保存
+            if (this._pendingSave) {
+                this._pendingSave = false
+                await this.save()
             }
         } catch (e) {
             error(`setMg: 初始化设置管理器失败: ${e}`);
@@ -79,6 +94,11 @@ const setMg = {
     },
     async save() {
         info("setMg: 保存设置到存储");
+        if (!this.store) {
+            this._pendingSave = true
+            error("setMg: store 尚未初始化，标记待保存");
+            return
+        }
         try {
             await this.store.set(STORAGE_KEY, this.settings)
             info("setMg: 设置保存成功");

@@ -41,11 +41,16 @@
       </button>
     </div>
 
-    <div v-if="advancedQuickInputNotice" class="quick-input-note">
-      已为进阶教程关闭快速输入模式，离开教程后会自动恢复。
-    </div>
-    <div v-if="advancedWxInputNotice" class="quick-input-note">
-      已为进阶教程暂时关闭微信输入兼容模式，并恢复模拟输入，离开教程后会自动恢复。
+    <div v-if="advancedQuickInputNotice || advancedWxInputNotice" class="quick-input-note">
+      <template v-if="advancedQuickInputNotice && advancedWxInputNotice">
+        已为进阶教程关闭快速输入模式和微信输入兼容模式，并恢复模拟输入，离开教程后会自动恢复。
+      </template>
+      <template v-else-if="advancedQuickInputNotice">
+        已为进阶教程关闭快速输入模式，离开教程后会自动恢复。
+      </template>
+      <template v-else>
+        已为进阶教程暂时关闭微信输入兼容模式，并恢复模拟输入，离开教程后会自动恢复。
+      </template>
     </div>
 
     <div class="tutorial-content">
@@ -280,7 +285,7 @@ const stageHint = computed(() => {
   if (isPassedStage.value) return '你已经完成当前教程，可以开始正式使用 CopyToMe 了。'
   if (['failed', 'advancedFailed'].includes(stage.value)) return '根据建议改一改答案，再提交一次就行。'
   return isAdvanced.value
-    ? '想问的问题后面加上问号，然后复制。'
+    ? `想问的问题后面加上问号，然后复制。（这里建议手动输入，因为现在使用 ${textShortcutText.value} 会进入操作模式，而不是自动打字）`
     : '想问的问题后面加上问号 ，然后复制。'
 })
 
@@ -321,7 +326,7 @@ const trainingTitle = computed(() => {
 })
 
 const trainingDescription = computed(() => {
-  if (stage.value === 'advancedEnterMode') return `按 ${textShortcutText.value} 进入模拟输入操作模式。检测到进入后会自动进入下一步。`
+  if (stage.value === 'advancedEnterMode') return `按 ${textShortcutText.value} 进入模拟输入操作模式。检测到进入后会自动进入下一步。(只有关闭快速输入模式，才会进入到模拟输入操作模式，这里已经自动关闭快速输入模式了)`
   if (stage.value === 'advancedTryL') return '请先使用模拟输入快捷键进入操作模式，然后多次按 L。L 会每次输出一个字符，这就是逐字输入模式。'
   if (stage.value === 'advancedTryJ') return '请按 J 体验自动输入模式。再次按 J 可以暂停或继续。平常开启快速输入时，进入操作模式会自动触发 J，所以看起来会直接开始输入。'
   if (stage.value === 'advancedTryExit') return `请再次按 ${textShortcutText.value} 退出模拟输入操作模式。`
@@ -366,6 +371,7 @@ const enterAdvancedTutorial = async () => {
 
   if (!shouldRestoreQuickInput && settings.quickInput) {
     shouldRestoreQuickInput = true
+    settings.tutorialBackupQuickInput = true   // 持久化备份原始值
     settings.quickInput = false
     advancedQuickInputNotice.value = true
     changedSettings = true
@@ -374,6 +380,8 @@ const enterAdvancedTutorial = async () => {
   if (!shouldRestoreWxInputMode && settings.wxInputMode) {
     shouldRestoreWxInputMode = true
     originalTextProcessEnabledBeforeAdvanced = settings.textProcessEnabled
+    settings.tutorialBackupWxInputMode = true  // 持久化备份原始值
+    settings.tutorialBackupTextProcessEnabled = settings.textProcessEnabled
     settings.wxInputMode = false
     settings.textProcessEnabled = true
     advancedWxInputNotice.value = true
@@ -381,7 +389,11 @@ const enterAdvancedTutorial = async () => {
     changedShortcutState = true
   }
 
-  if (changedSettings) await setMg.save()
+  // 标记教程正在进行（持久化，断电/崩溃后可恢复）
+  if (changedSettings) {
+    settings.inAdvancedTutorial = true
+    await setMg.save()
+  }
   if (changedShortcutState) emit('update-shortcuts')
 }
 
@@ -391,6 +403,7 @@ const restoreQuickInputIfNeeded = async () => {
   shouldRestoreQuickInput = false
   advancedQuickInputNotice.value = false
   settings.quickInput = true
+  settings.tutorialBackupQuickInput = null
   await setMg.save()
 }
 
@@ -401,6 +414,8 @@ const restoreWxInputModeIfNeeded = async () => {
   advancedWxInputNotice.value = false
   settings.wxInputMode = true
   settings.textProcessEnabled = originalTextProcessEnabledBeforeAdvanced
+  settings.tutorialBackupWxInputMode = null
+  settings.tutorialBackupTextProcessEnabled = null
   await setMg.save()
   emit('update-shortcuts')
 }
@@ -442,14 +457,19 @@ const switchTutorialMode = async (mode) => {
 const handleLeaveTutorial = async () => {
   await restoreQuickInputIfNeeded()
   await restoreWxInputModeIfNeeded()
+  // 清除教程进行中标记（正常退出路径）
+  if (settings.inAdvancedTutorial) {
+    settings.inAdvancedTutorial = false
+    await setMg.save()
+  }
 }
 
 const blockPaste = () => {
-  ElMessage.warning('教程输入框禁止粘贴，请手动输入')
+  ElMessage.warning('禁止粘贴,想办法绕过吧')
 }
 
 const blockFreeTrainingPaste = () => {
-  ElMessage.warning('自由训练输入框禁止粘贴，请手动输入')
+  ElMessage.warning('禁止粘贴,想办法绕过吧')
 }
 
 const handleInputKeydown = (event) => {

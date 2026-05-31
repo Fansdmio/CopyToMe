@@ -165,6 +165,18 @@
                 <el-text size="small" type="info" style="margin-left: 12px">{{ feature.description }}</el-text>
               </div>
             </el-form-item>
+            <el-form-item label="去除换行符模式">
+              <div class="switch-container">
+                <el-switch
+                  v-model="settings.singleLineOutput"
+                  size="large"
+                  active-text="启用"
+                  inactive-text="关闭"
+                  @change="onSingleLineOutputChange"
+                />
+                <el-text size="small" type="info" style="margin-left: 12px">去除 AI 回答中的换行符，输出为单行</el-text>
+              </div>
+            </el-form-item>
             <el-form-item :label="TEXT_PROCESSING_CONFIG.timeRange.label">
               <el-slider
                 v-model="settings.timeRange"
@@ -332,11 +344,29 @@ const toggleCapture = (key) => {
 };
 
 const toggleFeature = async (enableKey, enableLabel) => {
+  // 开启模拟输入时，如果微信输入兼容模式已开启，警告但不改变 wxInputMode
+  if (enableKey === 'textProcessEnabled' && !settings.textProcessEnabled && settings.wxInputMode) {
+    try {
+      await ElMessageBox.confirm(
+        '当前已开启微信输入兼容模式，模拟输入功能本次可用，但下次启动时会自动禁用。建议先关闭微信输入兼容模式。',
+        '提示',
+        { confirmButtonText: '知道了，继续开启', cancelButtonText: '取消', type: 'warning' }
+      )
+    } catch {
+      return  // 用户取消
+    }
+  }
   settings[enableKey] = !settings[enableKey];
   await setMg.save();
   emit('update-shortcuts');
   ElMessage[settings[enableKey] ? 'success' : 'warning'](`${enableLabel}${settings[enableKey] ? '已启用' : '已关闭'}`);
 };
+
+// singleLineOutput toggle 变更后处理
+const onSingleLineOutputChange = async () => {
+  await setMg.save()
+  ElMessage[settings.singleLineOutput ? 'success' : 'warning'](`去除换行符模式${settings.singleLineOutput ? '已启用' : '已关闭'}`)
+}
 
 const stopCapture = () => {
   capturingKey.value = null;
@@ -582,8 +612,12 @@ defineExpose({
 }
 
 .state-pill.is-disabled {
-  color: var(--ctm-text-muted);
-  background: var(--ctm-surface-muted);
+  color: var(--ctm-danger);
+  background: var(--ctm-danger-soft);
+}
+
+.state-pill.is-disabled .state-dot {
+  background: var(--ctm-danger);
 }
 
 .advanced-settings {

@@ -51,7 +51,6 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import aiMg from "../composables/aiMg.js";
@@ -72,6 +71,7 @@ const needApiKey = ref(false)
 
 // 问答次数统计
 const qaCount = ref(0)
+// 微信输入法进程检测状态（由 App.vue 通过 mitt 事件通知）
 const hasWeType = ref(false)
 const deepSeekBalance = ref(null)
 
@@ -180,31 +180,15 @@ const handleStatusClick = () => {
   checkAi()
 }
 
-const checkWeType = async () => {
-  try {
-    hasWeType.value = await invoke('has_wetype_process')
-    info(`Home: 微信输入法进程检测结果: ${hasWeType.value}`)
-    if (hasWeType.value) {
-      await enableWeTypeProtectedMode()
-      return
-    }
-
-    if (!hasWeType.value && settings.wxInputMode) {
-      settings.wxInputMode = false
-      settings.textProcessEnabled = true
-      await setMg.save()
-      emit('update-shortcuts')
-    }
-  } catch (e) {
-    hasWeType.value = false
-    error(`Home: 微信输入法进程检测失败: ${e}`)
-  }
-}
+// 开启兼容模式前备份 singleLineOutput 原始值，关闭时恢复
+let singleLineOutputBackup = false
 
 const enableWeTypeProtectedMode = async () => {
   // 检测到微信输入法后进入保护模式，避免中文模式下模拟输入触发异常。
+  singleLineOutputBackup = settings.singleLineOutput
   settings.wxInputMode = true
   settings.textProcessEnabled = false
+  settings.singleLineOutput = true   // 开启去除换行符
   await setMg.save()
   emit('update-shortcuts')
 }
@@ -243,6 +227,7 @@ const beforeWeTypeModeChange = async () => {
 
 const syncWeTypeMode = async (enabled) => {
   if (enabled) {
+    settings.wxInputModeManuallyDisabled = false
     await enableWeTypeProtectedMode()
     return
   }
@@ -250,6 +235,8 @@ const syncWeTypeMode = async (enabled) => {
   // 用户明确确认风险后，关闭兼容模式并恢复模拟输入快捷键。
   settings.wxInputMode = false
   settings.textProcessEnabled = true
+  settings.singleLineOutput = singleLineOutputBackup   // 恢复去除换行符原始状态
+  settings.wxInputModeManuallyDisabled = true
   await setMg.save()
   emit('update-shortcuts')
   ElMessage.success(`已关闭兼容模式，模拟输入 ${textShortcutText.value} 已恢复`)
@@ -259,11 +246,14 @@ onMounted(() => {
   try {
     info("Home: 组件挂载");
     loadQACount()
-    checkWeType()
     loadDeepSeekBalance()
   } catch (e) {
     error(`Home: 组件挂载失败: ${e}`);
   }
+  // 监听 App.vue 的微信输入法进程检测结果
+  mitt.on('wetype-detected', (detected) => {
+    hasWeType.value = detected
+  })
 })
 
 defineExpose({

@@ -11,7 +11,10 @@ const aiMg = {
     async init() {
         info("aiMg: 开始初始化");
         try {
-            await setMg.init();
+            // setMg 已在 main.js 中提前初始化，这里只需获取 store 引用
+            if (!setMg.store) {
+                await setMg.init();
+            }
             this.store = setMg.store;
             info("aiMg: 初始化完成");
         } catch (e) {

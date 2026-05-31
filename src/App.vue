@@ -54,7 +54,7 @@
 
         <!-- 关于 -->
         <div v-show="activeMenu === 'about'" class="page-container">
-          <AboutPage />
+          <AboutPage :active-menu="activeMenu" />
         </div>
       </el-main>
     </el-container>
@@ -82,6 +82,7 @@ import { listen } from '@tauri-apps/api/event';
 import aiMg from "./composables/aiMg.js";
 import setMg from "./composables/setMg.js";
 import mitt from './utils/mitt.js'
+import { openUrl } from '@tauri-apps/plugin-opener'
 import { info, error } from '@tauri-apps/plugin-log';
 import Update from './components/Update.vue';
 import { toggleTrayIcon, isTrayIconVisible, hideTrayIcon, showTrayIcon } from './main.js';
@@ -91,6 +92,7 @@ info('App.vue: 应用启动');
 
 // 使用 快捷键管理器
 const {
+  registered,
   registerShortcuts,
   updateShortcuts,
   registerToggleWindowKey,
@@ -450,9 +452,9 @@ const processAiQuestion = async (question, source = 'shortcut') => {
   let clipboardAnswer = removeTrailingQuestionMarks(removeThinkingTags(answer))
   info(`App.vue: 去除思考标签后,长度: ${clipboardAnswer.length}`);
 
-  // 微信输入法模式处理
-  if (settings.wxInputMode) {
-    info("App.vue: 应用微信输入法模式(去除换行)");
+  // 去除换行符模式
+  if (settings.singleLineOutput) {
+    info("App.vue: 应用去除换行符模式");
     clipboardAnswer = removeTrailingQuestionMarks(handleWxInput(clipboardAnswer))
   }
 
@@ -636,6 +638,47 @@ const showAdminPrompt = () => {
   })
 }
 
+let supportPrompt = null
+
+// 萝莉照智能提示：引导用户去 GitHub 点 star
+const showSupportPrompt = () => {
+  if (supportPrompt) return
+  if (setMg.settings.hasSupported) return
+
+  supportPrompt = ElNotification({
+    title: '感谢使用 CopyToMe',
+    message: h('div', { class: 'support-prompt' }, [
+      h('p', { class: 'support-prompt__text' }, '如果觉得有帮助，欢迎去 GitHub 点个 star，也可以提交 bug 或建议'),
+      h('div', { class: 'support-prompt__actions' }, [
+        h(ElButton, {
+          size: 'small',
+          style: 'background: #fff; border: 1px solid var(--ctm-border); color: var(--ctm-text-soft)',
+          onClick: async () => {
+            setMg.settings.hasSupported = true
+            await setMg.save()
+            supportPrompt?.close()
+          }
+        }, () => '我已支持过'),
+        h(ElButton, {
+          type: 'primary',
+          size: 'small',
+          onClick: async () => {
+            await openUrl('https://github.com/Fansdmio/CopyToMe')
+            supportPrompt?.close()
+          }
+        }, () => '前往 GitHub')
+      ])
+    ]),
+    duration: 0,
+    position: 'bottom-right',
+    onClose: () => {
+      supportPrompt = null
+    }
+  })
+}
+
+mitt.on('show-support-prompt', showSupportPrompt)
+
 const checkAdminPrivilege = async () => {
   try {
     const isAdmin = await invoke('is_running_as_admin')
@@ -760,36 +803,59 @@ onMounted(async () => {
     error(`App.vue: 初始化时间范围失败: ${e}`);
   }
 
-  // 注册快捷键 (不包括停止键)
-  try {
-    info(`App.vue: 注册快捷键 - 文本:${settings.textKey}(${settings.textProcessEnabled}), 问答:${settings.questionKey}(${settings.aiQAEnabled})`);
-    await registerShortcuts(
-      settings.textKey,
-      settings.questionKey,
-      handleText,
-      handleQuestion,
-      settings.textProcessEnabled,
-      settings.aiQAEnabled
-    )
-    info("App.vue: 快捷键注册成功");
-  } catch (e) {
-    error(`App.vue: 快捷键注册失败: ${e}`);
-    ElMessage.warning('快捷键注册失败, 但应用可以继续使用');
+  // 恢复上次异常退出时的进阶教程设置（必须在 checkWeType 之前执行）
+  const restoreTutorialIfNeeded = async () => {
+    if (!settings.inAdvancedTutorial) return
+
+    info('App.vue: 检测到上次进阶教程未正常退出，恢复设置')
+    if (settings.tutorialBackupQuickInput !== null) {
+      settings.quickInput = settings.tutorialBackupQuickInput
+    }
+    if (settings.tutorialBackupWxInputMode !== null) {
+      settings.wxInputMode = settings.tutorialBackupWxInputMode
+    }
+    if (settings.tutorialBackupTextProcessEnabled !== null) {
+      settings.textProcessEnabled = settings.tutorialBackupTextProcessEnabled
+    }
+    // 清除教程备份标记
+    settings.inAdvancedTutorial = false
+    settings.tutorialBackupQuickInput = null
+    settings.tutorialBackupWxInputMode = null
+    settings.tutorialBackupTextProcessEnabled = null
+    await setMg.save()
   }
 
-  // 注册托盘图标切换快捷键
-  try {
-    if (settings.toggleWindowEnabled) {
-      info(`App.vue: 注册托盘图标切换快捷键: ${settings.toggleWindowKey}`);
-      await registerToggleWindowKey(settings.toggleWindowKey, handleToggleWindow)
-      info("App.vue: 托盘图标切换快捷键注册成功");
-    } else {
-      info('App.vue: 托盘图标切换快捷键已禁用, 跳过注册');
+  // 检测微信输入法进程，确定 textProcessEnabled 的值（必须在快捷键注册前完成）
+  const checkWeType = async () => {
+    try {
+      const detected = await invoke('has_wetype_process')
+      info(`App.vue: 微信输入法进程检测结果: ${detected}`)
+      // 通知 Home.vue 更新微信输入法进程状态（用于控制开关显示）
+      mitt.emit('wetype-detected', detected)
+      if (detected) {
+        // 用户手动关闭过，不自动覆盖
+        if (settings.wxInputModeManuallyDisabled) {
+          info('App.vue: 用户已手动关闭微信输入兼容模式，跳过自动开启')
+          return
+        }
+        settings.wxInputMode = true
+        settings.textProcessEnabled = false
+        settings.singleLineOutput = true   // 兼容模式自动开启去除换行符
+        await setMg.save()
+      } else if (settings.wxInputMode) {
+        settings.wxInputMode = false
+        settings.textProcessEnabled = true
+        await setMg.save()
+      }
+    } catch (e) {
+      error(`App.vue: 微信输入法进程检测失败: ${e}`)
     }
-  } catch (e) {
-    error(`App.vue: 托盘图标切换快捷键注册失败: ${e}`);
-    ElMessage.warning('托盘图标切换快捷键注册失败, 但应用可以继续使用');
   }
+
+  // 统一注册快捷键（通过 handleUpdateShortcuts 确保注销+注册流程一致）
+  await restoreTutorialIfNeeded()
+  await checkWeType()
+  await handleUpdateShortcuts()
 
   await startClipboardQuestionWatcher()
   info("App.vue: 初始化完成");
@@ -1053,5 +1119,22 @@ html {
   margin: 0;
   color: var(--ctm-text-soft);
   line-height: 1.5;
+}
+
+.support-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.support-prompt__text {
+  margin: 0;
+  color: var(--ctm-text-soft);
+  line-height: 1.5;
+}
+
+.support-prompt__actions {
+  display: flex;
+  gap: 8px;
 }
 </style>

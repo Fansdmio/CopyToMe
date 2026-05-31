@@ -20,8 +20,24 @@
           <h1>CopyToMe</h1>
           <el-text type="info">版本 {{ version }}</el-text>
           <div class="brand-links">
-            <span>免费软件，请勿上当受骗</span>
-            <el-link target="_blank" :href="`${setMg.baseUrl}`" underline="never" type="primary">官网链接</el-link>
+            <div class="brand-links-row">
+              <a :href="`${setMg.baseUrl}`" target="_blank" class="brand-link-item">
+                <svg class="link-icon" viewBox="0 0 16 16" fill="none">
+                  <path d="M6.5 2.5h-3a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                  <path d="M9 1.5h4.5V6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M13.5 1.5L7.5 7.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                </svg>
+                <span>官网链接</span>
+              </a>
+              <a href="https://github.com/Fansdmio/CopyToMe" target="_blank" class="brand-link-item">
+                <svg class="link-icon" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                </svg>
+                <span>GitHub</span>
+              </a>
+            </div>
+            <span class="brand-hint">免费软件，请勿上当受骗</span>
+            <span class="brand-star-hint">有帮助的话，请帮作者点一个 star</span>
           </div>
         </div>
 
@@ -60,7 +76,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import {
   InfoFilled,
   Picture,
@@ -71,8 +87,50 @@ import setMg from '../composables/setMg'
 import mitt from '../utils/mitt'
 const { version } = setMg
 
+const props = defineProps({
+  activeMenu: {
+    type: String,
+    default: 'about'
+  }
+})
+
 // 图片显示状态
 const showImage = ref(false)
+
+// 萝莉照智能提示计时逻辑
+let imageShownAt = null
+let supportCheckTimer = null
+
+// 检查是否需要弹出支持提示
+const checkAndMaybePrompt = () => {
+  if (imageShownAt === null) return
+  const elapsed = Date.now() - imageShownAt
+  imageShownAt = null  // 重置防止重复触发
+  if (elapsed < 30000 && !setMg.settings.hasSupported) {
+    mitt.emit('show-support-prompt')
+  }
+}
+
+watch(showImage, (newVal) => {
+  if (newVal) {
+    imageShownAt = Date.now()
+  } else {
+    checkAndMaybePrompt()
+  }
+})
+
+watch(() => props.activeMenu, (newMenu) => {
+  if (newMenu !== 'about' && imageShownAt !== null) {
+    if (supportCheckTimer) clearTimeout(supportCheckTimer)
+    supportCheckTimer = setTimeout(() => {
+      checkAndMaybePrompt()
+    }, 100)
+  }
+})
+
+onUnmounted(() => {
+  if (supportCheckTimer) clearTimeout(supportCheckTimer)
+})
 </script>
 
 <style scoped>
@@ -148,8 +206,46 @@ const showImage = ref(false)
 .brand-links {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
   margin-top: 10px;
+}
+
+.brand-links-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+}
+
+.brand-link-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  color: #0066cc;
+  text-decoration: none;
+  transition: color var(--ctm-transition);
+}
+
+.brand-link-item:hover {
+  color: #004499;
+}
+
+.link-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.brand-hint {
+  font-size: 12px;
+  color: var(--ctm-text-muted);
+}
+
+.brand-star-hint {
+  font-size: 12px;
+  color: var(--ctm-text-muted);
 }
 
 /* 图片占位符样式 */

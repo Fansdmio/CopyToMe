@@ -56,9 +56,11 @@ export function useShortcuts() {
       info(`useShortcuts: ${shortcut} 键已注册,跳过`);
       return true
     }
-    
+
     info(`useShortcuts: 注册快捷键 ${shortcut}`);
     try {
+      // 先尝试注销旧键，防止后端残留导致 "HotKey already registered"
+      try { await invoke('unregister_shortcut', { shortcut }) } catch {}
       await invoke('register_shortcut', { id, shortcut })
       if (listeners.value[id]) {
         listeners.value[id]()
@@ -118,12 +120,14 @@ export function useShortcuts() {
    */
   const registerShortcuts = async (textKey, questionKey, textHandler, questionHandler, textEnabled = true, questionEnabled = true) => {
     info(`useShortcuts: 注册快捷键 - 文本:${textKey}(${textEnabled ? '启用' : '禁用'}), 问答:${questionKey}(${questionEnabled ? '启用' : '禁用'})`);
-    
+
     let success = false
-    
+
     try {
       // 只有启用时才注册文本处理快捷键
       if (textEnabled) {
+        // 先尝试注销旧键，防止后端残留导致 "HotKey already registered"
+        try { await invoke('unregister_shortcut', { shortcut: textKey }) } catch {}
         await invoke('register_shortcut', { id: 'text', shortcut: textKey })
         if (listeners.value.text) {
           listeners.value.text()
@@ -136,9 +140,11 @@ export function useShortcuts() {
         info(`useShortcuts: 文本快捷键已禁用，跳过注册: ${textKey}`);
         currentKeys.value.textKey = null
       }
-      
+
       // 只有启用时才注册问答快捷键
       if (questionEnabled) {
+        // 先尝试注销旧键，防止后端残留导致 "HotKey already registered"
+        try { await invoke('unregister_shortcut', { shortcut: questionKey }) } catch {}
         await invoke('register_shortcut', { id: 'question', shortcut: questionKey })
         if (listeners.value.question) {
           listeners.value.question()
@@ -151,7 +157,7 @@ export function useShortcuts() {
         info(`useShortcuts: 问答快捷键已禁用，跳过注册: ${questionKey}`);
         currentKeys.value.questionKey = null
       }
-      
+
       registered.value = success
       info('useShortcuts: 快捷键注册完成');
       return true
